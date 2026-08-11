@@ -9,6 +9,13 @@ import {
   getFacadeBalance,
   settleFacade,
 } from "../lib/solana.js";
+import {
+  authorizeConditionalRelease,
+  delegateConditionalIntent,
+  initializeConditionalIntent,
+  settleConditionalIntent,
+  waitForReleasedIntent,
+} from "../lib/conditional-settlement.js";
 import { capabilityMatches, merchantPrincipal, requireMerchant } from "../middlewares/auth.js";
 import { decryptSecret, encryptSecret, hashCapability } from "../lib/secrets.js";
 
@@ -55,7 +62,7 @@ router.post("/sessions", requireMerchant, async (req, res): Promise<void> => {
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
 
   const { merchantId } = merchantPrincipal(res);
-  const { label, expiryMinutes, amount, currency } = parsed.data;
+  const { label, expiryMinutes, amount, currency, settlementMode = "standard" } = parsed.data;
   if (amount != null && amount < 0.5) {
     res.status(400).json({ error: "amount must be at least 0.50 USDC" });
     return;
@@ -63,6 +70,12 @@ router.post("/sessions", requireMerchant, async (req, res): Promise<void> => {
   const mins = expiryMinutes ?? 15;
   const id = randomBytes(16).toString("hex");
   const checkoutToken = randomBytes(32).toString("base64url");
+  const expiresAt = new Date(Date.now() + mins * 60_000);
+
+  if (settlementMode === "conditional" && (!isErConfigured() || !process.env.MAGICBLOCK_ROUTER_RPC?.trim())) {
+    res.status(503).json({ error: "conditional settlement requires ER and MagicBlock configuration" });
+    return;
+  }
 
   let facadeAddress: string;
   let facadeKeypairB58: string | null = null;
@@ -80,7 +93,7 @@ router.post("/sessions", requireMerchant, async (req, res): Promise<void> => {
     facadeAddress = stubFacade();
   }
 
-  const [row] = await db.insert(sessionsTable).values({
+  let [row] = await db.insert(sessionsTable).values({
     id,
     facadeAddress,
     facadeKeypairB58,
@@ -89,10 +102,38 @@ router.post("/sessions", requireMerchant, async (req, res): Promise<void> => {
     amount: amount != null ? String(amount) : null,
     currency: currency ?? "USDC",
     merchantId,
+    settlementMode,
     checkoutTokenHash: hashCapability(checkoutToken),
     status: "active",
-    expiresAt: new Date(Date.now() + mins * 60_000),
+    expiresAt,
   }).returning();
+
+  if (settlementMode === "conditional" && facadeKeypairB58) {
+    try {
+      const initialized = await initializeConditionalIntent({
+        sessionId: id,
+        facadeAddress,
+        requiredAmount: amount != null ? atomicUsdc(String(amount)) : 1n,
+        expiresAt,
+      });
+      [row] = await db.update(sessionsTable).set({
+        intentAddress: initialized.intentAddress,
+        intentInitTxHash: initialized.signature,
+        settlementStep: "intent_initialized",
+      }).where(eq(sessionsTable.id, id)).returning();
+
+      const delegateSignature = await delegateConditionalIntent(id);
+      [row] = await db.update(sessionsTable).set({
+        intentDelegateTxHash: delegateSignature,
+        settlementStep: "intent_delegated",
+      }).where(eq(sessionsTable.id, id)).returning();
+    } catch (error) {
+      [row] = await db.update(sessionsTable).set({
+        settlementStep: "failed",
+        settlementError: String(error),
+      }).where(eq(sessionsTable.id, id)).returning();
+    }
+  }
 
   const origin = checkoutOrigin(req);
   res.status(201).json(serializeWithUrl(row, origin, checkoutToken));
@@ -166,7 +207,48 @@ router.post("/sessions/:id/settle", async (req, res): Promise<void> => {
   if (!claimed) { res.status(409).json({ error: "session settlement already in progress" }); return; }
 
   try {
-    const result = await settleFacade(decryptSecret(claimed.facadeKeypairB58!), claimed.facadeAddress);
+    let result: { sig: string; private: boolean };
+    if (claimed.settlementMode === "conditional") {
+      let current = claimed;
+      if (!current.intentInitTxHash) {
+        const initialized = await initializeConditionalIntent({
+          sessionId: current.id,
+          facadeAddress: current.facadeAddress,
+          requiredAmount: required,
+          expiresAt: current.expiresAt,
+        });
+        [current] = await db.update(sessionsTable).set({
+          intentAddress: initialized.intentAddress,
+          intentInitTxHash: initialized.signature,
+          settlementStep: "intent_initialized",
+        }).where(eq(sessionsTable.id, current.id)).returning();
+      }
+      if (!current.intentDelegateTxHash) {
+        const signature = await delegateConditionalIntent(current.id);
+        [current] = await db.update(sessionsTable).set({
+          intentDelegateTxHash: signature,
+          settlementStep: "intent_delegated",
+        }).where(eq(sessionsTable.id, current.id)).returning();
+      }
+      if (!current.releaseTxHash) {
+        const signature = await authorizeConditionalRelease({
+          sessionId: current.id,
+          facadeAddress: current.facadeAddress,
+        });
+        [current] = await db.update(sessionsTable).set({
+          releaseTxHash: signature,
+          settlementStep: "release_authorized",
+        }).where(eq(sessionsTable.id, current.id)).returning();
+      }
+      await waitForReleasedIntent(current.id);
+      const signature = await settleConditionalIntent({
+        sessionId: current.id,
+        facadeKeypairB58: decryptSecret(current.facadeKeypairB58!),
+      });
+      result = { sig: signature, private: true };
+    } else {
+      result = await settleFacade(decryptSecret(claimed.facadeKeypairB58!), claimed.facadeAddress);
+    }
     const settledAt = new Date();
     await db.transaction(async (tx) => {
       await tx.update(sessionsTable).set({
@@ -176,6 +258,7 @@ router.post("/sessions/:id/settle", async (req, res): Promise<void> => {
         receivedAmount: decimalUsdc(received),
         settledAt,
         settlementError: null,
+        settlementStep: "settled",
         facadeKeypairB58: null,
       }).where(and(eq(sessionsTable.id, claimed.id), eq(sessionsTable.status, "settling")));
       await tx.insert(paymentsTable).values({
@@ -189,7 +272,11 @@ router.post("/sessions/:id/settle", async (req, res): Promise<void> => {
     });
     res.json({ sig: result.sig, private: result.private, status: "settled" });
   } catch (e) {
-    await db.update(sessionsTable).set({ status: "settlement_failed", settlementError: String(e) })
+    await db.update(sessionsTable).set({
+      status: "settlement_failed",
+      settlementStep: "failed",
+      settlementError: String(e),
+    })
       .where(and(eq(sessionsTable.id, claimed.id), eq(sessionsTable.status, "settling")));
     res.status(502).json({ error: "settlement failed", detail: String(e) });
   }
@@ -215,6 +302,9 @@ function serialize(s: typeof sessionsTable.$inferSelect) {
     currency: s.currency,
     merchantId: s.merchantId,
     status: s.status,
+    settlementMode: s.settlementMode,
+    settlementStep: s.settlementStep,
+    intentAddress: s.intentAddress,
     createdAt: s.createdAt.toISOString(),
     expiresAt: s.expiresAt.toISOString(),
   };

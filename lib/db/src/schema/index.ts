@@ -7,8 +7,11 @@ import {
   numeric,
   timestamp,
   boolean,
+  check,
+  index,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -43,6 +46,12 @@ export const sessionsTable = pgTable("sessions", {
   currency: varchar("currency", { length: 10 }).notNull().default("USDC"),
   merchantId: varchar("merchant_id", { length: 100 }).notNull(),
   status: varchar("status", { length: 20 }).notNull().default("active"),
+  settlementMode: varchar("settlement_mode", { length: 20 }).notNull().default("standard"),
+  settlementStep: varchar("settlement_step", { length: 40 }).notNull().default("pending"),
+  intentAddress: varchar("intent_address", { length: 100 }),
+  intentInitTxHash: varchar("intent_init_tx_hash", { length: 100 }),
+  intentDelegateTxHash: varchar("intent_delegate_tx_hash", { length: 100 }),
+  releaseTxHash: varchar("release_tx_hash", { length: 100 }),
   facadeKeypairB58: text("facade_keypair_b58"),
   checkoutTokenHash: varchar("checkout_token_hash", { length: 64 }),
   settlementTxHash: varchar("settlement_tx_hash", { length: 100 }),
@@ -53,7 +62,21 @@ export const sessionsTable = pgTable("sessions", {
   receivedAmount: numeric("received_amount", { precision: 20, scale: 6 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   expiresAt: timestamp("expires_at").notNull(),
-});
+}, (table) => [
+  check(
+    "sessions_settlement_mode_check",
+    sql`${table.settlementMode} in ('standard', 'conditional')`,
+  ),
+  check(
+    "sessions_settlement_step_check",
+    sql`${table.settlementStep} in ('pending', 'intent_initialized', 'intent_delegated', 'release_authorized', 'settled', 'failed')`,
+  ),
+  index("sessions_settlement_workflow_idx").on(
+    table.settlementMode,
+    table.settlementStep,
+    table.settlementStartedAt,
+  ),
+]);
 
 export const insertSessionSchema = createInsertSchema(sessionsTable).omit({
   createdAt: true,

@@ -12,4 +12,5 @@ export interface SessionInput {
   amount?: number;
   currency?: string;
   merchantId?: string;
+  settlementMode?: "standard" | "conditional";
 }

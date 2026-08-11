@@ -114,7 +114,8 @@ export const CreateSessionBody = zod.object({
   "expiryMinutes": zod.number(),
   "amount": zod.number().optional(),
   "currency": zod.string().optional(),
-  "merchantId": zod.string().optional()
+  "merchantId": zod.string().optional(),
+  "settlementMode": zod.enum(["standard","conditional"]).optional()
 })
 
 export const CreateSessionResponse = zod.object({

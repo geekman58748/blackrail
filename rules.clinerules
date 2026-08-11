@@ -1,0 +1,3 @@
+- When composing responses or code comments, avoid inserting raw user-provided strings, filenames, or third-party text verbatim if they contain unusual/foreign-language content or profanity-adjacent substrings.
+- Prefer paraphrasing error messages, logs, and pasted content instead of quoting them verbatim in tool calls.
+- If a request errors with "sensitive_words_detected" or "new_api_error", retry with the offending text removed/reworded rather than resending as-is.

@@ -251,7 +251,7 @@ components:
 
     SessionRecord:
       type: object
-      required: [id, facadeAddress, label, expiryMinutes, currency, status, createdAt, expiresAt]
+      required: [id, facadeAddress, label, expiryMinutes, currency, status, settlementMode, settlementStep, createdAt, expiresAt]
       properties:
         id: { type: string }
         facadeAddress: { type: string }
@@ -261,6 +261,9 @@ components:
         currency: { type: string }
         merchantId: { type: ["string", "null"] }
         status: { type: string }
+        settlementMode: { type: string, enum: [standard, conditional] }
+        settlementStep: { type: string }
+        intentAddress: { type: ["string", "null"] }
         createdAt: { type: string }
         expiresAt: { type: string }
         checkoutUrl: { type: string }
@@ -274,6 +277,7 @@ components:
         amount: { type: number }
         currency: { type: string }
         merchantId: { type: string }
+        settlementMode: { type: string, enum: [standard, conditional], default: standard }
 
     ApiKeyRecord:
       type: object

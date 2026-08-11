@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&family=JetBrains+Mono:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
+<script src="../runtime-config.js"></script>
 <style>
   :root {
     --bg-base: #08090d;
@@ -926,6 +927,19 @@
               </div>
             </div>
 
+            <div class="field-group">
+              <label class="field-label">Settlement Mode</label>
+              <div class="expiry-selector" style="grid-template-columns:1fr 1fr;">
+                <div class="radio-pill">
+                  <input type="radio" id="modeStandard" name="settlement-mode" value="standard" checked>
+                  <label for="modeStandard" class="radio-label">Direct</label>
+                </div>
+                <div class="radio-pill">
+                  <input type="radio" id="modeConditional" name="settlement-mode" value="conditional" disabled>
+                  <label for="modeConditional" class="radio-label" style="opacity:.45;cursor:not-allowed;">Conditional (soon)</label>
+                </div>
+              </div>
+            </div>
             <button type="submit" class="btn-action-primary" style="margin-top: 8px;">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
               Generate Ephemeral Checkout
@@ -1035,18 +1049,22 @@
     preview.innerHTML = '<div style="color:var(--text-muted);font-size:13px;">Creating session…</div>';
 
     try {
+      const expiryMinutes = parseInt(document.querySelector('input[name="expiry"]:checked')?.value || '15') || 15;
+      const settlementMode = document.querySelector('input[name="settlement-mode"]:checked')?.value || 'standard';
       const res = await apiFetch('/api/sessions', {
         method: 'POST',
         body: JSON.stringify({
           amount: amountRaw ? parseFloat(amountRaw) : null,
           currency: 'USDC',
           label: label || 'Untitled',
-          expiryMinutes: parseInt(document.querySelector('input[name="expiry"]:checked')?.value || '15') || 15,
+          expiryMinutes,
+          settlementMode,
         }),
       });
       if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error || 'API error'); }
       const session = await res.json();
-      const checkoutURL = session.checkoutUrl;
+      const apiCheckoutURL = new URL(session.checkoutUrl);
+      const checkoutURL = new URL('checkout.html' + apiCheckoutURL.search + apiCheckoutURL.hash, window.location.href).href;
       const amountLabel = session.amount ? '$' + session.amount + ' USDC' : 'Open Amount';
 
       preview.innerHTML = `
@@ -1055,7 +1073,7 @@
         <div style="font-size:15px;color:var(--text-primary);font-weight:600;margin-top:2px;">${amountLabel}</div>
         <div style="font-size:11px;color:var(--text-muted);margin-top:8px;">Facade Address:</div>
         <div class="facade-address-pill" style="font-family:var(--font-mono);font-size:11px;">${session.facadeAddress.slice(0,8)}…${session.facadeAddress.slice(-6)}</div>
-        <div style="font-size:10px;color:var(--text-muted);margin-top:4px;">Expires in 30 min</div>
+        <div style="font-size:10px;color:var(--text-muted);margin-top:4px;">${settlementMode === 'conditional' ? 'Conditional settlement' : 'Direct settlement'} · Expires in ${expiryMinutes} min</div>
         <button class="btn-action-primary" style="margin-top:16px;padding:9px 16px;font-size:12px;"
           onclick="navigator.clipboard.writeText('${checkoutURL}').then(()=>this.textContent='Copied!')">
           Copy Shareable Checkout Link
@@ -1068,7 +1086,8 @@
 </script>
 
 <script>
-const API_BASE = 'https://mirage-production-6dfc.up.railway.app';
+const configuredApiBase = window.BLACKRAIL_CONFIG?.apiBase || localStorage.getItem('blackrail_api_base') || '';
+const API_BASE = configuredApiBase.replace(/\/+$/, '');
 const PRIVY_APP_ID = 'cms56lvu500030ckz9hxe7lex';
 
 function apiFetch(path, options = {}) {

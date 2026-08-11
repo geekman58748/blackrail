@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&family=JetBrains+Mono:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
+<script src="../runtime-config.js"></script>
 <style>
   :root {
     --bg-base: #08090d;
@@ -930,26 +931,12 @@
               <label class="field-label">Settlement Mode</label>
               <div class="expiry-selector" style="grid-template-columns:1fr 1fr;">
                 <div class="radio-pill">
-                  <input type="radio" id="modeDirect" name="settlement-mode" value="direct">
-                  <label for="modeDirect" class="radio-label">Direct</label>
+                  <input type="radio" id="modeStandard" name="settlement-mode" value="standard" checked>
+                  <label for="modeStandard" class="radio-label">Direct</label>
                 </div>
                 <div class="radio-pill">
-                  <input type="radio" id="modeConditional" name="settlement-mode" value="conditional" checked>
-                  <label for="modeConditional" class="radio-label">Conditional</label>
-                </div>
-              </div>
-            </div>
-
-            <div class="field-group">
-              <label class="field-label">Settlement Mode</label>
-              <div class="expiry-selector" style="grid-template-columns:1fr 1fr;">
-                <div class="radio-pill">
-                  <input type="radio" id="modeDirect" name="settlement-mode" value="direct">
-                  <label for="modeDirect" class="radio-label">Direct</label>
-                </div>
-                <div class="radio-pill">
-                  <input type="radio" id="modeConditional" name="settlement-mode" value="conditional" checked>
-                  <label for="modeConditional" class="radio-label">Conditional</label>
+                  <input type="radio" id="modeConditional" name="settlement-mode" value="conditional" disabled>
+                  <label for="modeConditional" class="radio-label" style="opacity:.45;cursor:not-allowed;">Conditional (soon)</label>
                 </div>
               </div>
             </div>
@@ -1064,9 +1051,7 @@
 
     try {
       const expiryMinutes = parseInt(document.querySelector('input[name="expiry"]:checked')?.value || '15') || 15;
-      const settlementMode = document.querySelector('input[name="settlement-mode"]:checked')?.value || 'conditional';
-      const expiryMinutes = parseInt(document.querySelector('input[name="expiry"]:checked')?.value || '15') || 15;
-      const settlementMode = document.querySelector('input[name="settlement-mode"]:checked')?.value || 'conditional';
+      const settlementMode = document.querySelector('input[name="settlement-mode"]:checked')?.value || 'standard';
       const res = await apiFetch('/api/sessions', {
         method: 'POST',
         body: JSON.stringify({
@@ -1075,13 +1060,11 @@
           label: label || 'Untitled',
           expiryMinutes,
           settlementMode,
-          settlementMode,
         }),
       });
       if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error || 'API error'); }
       const session = await res.json();
       const apiCheckoutURL = new URL(session.checkoutUrl);
-      const checkoutURL = new URL('checkout.html' + apiCheckoutURL.search + apiCheckoutURL.hash, window.location.href).href;
       const checkoutURL = new URL('checkout.html' + apiCheckoutURL.search + apiCheckoutURL.hash, window.location.href).href;
       const amountLabel = session.amount ? '$' + session.amount + ' USDC' : 'Open Amount';
 
@@ -1091,7 +1074,6 @@
         <div style="font-size:15px;color:var(--text-primary);font-weight:600;margin-top:2px;">${amountLabel}</div>
         <div style="font-size:10px;color:var(--text-muted);margin-top:4px;">${settlementMode === 'conditional' ? 'Conditional settlement' : 'Direct settlement'} · Expires in ${expiryMinutes} min</div>
         <div class="facade-address-pill" style="font-family:var(--font-mono);font-size:11px;">${session.facadeAddress.slice(0,8)}…${session.facadeAddress.slice(-6)}</div>
-        <div style="font-size:10px;color:var(--text-muted);margin-top:4px;">${settlementMode === 'conditional' ? 'Conditional settlement' : 'Direct settlement'} · Expires in ${expiryMinutes} min</div>
         <button class="btn-action-primary" style="margin-top:16px;padding:9px 16px;font-size:12px;"
           onclick="navigator.clipboard.writeText('${checkoutURL}').then(()=>this.textContent='Copied!')">
           Copy Shareable Checkout Link
@@ -1104,7 +1086,8 @@
 </script>
 
 <script>
-const API_BASE = 'https://mirage-production-6dfc.up.railway.app';
+const configuredApiBase = window.BLACKRAIL_CONFIG?.apiBase || localStorage.getItem('blackrail_api_base') || '';
+const API_BASE = configuredApiBase.replace(/\/+$/, '');
 const PRIVY_APP_ID = 'cms56lvu500030ckz9hxe7lex';
 
 function apiFetch(path, options = {}) {

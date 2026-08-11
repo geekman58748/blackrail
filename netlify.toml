@@ -1,3 +1,7 @@
+[build]
+  command = "node scripts/generate-runtime-config.mjs"
+  publish = "."
+
 [[redirects]]
   from = "/"
   to = "/pages/dashboard.html"

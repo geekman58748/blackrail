@@ -418,14 +418,18 @@
   let PAYMENT_AMOUNT     = parseFloat(params.get('amount') || '0');
   const PAYMENT_CURRENCY = params.get('currency') || 'USDC';
   const SESSION_ID       = params.get('session') || '';
+  const CHECKOUT_TOKEN   = new URLSearchParams(window.location.hash.slice(1)).get('token') || '';
   const API_BASE = 'https://mirage-production-6dfc.up.railway.app';
+  const checkoutHeaders = CHECKOUT_TOKEN ? { 'x-checkout-token': CHECKOUT_TOKEN } : {};
+  if (window.location.hash) history.replaceState(null, '', window.location.pathname + window.location.search);
 
   // Pull real facade address from session API
   (async function loadSession() {
     if (!SESSION_ID) return;
     try {
-      const res  = await fetch(API_BASE + '/api/sessions/' + SESSION_ID);
+      const res  = await fetch(API_BASE + '/api/sessions/' + SESSION_ID, { headers: checkoutHeaders });
       const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Session load failed');
       if (data.facadeAddress) {
         FACADE_ADDRESS = data.facadeAddress;
         const addrEl = document.getElementById('facadeAddr');
@@ -466,22 +470,6 @@
     } catch(e) { console.warn('Session load failed:', e); }
   })();
 
-  async function logPaymentConfirmed() {
-    try {
-      await fetch(API_BASE + '/api/payments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          amount: PAYMENT_AMOUNT || 0,
-          currency: PAYMENT_CURRENCY,
-          sessionId: SESSION_ID || null,
-          facadeAddress: FACADE_ADDRESS,
-        }),
-      });
-    } catch(e) {
-      console.warn('Payment log failed:', e);
-    }
-  }
   let countdownSeconds = 300; // 5 Minutes Default
   let timerInterval = null;
   let webSocketListener = null;
@@ -543,8 +531,6 @@
     else if (stateNumber === 2) {
       clearInterval(timerInterval);
       document.getElementById('stateConfirmed').classList.add('active-state');
-      logPaymentConfirmed(); // ← log real payment to backend
-      
       // Flash Green Background
       document.getElementById('greenFlash').classList.add('active');
       setTimeout(() => document.getElementById('greenFlash').classList.remove('active'), 800);
@@ -577,13 +563,19 @@
         clearInterval(_pollInterval); return;
       }
       try {
-        const r = await fetch(API_BASE + '/api/sessions/' + SESSION_ID + '/balance');
+        const r = await fetch(API_BASE + '/api/sessions/' + SESSION_ID + '/balance', { headers: checkoutHeaders });
         const d = await r.json();
+        if (!r.ok) throw new Error(d.error || 'Balance check failed');
         const received = d.er && d.balance ? BigInt(d.balance) : 0n;
         const required = PAYMENT_AMOUNT > 0 ? BigInt(Math.round(PAYMENT_AMOUNT * 1e6)) : 1n;
         if (received >= required && received > 0n) {
+          const settlement = await fetch(API_BASE + '/api/sessions/' + SESSION_ID + '/settle', {
+            method: 'POST',
+            headers: checkoutHeaders,
+          });
+          const settlementData = await settlement.json();
+          if (!settlement.ok) throw new Error(settlementData.error || 'Settlement failed');
           clearInterval(_pollInterval);
-          await fetch(API_BASE + '/api/sessions/' + SESSION_ID + '/settle', { method: 'POST' });
           transitionToState(2);
         }
       } catch(e) {}

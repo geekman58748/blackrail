@@ -1035,11 +1035,9 @@
     preview.innerHTML = '<div style="color:var(--text-muted);font-size:13px;">Creating session…</div>';
 
     try {
-      const res = await fetch(API_BASE + '/api/sessions', {
+      const res = await apiFetch('/api/sessions', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          merchantId: localStorage.getItem('privy_user_id') || 'anon',
           amount: amountRaw ? parseFloat(amountRaw) : null,
           currency: 'USDC',
           label: label || 'Untitled',
@@ -1048,7 +1046,7 @@
       });
       if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error || 'API error'); }
       const session = await res.json();
-      const checkoutURL = window.location.origin + '/pages/checkout.html?session=' + session.id;
+      const checkoutURL = session.checkoutUrl;
       const amountLabel = session.amount ? '$' + session.amount + ' USDC' : 'Open Amount';
 
       preview.innerHTML = `
@@ -1072,6 +1070,14 @@
 <script>
 const API_BASE = 'https://mirage-production-6dfc.up.railway.app';
 const PRIVY_APP_ID = 'cms56lvu500030ckz9hxe7lex';
+
+function apiFetch(path, options = {}) {
+  const token = localStorage.getItem('privy_token');
+  const headers = new Headers(options.headers || {});
+  headers.set('Authorization', 'Bearer ' + token);
+  if (options.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
+  return fetch(API_BASE + path, { ...options, headers });
+}
 
 // ── Auth gate ─────────────────────────────────────────────────────────────────
 (function() {
@@ -1180,9 +1186,8 @@ async function withdrawFunds() {
 
   if(statusEl) statusEl.textContent = 'Requesting withdrawal…';
   try {
-    const res = await fetch(API_BASE + '/api/vault/withdraw', {
+    const res = await apiFetch('/api/vault/withdraw', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ destination: addr, amount: 0 }), // amount 0 = sweep all
     });
     const data = await res.json();
@@ -1199,7 +1204,7 @@ async function withdrawFunds() {
 
 async function loadVaultBalance() {
   try {
-    const res = await fetch(API_BASE + '/api/vault/balance');
+    const res = await apiFetch('/api/vault/balance');
     const { balance, configured, ata } = await res.json();
     const el = document.getElementById('vault-balance');
     if (el) el.textContent = configured && balance != null ? parseFloat(balance).toFixed(2) : '—';
@@ -1215,8 +1220,8 @@ async function loadVaultBalance() {
 async function loadStats() {
   try {
     const [statsRes, allRes] = await Promise.all([
-      fetch(API_BASE + '/api/payments/stats'),
-      fetch(API_BASE + '/api/payments'),
+      apiFetch('/api/payments/stats'),
+      apiFetch('/api/payments'),
     ]);
     const { totalUSDC, totalPayments, recent } = await statsRes.json();
     const payments = await allRes.json();
@@ -1310,11 +1315,10 @@ setInterval(loadVaultBalance, 30000);
 
 // ── API Keys ─────────────────────────────────────────────────────────────────
 async function loadApiKeys() {
-  const merchantId = localStorage.getItem('privy_user_id') || 'anon';
   const list = document.getElementById('api-keys-list');
   if (!list) return;
   try {
-    const res = await fetch(API_BASE + '/api/api-keys?merchantId=' + encodeURIComponent(merchantId));
+    const res = await apiFetch('/api/api-keys');
     const keys = await res.json();
     if (!Array.isArray(keys) || keys.length === 0) {
       list.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:12px 0;">No keys yet — create one above.</div>';
@@ -1337,14 +1341,13 @@ async function loadApiKeys() {
 
 async function createApiKey() {
   const label = prompt('Key label (e.g. "Production", "Test"):', 'Production') || 'Default';
-  const merchantId = localStorage.getItem('privy_user_id') || 'anon';
   try {
-    const res = await fetch(API_BASE + '/api/api-keys', {
+    const res = await apiFetch('/api/api-keys', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ merchantId, label }),
+      body: JSON.stringify({ label }),
     });
     const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to create key');
     const modal = document.getElementById('new-key-modal');
     const keyVal = document.getElementById('new-key-val');
     if (modal && keyVal) {
@@ -1358,7 +1361,7 @@ async function createApiKey() {
 
 async function revokeApiKey(id) {
   if (!confirm('Revoke this key? This cannot be undone.')) return;
-  await fetch(API_BASE + '/api/api-keys/' + id, { method: 'DELETE' });
+  await apiFetch('/api/api-keys/' + id, { method: 'DELETE' });
   loadApiKeys();
 }
 

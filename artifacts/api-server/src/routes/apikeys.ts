@@ -1,17 +1,15 @@
 import { Router } from "express";
 import { createHash, randomBytes } from "crypto";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db, apiKeysTable } from "@workspace/db";
 import { CreateApiKeyBody } from "@workspace/api-zod";
+import { merchantPrincipal, requireMerchant, requirePrivy } from "../middlewares/auth.js";
 
 const router = Router();
+router.use(requireMerchant, requirePrivy);
 
-router.get("/api-keys", async (req, res): Promise<void> => {
-  const merchantId = req.query.merchantId as string | undefined;
-  if (!merchantId) {
-    res.status(400).json({ error: "merchantId required" });
-    return;
-  }
+router.get("/api-keys", async (_req, res): Promise<void> => {
+  const { merchantId } = merchantPrincipal(res);
   const rows = await db
     .select()
     .from(apiKeysTable)
@@ -25,7 +23,8 @@ router.post("/api-keys", async (req, res): Promise<void> => {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  const { merchantId, label } = parsed.data;
+  const { merchantId } = merchantPrincipal(res);
+  const { label } = parsed.data;
 
   const raw = "mrg_live_" + randomBytes(12).toString("hex");
   const prefix = raw.slice(0, 20);
@@ -42,9 +41,11 @@ router.post("/api-keys", async (req, res): Promise<void> => {
 router.delete("/api-keys/:id", async (req, res): Promise<void> => {
   const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const id = parseInt(rawId, 10);
+  if (!Number.isSafeInteger(id) || id <= 0) { res.status(400).json({ error: "invalid key id" }); return; }
+  const { merchantId } = merchantPrincipal(res);
   const [row] = await db
     .delete(apiKeysTable)
-    .where(eq(apiKeysTable.id, id))
+    .where(and(eq(apiKeysTable.id, id), eq(apiKeysTable.merchantId, merchantId)))
     .returning();
   if (!row) {
     res.status(404).json({ error: "Key not found" });

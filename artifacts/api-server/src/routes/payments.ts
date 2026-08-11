@@ -1,10 +1,11 @@
 import { Router } from "express";
-import { desc, eq, sum } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { db, paymentsTable } from "@workspace/db";
-import { LogPaymentBody } from "@workspace/api-zod";
 import { isErConfigured, isWithdrawConfigured, getVaultBalance, getVaultAddress, withdrawFromVault } from "../lib/solana.js";
+import { merchantPrincipal, requireMerchant } from "../middlewares/auth.js";
 
 const router = Router();
+router.use(requireMerchant);
 
 router.get("/vault/balance", async (_req, res): Promise<void> => {
   if (!isErConfigured()) { res.json({ balance: null, configured: false }); return; }
@@ -34,13 +35,10 @@ router.post("/vault/withdraw", async (req, res): Promise<void> => {
   }
 });
 
-router.get("/payments/stats", async (req, res): Promise<void> => {
-  const merchantId = req.query.merchantId as string | undefined;
-
+router.get("/payments/stats", async (_req, res): Promise<void> => {
+  const { merchantId } = merchantPrincipal(res);
   const query = db.select().from(paymentsTable).orderBy(desc(paymentsTable.createdAt));
-  const all = merchantId
-    ? await query.where(eq(paymentsTable.merchantId, merchantId))
-    : await query;
+  const all = await query.where(eq(paymentsTable.merchantId, merchantId));
 
   const totalUSDC = all.reduce((acc, p) => acc + parseFloat(p.amount), 0);
   const recent = all.slice(0, 10).map(serialize);
@@ -48,34 +46,11 @@ router.get("/payments/stats", async (req, res): Promise<void> => {
   res.json({ totalUSDC, totalPayments: all.length, recent });
 });
 
-router.get("/payments", async (req, res): Promise<void> => {
-  const merchantId = req.query.merchantId as string | undefined;
+router.get("/payments", async (_req, res): Promise<void> => {
+  const { merchantId } = merchantPrincipal(res);
   const query = db.select().from(paymentsTable).orderBy(desc(paymentsTable.createdAt));
-  const rows = merchantId
-    ? await query.where(eq(paymentsTable.merchantId, merchantId))
-    : await query;
+  const rows = await query.where(eq(paymentsTable.merchantId, merchantId));
   res.json(rows.map(serialize));
-});
-
-router.post("/payments", async (req, res): Promise<void> => {
-  const parsed = LogPaymentBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
-    return;
-  }
-  const { amount, currency, facadeAddress, sessionId, txHash, merchantId } = parsed.data;
-  const [row] = await db
-    .insert(paymentsTable)
-    .values({
-      amount: String(amount),
-      currency: currency ?? "USDC",
-      facadeAddress,
-      sessionId: sessionId ?? null,
-      txHash: txHash ?? null,
-      merchantId: merchantId ?? null,
-    })
-    .returning();
-  res.status(201).json(serialize(row));
 });
 
 function serialize(p: typeof paymentsTable.$inferSelect) {

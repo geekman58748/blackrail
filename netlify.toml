@@ -2,6 +2,9 @@
   command = "node scripts/generate-runtime-config.mjs"
   publish = "."
 
+[context.production.environment]
+  BLACKRAIL_API_BASE = "https://mirage-production-6dfc.up.railway.app"
+
 [[redirects]]
   from = "/"
   to = "/pages/dashboard.html"

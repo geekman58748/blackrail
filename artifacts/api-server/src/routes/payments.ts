@@ -5,7 +5,6 @@ import { isErConfigured, isWithdrawConfigured, getVaultBalance, getVaultAddress,
 import { merchantPrincipal, requireMerchant } from "../middlewares/auth.js";
 
 const router = Router();
-router.use(requireMerchant);
 
 router.get("/vault/balance", async (_req, res): Promise<void> => {
   if (!isErConfigured()) { res.json({ balance: null, configured: false }); return; }
@@ -13,6 +12,8 @@ router.get("/vault/balance", async (_req, res): Promise<void> => {
   const { wallet, ata } = getVaultAddress();
   res.json({ balance: (Number(raw) / 1e6).toFixed(6), configured: true, wallet, ata });
 });
+
+router.use(requireMerchant);
 
 router.post("/vault/withdraw", async (req, res): Promise<void> => {
   const secret = req.headers["x-withdraw-secret"];

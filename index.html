@@ -1230,6 +1230,12 @@ window.closeSignIn = function() {
     el.style.opacity = busy ? '0.55' : '1';
   }
 
+  function savePrivySession(d) {
+    var token = d && (d.token || d.access_token || d.session_token);
+    if (token) localStorage.setItem('privy_token', token);
+    return token;
+  }
+
   /* ── OAuth: Google / Twitter ── */
   window.privyLogin = function(provider) {
     var redirectURI = window.location.origin + '/pages/' + CALLBACK.replace('pages/', '');
@@ -1291,8 +1297,7 @@ window.closeSignIn = function() {
     .then(function(r){ return r.json(); })
     .then(function(d){
       setBusy('privy-verify-btn', false);
-      if (d.token || d.user) {
-        if (d.token) localStorage.setItem('privy_token', d.token);
+      if (savePrivySession(d) || d.user) {
         var u = d.user || {};
         if (u.id) localStorage.setItem('privy_user_id', u.id);
         var accts = u.linked_accounts || [];

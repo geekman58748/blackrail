@@ -28,6 +28,12 @@
   var BASE     = 'https://auth.privy.io/api/v1';
   var HEADERS  = { 'Content-Type': 'application/json', 'privy-app-id': APP_ID };
 
+  function savePrivySession(d) {
+    var token = d && (d.token || d.access_token || d.session_token);
+    if (token) localStorage.setItem('privy_token', token);
+    return token;
+  }
+
   var params   = new URLSearchParams(window.location.search);
   var code     = params.get('code');
   var state    = params.get('state');
@@ -45,8 +51,7 @@
   })
   .then(function(r){ return r.json(); })
   .then(function(d){
-    if (d.token || d.user) {
-      if (d.token) localStorage.setItem('privy_token', d.token);
+    if (savePrivySession(d) || d.user) {
       localStorage.removeItem('privy_oauth_provider');
       var u = d.user || {};
       if (u.id) localStorage.setItem('privy_user_id', u.id);

@@ -1093,9 +1093,17 @@ const PRIVY_APP_ID = 'cms56lvu500030ckz9hxe7lex';
 function apiFetch(path, options = {}) {
   const token = localStorage.getItem('privy_token');
   const headers = new Headers(options.headers || {});
-  headers.set('Authorization', 'Bearer ' + token);
+  if (token) headers.set('Authorization', 'Bearer ' + token);
   if (options.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
-  return fetch(API_BASE + path, { ...options, headers });
+  return fetch(API_BASE + path, { ...options, headers }).then(res => {
+    if (res.status === 401) {
+      localStorage.removeItem('privy_token');
+      localStorage.removeItem('privy_user_id');
+      localStorage.removeItem('privy_wallet');
+      window.location.replace('../index.html');
+    }
+    return res;
+  });
 }
 
 // ── Auth gate ─────────────────────────────────────────────────────────────────

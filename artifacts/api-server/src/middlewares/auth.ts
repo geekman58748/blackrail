@@ -2,6 +2,7 @@ import type { NextFunction, Request, Response } from "express";
 import { createHash, timingSafeEqual } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { apiKeysTable, db } from "@workspace/db";
+import { getPrivyAppId } from "../lib/privy.js";
 
 export type MerchantPrincipal = { merchantId: string; method: "api-key" | "privy" };
 
@@ -22,8 +23,7 @@ async function apiKeyPrincipal(raw: string): Promise<MerchantPrincipal | null> {
 }
 
 async function privyPrincipal(token: string): Promise<MerchantPrincipal | null> {
-  const appId = process.env.PRIVY_APP_ID?.trim();
-  if (!appId) throw new Error("PRIVY_APP_ID is not configured");
+  const appId = getPrivyAppId();
   const response = await fetch("https://auth.privy.io/api/v1/users/me", {
     headers: { Authorization: `Bearer ${token}`, "privy-app-id": appId },
     signal: AbortSignal.timeout(5000),

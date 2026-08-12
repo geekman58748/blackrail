@@ -6,7 +6,10 @@ export function validateRuntimeConfig() {
     throw new Error("FACADE_ENCRYPTION_KEY is required when Solana settlement is enabled");
   }
   if (process.env.NODE_ENV === "production") {
-    for (const name of ["PRIVY_APP_ID", "WITHDRAW_SECRET", "CORS_ORIGINS", "PUBLIC_APP_URL"] as const) {
+    // PRIVY_APP_ID is a public client identifier and has a safe fallback in
+    // getPrivyAppId(); the remaining values are deployment configuration or
+    // secrets and must still be explicitly supplied.
+    for (const name of ["WITHDRAW_SECRET", "CORS_ORIGINS", "PUBLIC_APP_URL"] as const) {
       if (!process.env[name]?.trim()) throw new Error(`${name} is required in production`);
     }
   }

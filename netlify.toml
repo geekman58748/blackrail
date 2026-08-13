@@ -4,6 +4,14 @@
 
 [context.production.environment]
   BLACKRAIL_API_BASE = "https://mirage-production-6dfc.up.railway.app"
+  # BLACKRAIL_PRIVY_APP_ID is intentionally NOT set here. It must be set in
+  # Netlify's Site settings > Environment variables to the exact same value
+  # as PRIVY_APP_ID on the Railway API service. It's a public client
+  # identifier (not a secret), but it must be byte-for-byte identical on both
+  # sides or Privy access tokens minted by the frontend will fail
+  # verification on the backend and every login will immediately sign the
+  # user back out. The build now fails loudly if it's missing in production,
+  # instead of silently falling back to a demo app id.
 
 [[redirects]]
   from = "/"

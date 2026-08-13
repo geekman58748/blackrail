@@ -4,6 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>BlackRail — Authenticating...</title>
+<script src="../runtime-config.js"></script>
 <style>
   body{background:#07080e;color:#f1f3f9;font-family:Inter,sans-serif;display:flex;
        align-items:center;justify-content:center;min-height:100vh;margin:0;}
@@ -24,7 +25,8 @@
 </div>
 <script>
 (function(){
-  var APP_ID   = 'cms56lvu500030ckz9hxe7lex';
+  // Must match the API server's PRIVY_APP_ID env var (see index.html).
+  var APP_ID   = window.BLACKRAIL_CONFIG && window.BLACKRAIL_CONFIG.privyAppId;
   var BASE     = 'https://auth.privy.io/api/v1';
   var HEADERS  = { 'Content-Type': 'application/json', 'privy-app-id': APP_ID };
 
@@ -51,7 +53,7 @@
   })
   .then(function(r){ return r.json(); })
   .then(function(d){
-    if (savePrivySession(d) || d.user) {
+    if (savePrivySession(d)) {
       localStorage.removeItem('privy_oauth_provider');
       var u = d.user || {};
       if (u.id) localStorage.setItem('privy_user_id', u.id);
@@ -63,9 +65,8 @@
     } else {
       document.getElementById('spinner').style.display = 'none';
       var el = document.getElementById('err');
-      el.textContent = d.message || d.error || 'Sign-in failed. Redirecting...';
+      el.textContent = d.message || d.error || 'Sign-in did not return a session token.';
       el.style.display = 'block';
-      setTimeout(function(){ window.location.replace('dashboard.html'); }, 2000);
     }
   })
   .catch(function(e){
@@ -73,7 +74,6 @@
     var el = document.getElementById('err');
     el.textContent = 'Network error: ' + e.message;
     el.style.display = 'block';
-    setTimeout(function(){ window.location.replace('dashboard.html'); }, 2000);
   });
 })();
 </script>

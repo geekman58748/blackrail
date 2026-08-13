@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>BlackRail: Private Crypto Merchant Gateway</title>
+<script src="runtime-config.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -1200,7 +1201,10 @@ window.closeSignIn = function() {
 
 <script>
 (function() {
-  var APP_ID   = 'cms56lvu500030ckz9hxe7lex';
+  // Must match the API server's PRIVY_APP_ID env var, or logins succeed
+  // against Privy but fail (and get signed out) at the API. Sourced from
+  // runtime-config.js, generated at build time from BLACKRAIL_PRIVY_APP_ID.
+  var APP_ID   = window.BLACKRAIL_CONFIG && window.BLACKRAIL_CONFIG.privyAppId;
   var DASHBOARD = 'pages/dashboard.html';
   var CALLBACK  = 'pages/auth-callback.html';
   var BASE      = 'https://auth.privy.io/api/v1';
@@ -1297,7 +1301,7 @@ window.closeSignIn = function() {
     .then(function(r){ return r.json(); })
     .then(function(d){
       setBusy('privy-verify-btn', false);
-      if (savePrivySession(d) || d.user) {
+      if (savePrivySession(d)) {
         var u = d.user || {};
         if (u.id) localStorage.setItem('privy_user_id', u.id);
         var accts = u.linked_accounts || [];
@@ -1306,7 +1310,7 @@ window.closeSignIn = function() {
         if (w && w.address) localStorage.setItem('privy_wallet', w.address);
         window.location.href = DASHBOARD;
       } else {
-        showError(d.message || d.error || 'Invalid code — try again.');
+        showError(d.message || d.error || 'Sign-in did not return a session token.');
       }
     })
     .catch(function(e){ setBusy('privy-verify-btn', false); showError('Network error: ' + e.message); });

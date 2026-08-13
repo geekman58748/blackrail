@@ -1088,7 +1088,8 @@
 <script>
 const configuredApiBase = window.BLACKRAIL_CONFIG?.apiBase || localStorage.getItem('blackrail_api_base') || '';
 const API_BASE = configuredApiBase.replace(/\/+$/, '');
-const PRIVY_APP_ID = 'cms56lvu500030ckz9hxe7lex';
+// Must match the API server's PRIVY_APP_ID env var (see index.html).
+const PRIVY_APP_ID = window.BLACKRAIL_CONFIG && window.BLACKRAIL_CONFIG.privyAppId;
 
 function apiFetch(path, options = {}) {
   const token = localStorage.getItem('privy_token');
@@ -1109,7 +1110,19 @@ function apiFetch(path, options = {}) {
 // ── Auth gate ─────────────────────────────────────────────────────────────────
 (function() {
   const token = localStorage.getItem('privy_token');
-  if (!token) { window.location.replace('../index.html'); }
+  if (!token) {
+    localStorage.removeItem('privy_token');
+    localStorage.removeItem('privy_user_id');
+    localStorage.removeItem('privy_wallet');
+    window.location.replace('../index.html');
+    return;
+  }
+  if (!PRIVY_APP_ID) {
+    const body = document.body;
+    if (body) {
+      body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#08090d;color:#f8fafc;font-family:sans-serif;padding:24px;text-align:center"><div><div style="font-size:18px;font-weight:700;margin-bottom:8px">Privy config missing</div><div style="color:#8a94a6;font-size:14px;max-width:420px">BLACKRAIL_PRIVY_APP_ID is not set for this build. Set it to the same Privy app ID used by the API server, then rebuild.</div></div></div>';
+    }
+  }
 })();
 
 // ── Wallet: load from storage, or create on-demand via Privy ─────────────────

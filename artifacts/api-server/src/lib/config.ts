@@ -6,10 +6,17 @@ export function validateRuntimeConfig() {
     throw new Error("FACADE_ENCRYPTION_KEY is required when Solana settlement is enabled");
   }
   if (process.env.NODE_ENV === "production") {
-    // PRIVY_APP_ID is a public client identifier and has a safe fallback in
-    // getPrivyAppId(); the remaining values are deployment configuration or
-    // secrets and must still be explicitly supplied.
-    for (const name of ["WITHDRAW_SECRET", "CORS_ORIGINS", "PUBLIC_APP_URL", "PRIVY_APP_SECRET"] as const) {
+    // PRIVY_APP_ID must match the app ID the frontend is configured with, or
+    // Privy access-token verification fails for every login (users appear to
+    // be signed out immediately). There is no safe default for it, so it's
+    // required here just like the other deployment configuration and secrets.
+    for (const name of [
+      "WITHDRAW_SECRET",
+      "CORS_ORIGINS",
+      "PUBLIC_APP_URL",
+      "PRIVY_APP_SECRET",
+      "PRIVY_APP_ID",
+    ] as const) {
       if (!process.env[name]?.trim()) throw new Error(`${name} is required in production`);
     }
   }

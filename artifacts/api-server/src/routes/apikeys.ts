@@ -1,7 +1,6 @@
 import { Router } from "express";
 import { createHash, randomBytes } from "crypto";
-import { and, eq } from "drizzle-orm";
-import { db, apiKeysTable } from "@workspace/db";
+import { and, db, eq, apiKeysTable } from "@workspace/db";
 import { CreateApiKeyBody } from "@workspace/api-zod";
 import { merchantPrincipal, requireMerchant, requirePrivy } from "../middlewares/auth.js";
 

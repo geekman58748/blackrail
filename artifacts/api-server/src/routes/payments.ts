@@ -1,6 +1,5 @@
 import { Router } from "express";
-import { desc, eq } from "drizzle-orm";
-import { db, paymentsTable } from "@workspace/db";
+import { db, desc, eq, paymentsTable } from "@workspace/db";
 import { isErConfigured, isWithdrawConfigured, getVaultBalance, getVaultAddress, withdrawFromVault } from "../lib/solana.js";
 import { merchantPrincipal, requireMerchant } from "../middlewares/auth.js";
 

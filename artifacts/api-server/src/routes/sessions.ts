@@ -1,7 +1,6 @@
 import { Router, type Request } from "express";
-import { and, eq, or } from "drizzle-orm";
 import { randomBytes } from "crypto";
-import { db, sessionsTable, paymentsTable } from "@workspace/db";
+import { and, db, eq, or, sessionsTable, paymentsTable } from "@workspace/db";
 import { CreateSessionBody } from "@workspace/api-zod";
 import {
   isErConfigured,

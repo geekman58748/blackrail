@@ -1,8 +1,8 @@
 import type { NextFunction, Request, Response } from "express";
 import { createHash, timingSafeEqual } from "node:crypto";
-import { eq } from "drizzle-orm";
-import { apiKeysTable, db } from "@workspace/db";
-import { getPrivyAppId } from "../lib/privy.js";
+import { InvalidAuthTokenError } from "@privy-io/node";
+import { apiKeysTable, db, eq } from "@workspace/db";
+import { getPrivyClient } from "../lib/privy.js";
 
 export type MerchantPrincipal = { merchantId: string; method: "api-key" | "privy" };
 
@@ -23,15 +23,13 @@ async function apiKeyPrincipal(raw: string): Promise<MerchantPrincipal | null> {
 }
 
 async function privyPrincipal(token: string): Promise<MerchantPrincipal | null> {
-  const appId = getPrivyAppId();
-  const response = await fetch("https://auth.privy.io/api/v1/users/me", {
-    headers: { Authorization: `Bearer ${token}`, "privy-app-id": appId },
-    signal: AbortSignal.timeout(5000),
-  });
-  if (!response.ok) return null;
-  const body = await response.json() as { id?: string; user?: { id?: string } };
-  const merchantId = body.user?.id ?? body.id;
-  return merchantId ? { merchantId, method: "privy" } : null;
+  try {
+    const claims = await getPrivyClient().utils().auth().verifyAccessToken(token);
+    return claims.user_id ? { merchantId: claims.user_id, method: "privy" } : null;
+  } catch (error) {
+    if (error instanceof InvalidAuthTokenError) return null;
+    throw error;
+  }
 }
 
 export async function requireMerchant(req: Request, res: Response, next: NextFunction): Promise<void> {

@@ -30,12 +30,6 @@
   var BASE     = 'https://auth.privy.io/api/v1';
   var HEADERS  = { 'Content-Type': 'application/json', 'privy-app-id': APP_ID };
 
-  function savePrivySession(d) {
-    var token = d && (d.token || d.access_token || d.session_token);
-    if (token) localStorage.setItem('privy_token', token);
-    return token;
-  }
-
   var params   = new URLSearchParams(window.location.search);
   var code     = params.get('code');
   var state    = params.get('state');
@@ -53,19 +47,35 @@
   })
   .then(function(r){ return r.json(); })
   .then(function(d){
-    if (savePrivySession(d)) {
+    if (d && d.user) {
       localStorage.removeItem('privy_oauth_provider');
       var u = d.user || {};
-      if (u.id) localStorage.setItem('privy_user_id', u.id);
-      var accts = u.linked_accounts || [];
-      var w = accts.find(function(a){ return a.type === 'wallet' && (a.wallet_client === 'privy' || a.wallet_client_type === 'privy'); });
-      if (!w) w = accts.find(function(a){ return a.type === 'wallet'; });
-      if (w && w.address) localStorage.setItem('privy_wallet', w.address);
-      window.location.replace('dashboard.html');
+      var email = (u.email || (u.linked_accounts || []).find(function(a){ return a.type === 'email'; })?.address || '').trim();
+      var identity = (u.id || email || '').trim();
+      if (!identity) {
+        throw new Error('Privy login succeeded, but no user identity was returned.');
+      }
+      return fetch((window.BLACKRAIL_CONFIG && window.BLACKRAIL_CONFIG.apiBase ? window.BLACKRAIL_CONFIG.apiBase.replace(/\/+$/, '') : '') + '/api/auth/bootstrap', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ merchantId: identity, email: email })
+      })
+      .then(function(r){ return r.json().then(function(body){ return { ok: r.ok, status: r.status, body: body }; }); })
+      .then(function(result){
+        if (!result.ok || !result.body || !result.body.apiKey) {
+          throw new Error(result.body && (result.body.error || result.body.message) || 'Bootstrap failed');
+        }
+        localStorage.setItem('blackrail_merchant_id', result.body.merchantId || identity);
+        localStorage.setItem('blackrail_api_key', result.body.apiKey);
+        localStorage.removeItem('privy_token');
+        localStorage.removeItem('privy_user_id');
+        localStorage.removeItem('privy_wallet');
+        window.location.replace('dashboard.html');
+      });
     } else {
       document.getElementById('spinner').style.display = 'none';
       var el = document.getElementById('err');
-      el.textContent = d.message || d.error || 'Sign-in did not return a session token.';
+      el.textContent = d.message || d.error || 'Sign-in did not return a user profile.';
       el.style.display = 'block';
     }
   })

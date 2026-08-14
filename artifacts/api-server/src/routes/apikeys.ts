@@ -2,10 +2,38 @@ import { Router } from "express";
 import { createHash, randomBytes } from "crypto";
 import { and, db, eq, apiKeysTable } from "@workspace/db";
 import { CreateApiKeyBody } from "@workspace/api-zod";
-import { merchantPrincipal, requireMerchant, requirePrivy } from "../middlewares/auth.js";
+import { merchantPrincipal, requireMerchant } from "../middlewares/auth.js";
 
 const router = Router();
-router.use(requireMerchant, requirePrivy);
+
+router.post("/auth/bootstrap", async (req, res): Promise<void> => {
+  const merchantId = typeof req.body?.merchantId === "string" ? req.body.merchantId.trim() : "";
+  const email = typeof req.body?.email === "string" ? req.body.email.trim() : "";
+  const identity = (merchantId || email).toLowerCase();
+
+  if (!identity) {
+    res.status(400).json({ error: "merchant identity required" });
+    return;
+  }
+
+  const raw = "mrg_bootstrap_" + randomBytes(12).toString("hex");
+  const prefix = raw.slice(0, 20);
+  const hash = createHash("sha256").update(raw).digest("hex");
+
+  const [row] = await db
+    .insert(apiKeysTable)
+    .values({
+      merchantId: identity,
+      keyHash: hash,
+      keyPrefix: prefix,
+      label: "Bootstrap",
+    })
+    .returning();
+
+  res.status(201).json({ merchantId: identity, apiKey: raw, key: serialize(row) });
+});
+
+router.use(requireMerchant);
 
 router.get("/api-keys", async (_req, res): Promise<void> => {
   const { merchantId } = merchantPrincipal(res);

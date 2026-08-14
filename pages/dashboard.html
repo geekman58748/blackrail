@@ -1088,42 +1088,22 @@
 <script>
 const configuredApiBase = window.BLACKRAIL_CONFIG?.apiBase || localStorage.getItem('blackrail_api_base') || '';
 const API_BASE = configuredApiBase.replace(/\/+$/, '');
-// Must match the API server's PRIVY_APP_ID env var (see index.html).
-const PRIVY_APP_ID = window.BLACKRAIL_CONFIG && window.BLACKRAIL_CONFIG.privyAppId;
-
-function showAuthIssue(message) {
-  const el = document.getElementById('stats-status') || document.getElementById('vault-addr-text');
-  if (el) {
-    el.textContent = message;
-    el.style.color = '#f87171';
-  }
-}
+const MERCHANT_API_KEY = localStorage.getItem('blackrail_api_key');
 
 function apiFetch(path, options = {}) {
-  const token = localStorage.getItem('privy_token');
+  const token = localStorage.getItem('blackrail_api_key');
   const headers = new Headers(options.headers || {});
-  if (token) headers.set('Authorization', 'Bearer ' + token);
+  if (token) headers.set('x-api-key', token);
   if (options.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
-  return fetch(API_BASE + path, { ...options, headers }).then(res => {
-    if (res.status === 401) {
-      showAuthIssue('Auth error on ' + path.replace('/api/', '') + ' - token may be expired or missing');
-    }
-    return res;
-  });
+  return fetch(API_BASE + path, { ...options, headers });
 }
 
 // ── Auth gate ─────────────────────────────────────────────────────────────────
 (function() {
-  const token = localStorage.getItem('privy_token');
+  const token = localStorage.getItem('blackrail_api_key');
   if (!token) {
     window.location.replace('../index.html');
     return;
-  }
-  if (!PRIVY_APP_ID) {
-    const body = document.body;
-    if (body) {
-      body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#08090d;color:#f8fafc;font-family:sans-serif;padding:24px;text-align:center"><div><div style="font-size:18px;font-weight:700;margin-bottom:8px">Privy config missing</div><div style="color:#8a94a6;font-size:14px;max-width:420px">BLACKRAIL_PRIVY_APP_ID is not set for this build. Set it to the same Privy app ID used by the API server, then rebuild.</div></div></div>';
-    }
   }
 })();
 
@@ -1138,56 +1118,12 @@ function showWalletAddr(addr) {
 }
 
 async function loadWallet() {
-  // 1. Already have it cached — show immediately
-  const cached = localStorage.getItem('privy_wallet');
-  if (cached) { showWalletAddr(cached); return; }
-
-  const token = localStorage.getItem('privy_token');
-  if (!token) return;
-
-  const vaultText = document.getElementById('vault-addr-text');
-
-  // 2. Try creating a Solana embedded wallet on-demand
-  try {
-    if (vaultText) vaultText.textContent = 'Creating wallet…';
-    const res = await fetch('https://auth.privy.io/api/v1/wallets', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'privy-app-id': PRIVY_APP_ID,
-        'Authorization': 'Bearer ' + token,
-      },
-      body: JSON.stringify({ chain_type: 'solana' }),
-    });
-    const data = await res.json();
-
-    // Privy returns { address } on creation, or { error } if already exists
-    if (data.address) {
-      localStorage.setItem('privy_wallet', data.address);
-      showWalletAddr(data.address);
-      return;
-    }
-
-    // 3. Wallet already exists — fetch it from the wallets list
-    const listRes = await fetch('https://auth.privy.io/api/v1/wallets', {
-      headers: {
-        'privy-app-id': PRIVY_APP_ID,
-        'Authorization': 'Bearer ' + token,
-      },
-    });
-    const listData = await listRes.json();
-    const wallets = listData.wallets || listData.data || [];
-    const w = wallets.find(w => w.chain_type === 'solana') || wallets[0];
-    if (w && w.address) {
-      localStorage.setItem('privy_wallet', w.address);
-      showWalletAddr(w.address);
-      return;
-    }
-
-    if (vaultText) vaultText.textContent = 'Enable Embedded Wallets in Privy dashboard first';
-  } catch(e) {
-    console.error('Wallet load error:', e);
-    if (vaultText) vaultText.textContent = 'Could not load wallet — check console';
+  const merchantId = localStorage.getItem('blackrail_merchant_id');
+  const pill = document.getElementById('sidebar-wallet');
+  if (pill && merchantId) {
+    const short = merchantId.slice(0, 6) + '…' + merchantId.slice(-4);
+    pill.textContent = short;
+    pill.style.display = 'block';
   }
 }
 
@@ -1201,7 +1137,7 @@ function copyVaultAta() {
 }
 
 function copyWallet() {
-  const addr = localStorage.getItem('privy_wallet');
+  const addr = localStorage.getItem('blackrail_merchant_id') || localStorage.getItem('blackrail_api_key');
   if (!addr) return;
   navigator.clipboard.writeText(addr).then(() => {
     const pill = document.getElementById('sidebar-wallet');
@@ -1211,6 +1147,8 @@ function copyWallet() {
 }
 
 function doLogout() {
+  localStorage.removeItem('blackrail_api_key');
+  localStorage.removeItem('blackrail_merchant_id');
   localStorage.removeItem('privy_token');
   localStorage.removeItem('privy_user_id');
   localStorage.removeItem('privy_wallet');

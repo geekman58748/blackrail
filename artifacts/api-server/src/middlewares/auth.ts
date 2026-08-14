@@ -27,7 +27,17 @@ async function privyPrincipal(token: string): Promise<MerchantPrincipal | null> 
     const claims = await getPrivyClient().utils().auth().verifyAccessToken(token);
     return claims.user_id ? { merchantId: claims.user_id, method: "privy" } : null;
   } catch (error) {
-    if (error instanceof InvalidAuthTokenError) return null;
+    if (error instanceof InvalidAuthTokenError) {
+      console.warn("Privy access token rejected", {
+        name: error.name,
+        message: error.message,
+      });
+      return null;
+    }
+    console.error("Privy access token verification failed unexpectedly", {
+      name: error instanceof Error ? error.name : typeof error,
+      message: error instanceof Error ? error.message : String(error),
+    });
     throw error;
   }
 }

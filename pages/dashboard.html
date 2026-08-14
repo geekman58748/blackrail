@@ -1091,6 +1091,14 @@ const API_BASE = configuredApiBase.replace(/\/+$/, '');
 // Must match the API server's PRIVY_APP_ID env var (see index.html).
 const PRIVY_APP_ID = window.BLACKRAIL_CONFIG && window.BLACKRAIL_CONFIG.privyAppId;
 
+function showAuthIssue(message) {
+  const el = document.getElementById('stats-status') || document.getElementById('vault-addr-text');
+  if (el) {
+    el.textContent = message;
+    el.style.color = '#f87171';
+  }
+}
+
 function apiFetch(path, options = {}) {
   const token = localStorage.getItem('privy_token');
   const headers = new Headers(options.headers || {});
@@ -1098,10 +1106,7 @@ function apiFetch(path, options = {}) {
   if (options.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
   return fetch(API_BASE + path, { ...options, headers }).then(res => {
     if (res.status === 401) {
-      localStorage.removeItem('privy_token');
-      localStorage.removeItem('privy_user_id');
-      localStorage.removeItem('privy_wallet');
-      window.location.replace('../index.html');
+      showAuthIssue('Auth error on ' + path.replace('/api/', '') + ' - token may be expired or missing');
     }
     return res;
   });
@@ -1111,9 +1116,6 @@ function apiFetch(path, options = {}) {
 (function() {
   const token = localStorage.getItem('privy_token');
   if (!token) {
-    localStorage.removeItem('privy_token');
-    localStorage.removeItem('privy_user_id');
-    localStorage.removeItem('privy_wallet');
     window.location.replace('../index.html');
     return;
   }
@@ -1245,6 +1247,7 @@ async function withdrawFunds() {
 async function loadVaultBalance() {
   try {
     const res = await apiFetch('/api/vault/balance');
+    if (res.status === 401) return;
     const { balance, configured, ata } = await res.json();
     const el = document.getElementById('vault-balance');
     if (el) el.textContent = configured && balance != null ? parseFloat(balance).toFixed(2) : '—';
@@ -1263,6 +1266,7 @@ async function loadStats() {
       apiFetch('/api/payments/stats'),
       apiFetch('/api/payments'),
     ]);
+    if (statsRes.status === 401 || allRes.status === 401) return;
     const { totalUSDC, totalPayments, recent } = await statsRes.json();
     const payments = await allRes.json();
 

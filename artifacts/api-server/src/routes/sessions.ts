@@ -36,9 +36,15 @@ router.post("/sessions", async (req, res): Promise<void> => {
   let facadeAddress: string;
   let facadeKeypairB58: string | null = null;
 
+  const expiresAt = new Date(Date.now() + mins * 60_000);
+
   if (isErConfigured()) {
     try {
-      const result = await createAndDelegateFacade();
+      const result = await createAndDelegateFacade(
+        id,
+        amount ?? 0,
+        expiresAt
+      );
       facadeAddress = result.facadeAddress;
       facadeKeypairB58 = result.keypairB58;
     } catch (e) {
@@ -59,7 +65,7 @@ router.post("/sessions", async (req, res): Promise<void> => {
     currency: currency ?? "USDC",
     merchantId: merchantId ?? null,
     status: "active",
-    expiresAt: new Date(Date.now() + mins * 60_000),
+    expiresAt,
   }).returning();
 
   const origin = req.headers.origin ?? `${req.protocol}://${req.get("host")}`;
@@ -95,7 +101,7 @@ router.post("/sessions/:id/settle", async (req, res): Promise<void> => {
   if (!row.facadeKeypairB58) { res.status(400).json({ error: "session has no ER keypair (stub mode)" }); return; }
 
   try {
-    const sig = await settleFacade(row.facadeKeypairB58, row.facadeAddress);
+    const sig = await settleFacade(row.facadeKeypairB58, row.facadeAddress, row.id);
     await db.update(sessionsTable).set({ status: "settled" }).where(eq(sessionsTable.id, row.id));
     res.json({ sig, status: "settled" });
   } catch (e) {

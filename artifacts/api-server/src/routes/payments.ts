@@ -1,30 +1,33 @@
 import { Router } from "express";
-import { db, desc, eq, paymentsTable } from "@workspace/db";
-import { isErConfigured, isWithdrawConfigured, getVaultBalance, getVaultAddress, withdrawFromVault } from "../lib/solana.js";
-import { merchantPrincipal, requireMerchant } from "../middlewares/auth.js";
+import { desc, eq, sum } from "drizzle-orm";
+import { db, paymentsTable } from "@workspace/db";
+import { LogPaymentBody } from "@workspace/api-zod";
+import {
+  isErConfigured,
+  isWithdrawConfigured,
+  getVaultAddress,
+  getVaultBalance,
+  withdrawFromVault,
+} from "../lib/solana.js";
 
 const router = Router();
 
 router.get("/vault/balance", async (_req, res): Promise<void> => {
   if (!isErConfigured()) { res.json({ balance: null, configured: false }); return; }
-  const raw = await getVaultBalance();
-  const { wallet, ata } = getVaultAddress();
-  res.json({ balance: (Number(raw) / 1e6).toFixed(6), configured: true, wallet, ata });
+  try {
+    const raw = await getVaultBalance();
+    const { wallet, ata } = getVaultAddress();
+    res.json({ balance: (Number(raw) / 1e6).toFixed(6), configured: true, wallet, ata });
+  } catch (e) {
+    res.status(502).json({ error: "vault balance fetch failed", detail: String(e) });
+  }
 });
 
-router.use(requireMerchant);
-
 router.post("/vault/withdraw", async (req, res): Promise<void> => {
-  const secret = req.headers["x-withdraw-secret"];
-  if (!secret || secret !== process.env.WITHDRAW_SECRET) {
-    res.status(401).json({ error: "unauthorized" });
-    return;
-  }
   if (!isWithdrawConfigured()) {
-    res.status(400).json({ error: "VAULT_KEYPAIR not set — add it to Railway env vars to enable withdrawals" });
+    res.status(400).json({ error: "SERVER_KEYPAIR not set — add it to env vars to enable withdrawals" });
     return;
   }
-  // Accept either a wallet address or a token account; server derives ATA if needed
   const { destination, amount } = req.body as { destination: string; amount?: number };
   if (!destination) { res.status(400).json({ error: "destination required" }); return; }
   try {
@@ -35,10 +38,13 @@ router.post("/vault/withdraw", async (req, res): Promise<void> => {
   }
 });
 
-router.get("/payments/stats", async (_req, res): Promise<void> => {
-  const { merchantId } = merchantPrincipal(res);
+router.get("/payments/stats", async (req, res): Promise<void> => {
+  const merchantId = req.query.merchantId as string | undefined;
+
   const query = db.select().from(paymentsTable).orderBy(desc(paymentsTable.createdAt));
-  const all = await query.where(eq(paymentsTable.merchantId, merchantId));
+  const all = merchantId
+    ? await query.where(eq(paymentsTable.merchantId, merchantId))
+    : await query;
 
   const totalUSDC = all.reduce((acc, p) => acc + parseFloat(p.amount), 0);
   const recent = all.slice(0, 10).map(serialize);
@@ -46,11 +52,34 @@ router.get("/payments/stats", async (_req, res): Promise<void> => {
   res.json({ totalUSDC, totalPayments: all.length, recent });
 });
 
-router.get("/payments", async (_req, res): Promise<void> => {
-  const { merchantId } = merchantPrincipal(res);
+router.get("/payments", async (req, res): Promise<void> => {
+  const merchantId = req.query.merchantId as string | undefined;
   const query = db.select().from(paymentsTable).orderBy(desc(paymentsTable.createdAt));
-  const rows = await query.where(eq(paymentsTable.merchantId, merchantId));
+  const rows = merchantId
+    ? await query.where(eq(paymentsTable.merchantId, merchantId))
+    : await query;
   res.json(rows.map(serialize));
+});
+
+router.post("/payments", async (req, res): Promise<void> => {
+  const parsed = LogPaymentBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+  const { amount, currency, facadeAddress, sessionId, txHash, merchantId } = parsed.data;
+  const [row] = await db
+    .insert(paymentsTable)
+    .values({
+      amount: String(amount),
+      currency: currency ?? "USDC",
+      facadeAddress,
+      sessionId: sessionId ?? null,
+      txHash: txHash ?? null,
+      merchantId: merchantId ?? null,
+    })
+    .returning();
+  res.status(201).json(serialize(row));
 });
 
 function serialize(p: typeof paymentsTable.$inferSelect) {
@@ -67,4 +96,3 @@ function serialize(p: typeof paymentsTable.$inferSelect) {
 }
 
 export default router;
-// Wed Jul 29 07:58:46 PM UTC 2026

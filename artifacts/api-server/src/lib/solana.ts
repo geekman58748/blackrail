@@ -79,19 +79,26 @@ export async function createAndDelegateFacade(
   const tx = new Transaction().add(createAtaIx);
   await sendAndConfirmTransaction(base, tx, [server]);
 
+  // Return the WALLET address (facade.publicKey), not the ATA address.
+  // Solana wallets automatically resolve the ATA when sending SPL tokens to
+  // a wallet address, so this looks like a normal Solana address to payers.
+  // The ATA is derived internally whenever we need to read or sweep funds.
   return {
-    facadeAddress: facadeAta.toBase58(),
+    facadeAddress: facade.publicKey.toBase58(),
     keypairB58: bs58.encode(facade.secretKey),
   };
 }
 
 /**
  * Reads the facade ATA balance from base chain.
+ * facadeAddress is the WALLET address — ATA is derived from it.
  */
 export async function getFacadeBalance(facadeAddress: string): Promise<bigint> {
-  const { base } = cfg();
+  const { base, usdcMint } = cfg();
   try {
-    const acct = await getAccount(base, new PublicKey(facadeAddress));
+    const facadeWallet = new PublicKey(facadeAddress);
+    const facadeAta = getAssociatedTokenAddressSync(usdcMint, facadeWallet);
+    const acct = await getAccount(base, facadeAta);
     return acct.amount;
   } catch {
     return 0n;
@@ -103,6 +110,7 @@ export async function getFacadeBalance(facadeAddress: string): Promise<bigint> {
  *   1. Transfer USDC from facade ATA → vault ATA
  *   2. Close facade ATA (rent back to server)
  *
+ * facadeAddress is the WALLET address — ATA is derived from it.
  * Both the server and the facade keypair sign — the server pays fees,
  * the facade authorises the transfer out of its ATA.
  */
@@ -111,9 +119,9 @@ export async function settleFacade(
   facadeAddress: string,
   _sessionId: string
 ): Promise<string> {
-  const { server, merchantAta, base } = cfg();
+  const { server, merchantAta, base, usdcMint } = cfg();
   const facade = Keypair.fromSecretKey(bs58.decode(keypairB58));
-  const facadeAtaPk = new PublicKey(facadeAddress);
+  const facadeAtaPk = getAssociatedTokenAddressSync(usdcMint, facade.publicKey);
 
   // How much is in the facade?
   const acct = await getAccount(base, facadeAtaPk);

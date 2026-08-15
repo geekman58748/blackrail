@@ -221,6 +221,10 @@ function buildSettle(
 
 // ── Config ────────────────────────────────────────────────────────────────────
 
+export function validateSolanaConfig(): { configured: boolean } {
+  return { configured: isErConfigured() };
+}
+
 export function isErConfigured(): boolean {
   return !!(
     process.env.SERVER_KEYPAIR &&

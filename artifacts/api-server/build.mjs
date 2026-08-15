@@ -73,6 +73,7 @@ async function buildAll() {
       "aws-sdk",
       "classic-level",
       "dd-trace",
+      "drizzle-orm",
       "ffi-napi",
       "grpc",
       "hiredis",

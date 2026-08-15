@@ -35,6 +35,14 @@
   var state    = params.get('state');
   var provider = localStorage.getItem('privy_oauth_provider') || 'google';
 
+  if (!APP_ID) {
+    document.getElementById('spinner').style.display = 'none';
+    var el = document.getElementById('err');
+    el.textContent = 'Privy app configuration is missing. Set BLACKRAIL_PRIVY_APP_ID so it matches the API server PRIVY_APP_ID.';
+    el.style.display = 'block';
+    return;
+  }
+
   if (!code) {
     window.location.replace('../index.html');
     return;
@@ -67,9 +75,9 @@
         }
         localStorage.setItem('blackrail_merchant_id', result.body.merchantId || identity);
         localStorage.setItem('blackrail_api_key', result.body.apiKey);
-        localStorage.removeItem('privy_token');
-        localStorage.removeItem('privy_user_id');
-        localStorage.removeItem('privy_wallet');
+        // Keep the Privy token so future API calls can still authenticate if the
+        // session is refreshed or the app is reloaded before a new bootstrap key is issued.
+        // We do not delete it here, because clearing it causes immediate auth loss.
         window.location.replace('dashboard.html');
       });
     } else {

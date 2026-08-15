@@ -1240,8 +1240,17 @@ window.closeSignIn = function() {
     return token;
   }
 
+  function requirePrivyConfig() {
+    if (!APP_ID) {
+      showError('Privy is misconfigured. Set BLACKRAIL_PRIVY_APP_ID to match the API server PRIVY_APP_ID.');
+      return false;
+    }
+    return true;
+  }
+
   /* ── OAuth: Google / Twitter ── */
   window.privyLogin = function(provider) {
+    if (!requirePrivyConfig()) return;
     var redirectURI = window.location.origin + '/pages/' + CALLBACK.replace('pages/', '');
     fetch(BASE + '/oauth/init', {
       method: 'POST',
@@ -1262,6 +1271,7 @@ window.closeSignIn = function() {
 
   /* ── Email: send code ── */
   window.privySendEmail = function() {
+    if (!requirePrivyConfig()) return;
     var input = document.getElementById('privy-email');
     var val   = input ? input.value.trim() : '';
     if (!val || val.indexOf('@') < 0) { showError('Enter a valid email'); return; }
@@ -1289,6 +1299,7 @@ window.closeSignIn = function() {
 
   /* ── Email: verify code ── */
   window.privyVerifyOtp = function() {
+    if (!requirePrivyConfig()) return;
     var input = document.getElementById('privy-otp');
     var code  = input ? input.value.trim() : '';
     if (code.length < 6) { showError('Enter the 6-digit code'); return; }

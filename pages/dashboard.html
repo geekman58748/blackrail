@@ -1092,18 +1092,19 @@ const MERCHANT_API_KEY = localStorage.getItem('blackrail_api_key');
 
 function apiFetch(path, options = {}) {
   const token = localStorage.getItem('blackrail_api_key');
+  const privyToken = localStorage.getItem('privy_token');
   const headers = new Headers(options.headers || {});
   if (token) headers.set('x-api-key', token);
+  else if (privyToken) headers.set('Authorization', 'Bearer ' + privyToken);
   if (options.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
   return fetch(API_BASE + path, { ...options, headers });
 }
 
 // ── Auth gate ─────────────────────────────────────────────────────────────────
 (function() {
-  const token = localStorage.getItem('blackrail_api_key');
-  if (!token) {
-    window.location.replace('../index.html');
-    return;
+  const hasApiKey = !!localStorage.getItem('blackrail_api_key');
+  const hasPrivyToken = !!localStorage.getItem('privy_token');
+  if (!hasApiKey && !hasPrivyToken) {
   }
 })();
 

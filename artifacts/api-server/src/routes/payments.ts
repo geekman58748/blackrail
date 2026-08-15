@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { desc, eq, sum } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { db, paymentsTable } from "@workspace/db";
 import { LogPaymentBody } from "@workspace/api-zod";
 import {

@@ -10,11 +10,10 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@coral-xyz/anchor": "^0.32.1",
-    "@magicblock-labs/ephemeral-rollups-sdk": "^0.16.2",
     "@privy-io/node": "^0.28.0",
     "@solana/spl-token": "^0.4.13",
     "@solana/web3.js": "^1.98.2",
+    "tweetnacl": "^1.0.3",
     "@workspace/api-zod": "workspace:*",
     "@workspace/db": "workspace:*",
     "bs58": "^6.0.0",

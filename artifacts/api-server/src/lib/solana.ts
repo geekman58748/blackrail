@@ -2,89 +2,50 @@ import {
   Connection,
   Keypair,
   PublicKey,
-  SystemProgram,
   Transaction,
+  VersionedTransaction,
   sendAndConfirmTransaction,
 } from "@solana/web3.js";
 import {
-  TOKEN_PROGRAM_ID,
-  createAssociatedTokenAccountInstruction,
+  createAssociatedTokenAccountIdempotentInstruction,
   createCloseAccountInstruction,
   createTransferInstruction,
   getAssociatedTokenAddressSync,
   getAccount,
 } from "@solana/spl-token";
-import { AnchorProvider, Program, BN, Idl } from "@coral-xyz/anchor";
-import {
-  ConnectionMagicRouter,
-  MAGIC_PROGRAM_ID,
-  MAGIC_CONTEXT_ID,
-  DELEGATION_PROGRAM_ID,
-  delegateBufferPdaFromDelegatedAccountAndOwnerProgram,
-  delegationRecordPdaFromDelegatedAccount,
-  delegationMetadataPdaFromDelegatedAccount,
-} from "@magicblock-labs/ephemeral-rollups-sdk";
 import bs58 from "bs58";
-import { createHash } from "crypto";
-import { readFileSync } from "fs";
-import { join } from "path";
+import nacl from "tweetnacl";
 
-// ── Hardcoded devnet constants (non-secret, safe to commit) ───────────────────
+const DEFAULT_MB_API = "https://payments.magicblock.app";
+const DEFAULT_CLUSTER = "devnet";
+const DEFAULT_USDC_MINT = "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU";
+const DEFAULT_VAULT_ATA = "B82AzAWZsvVUwW1iddK8H45E1rj6QKS36X9FPFtHmbjM";
+const DEFAULT_SERVER_WALLET = "2QGJqSPWogpnrsrEagH4Mn28JjvuxMjrNMPbUst56j6Y";
 
-const DEFAULT_USDC_MINT    = "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU";
-const DEFAULT_VAULT_ATA    = "B82AzAWZsvVUwW1iddK8H45E1rj6QKS36X9FPFtHmbjM";
-const DEFAULT_SERVER_WALLET= "2QGJqSPWogpnrsrEagH4Mn28JjvuxMjrNMPbUst56j6Y";
+type MagicBlockTransferResponse = {
+  signature?: string;
+  sig?: string;
+  txId?: string;
+  transactionBase64?: string;
+  requiredSigners?: string[];
+  sendTo?: string;
+  fees?: { lamports?: string; tokens?: string };
+};
 
-/**
- * Program ID.
- *
- * Current on-chain:  D6au34Ft153B5ghrujVzTg4nGJFiitpePnoQ666JPzB7  (old build)
- * After anchor deploy: 4r8Gfqx4DbgRG5ZHpKjdJJsysx9iZ5wXxofdkQM1C9FD
- *
- * Set PROGRAM_ID env var on Railway to switch.
- */
-const DEFAULT_PROGRAM_ID = "D6au34Ft153B5ghrujVzTg4nGJFiitpePnoQ666JPzB7";
-
-// ── IDL loading ───────────────────────────────────────────────────────────────
-
-function loadIdl(): Idl {
-  // Try to load a file dropped in by the user (e.g. uploaded from anchor build)
-  const overridePath = process.env.PROGRAM_IDL_PATH;
-  if (overridePath) {
-    try {
-      return JSON.parse(readFileSync(overridePath, "utf8")) as Idl;
-    } catch (e) {
-      console.warn("[solana] IDL override not readable, falling back:", e);
-    }
-  }
-  // Fall back to the IDL we maintain in-repo (derived from programs/mirage-vault/src/lib.rs)
-  const idlPath = join(__dirname, "../idl/mirage_vault.json");
-  return JSON.parse(readFileSync(idlPath, "utf8")) as Idl;
+function getCluster(): string {
+  return process.env.SOLANA_CLUSTER?.trim() || DEFAULT_CLUSTER;
 }
 
-// ── Wallet adapter for AnchorProvider ────────────────────────────────────────
+function getMagicBlockApi(): string {
+  return (process.env.MAGICBLOCK_API_URL?.trim() || DEFAULT_MB_API).replace(/\/$/, "");
+}
 
-class NodeWallet {
-  constructor(readonly payer: Keypair) {}
-  async signTransaction(tx: Transaction): Promise<Transaction> {
-    tx.partialSign(this.payer);
-    return tx;
-  }
-  async signAllTransactions(txs: Transaction[]): Promise<Transaction[]> {
-    return txs.map((tx) => { tx.partialSign(this.payer); return tx; });
-  }
-  get publicKey() { return this.payer.publicKey; }
+function getRpcUrl(): string {
+  return process.env.SOLANA_RPC?.trim() || process.env.SOLANA_RPC_URL?.trim() ||
+    (getCluster() === "devnet" ? "https://api.devnet.solana.com" : "https://api.mainnet-beta.solana.com");
 }
 
 // ── Config ────────────────────────────────────────────────────────────────────
-
-export function validateSolanaConfig(): { configured: boolean } {
-  return { configured: isErConfigured() };
-}
-
-export function isErConfigured(): boolean {
-  return !!process.env.SERVER_KEYPAIR;
-}
 
 export function isWithdrawConfigured(): boolean {
   return !!process.env.SERVER_KEYPAIR;
@@ -94,286 +55,212 @@ function cfg() {
   if (!process.env.SERVER_KEYPAIR) {
     throw new Error("SERVER_KEYPAIR is required but not set");
   }
-  const server    = Keypair.fromSecretKey(bs58.decode(process.env.SERVER_KEYPAIR));
-  const usdcMint  = new PublicKey(process.env.USDC_MINT    ?? DEFAULT_USDC_MINT);
+  const server = Keypair.fromSecretKey(bs58.decode(process.env.SERVER_KEYPAIR));
+  const usdcMint = new PublicKey(process.env.USDC_MINT ?? DEFAULT_USDC_MINT);
   const merchantAta = new PublicKey(process.env.MERCHANT_USDC_ATA ?? DEFAULT_VAULT_ATA);
-  const programId = new PublicKey(process.env.PROGRAM_ID   ?? DEFAULT_PROGRAM_ID);
-  const baseRpc   = process.env.SOLANA_RPC ?? "https://api.devnet.solana.com";
-
-  // ConnectionMagicRouter extends Connection and auto-routes transactions:
-  // delegated accounts → ER, everything else → base chain.
-  const connection = new ConnectionMagicRouter(baseRpc);
-  const base       = connection as unknown as Connection; // for direct SPL calls
-
-  const idl        = loadIdl();
-  // Override the IDL address with the actual env-configured program ID
-  const patchedIdl = { ...idl, address: programId.toBase58() };
-
-  const provider   = new AnchorProvider(
-    connection as unknown as Connection,
-    new NodeWallet(server) as unknown as AnchorProvider["wallet"],
-    { commitment: "confirmed", skipPreflight: false }
-  );
-  const program    = new Program(patchedIdl, provider);
-
-  return { server, usdcMint, merchantAta, programId, base, program, provider };
+  const base = new Connection(getRpcUrl(), "confirmed");
+  return { server, usdcMint, merchantAta, base };
 }
 
-// ── Intent PDA ────────────────────────────────────────────────────────────────
+// ── MagicBlock token auth ─────────────────────────────────────────────────────
 
-function sessionIdToBytes(sessionId: string): number[] {
-  // sha256 the session ID string → 32 bytes deterministically
-  return Array.from(createHash("sha256").update(sessionId).digest());
+const tokenCache = new Map<string, { token: string; expiresAt: number }>();
+
+async function getMbToken(keypair: Keypair): Promise<string> {
+  const pubkey = keypair.publicKey.toBase58();
+  const cached = tokenCache.get(pubkey);
+  if (cached && Date.now() < cached.expiresAt) return cached.token;
+  const cluster = getCluster();
+  const api = getMagicBlockApi();
+
+  const challengeRes = await fetch(`${api}/v1/spl/challenge?pubkey=${pubkey}&cluster=${cluster}`);
+  if (!challengeRes.ok) throw new Error(`MB challenge failed: ${challengeRes.status}`);
+  const { challenge } = await challengeRes.json() as { challenge: string };
+
+  const msgBytes = Buffer.from(challenge, "utf8");
+  const sigBytes = nacl.sign.detached(msgBytes, keypair.secretKey);
+  const signature = bs58.encode(sigBytes);
+
+  const loginRes = await fetch(`${api}/v1/spl/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ pubkey, challenge, signature, cluster }),
+  });
+  if (!loginRes.ok) throw new Error(`MB login failed: ${loginRes.status} ${await loginRes.text()}`);
+  const { token } = await loginRes.json() as { token: string };
+
+  tokenCache.set(pubkey, { token, expiresAt: Date.now() + 50 * 60 * 1000 });
+  return token;
 }
 
-function intentPda(sessionIdBytes: number[], programId: PublicKey): PublicKey {
-  const [pda] = PublicKey.findProgramAddressSync(
-    [Buffer.from("settlement"), Buffer.from(sessionIdBytes)],
-    programId
-  );
-  return pda;
+async function requestMagicBlockTransfer(
+  token: string,
+  payload: Record<string, unknown>
+): Promise<{ ok: boolean; status: number; rawBody: string; data: MagicBlockTransferResponse }> {
+  const response = await fetch(`${getMagicBlockApi()}/v1/spl/transfer`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify(payload),
+  });
+  const rawBody = await response.text();
+  let data: MagicBlockTransferResponse = {};
+  if (rawBody) try { data = JSON.parse(rawBody); } catch {}
+  return { ok: response.ok, status: response.status, rawBody, data };
 }
 
-// ── Public API ────────────────────────────────────────────────────────────────
+// ── Facade (address generation) ───────────────────────────────────────────────
 
-/**
- * Creates a one-time facade keypair + USDC ATA for the buyer to pay into.
- * Also initialises the on-chain SettlementIntent and delegates it to the ER.
- */
-export async function createAndDelegateFacade(
-  sessionId: string,
-  amountUsdc: number,
-  expiresAt: Date
-): Promise<{ facadeAddress: string; keypairB58: string }> {
-  const { server, usdcMint, merchantAta, programId, base, program } = cfg();
+export async function createFacade(): Promise<{
+  facadeAddress: string;
+  keypairB58: string;
+}> {
+  const { server, usdcMint, base } = cfg();
   const facade = Keypair.generate();
   const facadeAta = getAssociatedTokenAddressSync(usdcMint, facade.publicKey);
 
-  // ── 1. Create facade USDC ATA on base chain ──────────────────────────────
-  const createAtaIx = createAssociatedTokenAccountInstruction(
-    server.publicKey,
-    facadeAta,
-    facade.publicKey,
-    usdcMint
+  const tx = new Transaction().add(
+    createAssociatedTokenAccountIdempotentInstruction(server.publicKey, facadeAta, facade.publicKey, usdcMint)
   );
-  const ataTx = new Transaction().add(createAtaIx);
-  await sendAndConfirmTransaction(base, ataTx, [server]);
-
-  // ── 2. Initialize the SettlementIntent PDA ──────────────────────────────
-  const sessionIdBytes = sessionIdToBytes(sessionId);
-  const intent         = intentPda(sessionIdBytes, programId);
-  const requiredLamports = BigInt(Math.round(amountUsdc * 1_000_000)); // USDC 6dp
-
-  try {
-    await (program.methods as any)
-      .initialize_intent(
-        sessionIdBytes,
-        new BN(requiredLamports.toString()),
-        new BN(Math.floor(expiresAt.getTime() / 1000))
-      )
-      .accounts({
-        operator:      server.publicKey,
-        facade:        facade.publicKey,
-        merchant:      merchantAta, // merchant ATA owner is the vault
-        mint:          usdcMint,
-        intent,
-        system_program: SystemProgram.programId,
-      })
-      .signers([server])
-      .rpc();
-    console.log(`[solana] initializeIntent ok — intent PDA: ${intent.toBase58()}`);
-  } catch (err) {
-    // Non-fatal: if the intent already exists or program call fails, we still
-    // have a working facade ATA for the plain-SPL fallback path.
-    console.warn("[solana] initializeIntent failed (will use plain-SPL fallback):", err);
-    return {
-      facadeAddress: facade.publicKey.toBase58(),
-      keypairB58:    bs58.encode(facade.secretKey),
-    };
-  }
-
-  // ── 3. Delegate the intent PDA to the ER ─────────────────────────────────
-  const buffer            = delegateBufferPdaFromDelegatedAccountAndOwnerProgram(intent, programId);
-  const delegationRecord  = delegationRecordPdaFromDelegatedAccount(intent);
-  const delegationMetadata= delegationMetadataPdaFromDelegatedAccount(intent);
-
-  try {
-    await (program.methods as any)
-      .delegate_intent(sessionIdBytes)
-      .accounts({
-        operator:          server.publicKey,
-        intent,
-        owner_program:     programId,
-        buffer,
-        delegation_record: delegationRecord,
-        delegation_metadata: delegationMetadata,
-        delegation_program: DELEGATION_PROGRAM_ID,
-        system_program:    SystemProgram.programId,
-      })
-      .signers([server])
-      .rpc();
-    console.log(`[solana] delegateIntent ok — intent delegated to ER`);
-  } catch (err) {
-    console.warn("[solana] delegateIntent failed:", err);
-    // Continue — authorizeRelease / settle will detect the undelegated state
-  }
+  await sendAndConfirmTransaction(base, tx, [server]);
 
   return {
     facadeAddress: facade.publicKey.toBase58(),
-    keypairB58:    bs58.encode(facade.secretKey),
+    keypairB58: bs58.encode(facade.secretKey),
   };
 }
 
-/**
- * Reads the facade ATA balance from base chain.
- * facadeAddress is the WALLET address — ATA is derived from it.
- */
 export async function getFacadeBalance(facadeAddress: string): Promise<bigint> {
-  const { base, usdcMint } = cfg();
+  const { usdcMint, base } = cfg();
   try {
-    const facadeWallet = new PublicKey(facadeAddress);
-    const facadeAta    = getAssociatedTokenAddressSync(usdcMint, facadeWallet);
-    const acct         = await getAccount(base, facadeAta);
+    const facadeAta = getAssociatedTokenAddressSync(usdcMint, new PublicKey(facadeAddress));
+    const acct = await getAccount(base, facadeAta);
     return acct.amount;
   } catch {
     return 0n;
   }
 }
 
-/**
- * Settles a payment session via MagicBlock:
- *   1. authorizeRelease on the ER (verifies facade balance privately)
- *   2. settle on base chain (transfers USDC facade→vault, closes facade ATA)
- *
- * Falls back to plain SPL transfer if the Anchor flow fails.
- */
+// ── Settlement ────────────────────────────────────────────────────────────────
+
 export async function settleFacade(
   keypairB58: string,
-  facadeAddress: string,
-  sessionId: string
+  _facadeAddress: string,
+  _sessionId: string
 ): Promise<string> {
-  const { server, usdcMint, merchantAta, programId, base, program } = cfg();
-  const facade      = Keypair.fromSecretKey(bs58.decode(keypairB58));
-  const facadeWallet= new PublicKey(facadeAddress);
-  const facadeAta   = getAssociatedTokenAddressSync(usdcMint, facadeWallet);
+  const { server, usdcMint, merchantAta, base } = cfg();
+  const facade = Keypair.fromSecretKey(bs58.decode(keypairB58));
+  const facadeAtaPk = getAssociatedTokenAddressSync(usdcMint, facade.publicKey);
 
-  // Check balance first
-  const acct  = await getAccount(base, facadeAta);
+  const acct = await getAccount(base, facadeAtaPk);
   const amount = acct.amount;
-  if (amount === 0n) throw new Error("facade ATA is empty — payment not received");
+  if (amount === 0n) throw new Error("facade ATA has zero balance");
 
-  const sessionIdBytes = sessionIdToBytes(sessionId);
-  const intent         = intentPda(sessionIdBytes, programId);
+  // Try MagicBlock private settlement first (requires >= 0.5 USDC for gasless)
+  const MB_MIN = 500_000n;
+  if (amount >= MB_MIN) {
+    try {
+      const token = await getMbToken(facade);
+      const payload = {
+        from: facade.publicKey.toBase58(),
+        to: server.publicKey.toBase58(),
+        mint: usdcMint.toBase58(),
+        amount: Number(amount),
+        visibility: "private",
+        fromBalance: "base",
+        toBalance: "base",
+        gasless: true,
+        initAtasIfMissing: true,
+        cluster: getCluster(),
+      };
 
-  // ── Step 1: authorize_release on the ER ───────────────────────────────────
-  // ConnectionMagicRouter detects 'intent' is delegated → routes to ER
-  let anchorSettleOk = false;
-  try {
-    await (program.methods as any)
-      .authorize_release(sessionIdBytes)
-      .accounts({
-        operator:      server.publicKey,
-        facade:        facadeWallet,
-        intent,
-        facade_ata:    facadeAta,
-        magic_context: MAGIC_CONTEXT_ID,
-        magic_program: MAGIC_PROGRAM_ID,
-      })
-      .signers([server])
-      .rpc();
-    console.log(`[solana] authorizeRelease ok on ER`);
+      const response = await requestMagicBlockTransfer(token, payload);
+      if (response.ok) {
+        let txBase64 = response.data.transactionBase64;
 
-    // Give the ER a moment to commit the intent state back to base chain
-    await new Promise((r) => setTimeout(r, 3000));
+        // MB charges fees ON TOP — adjust amount if needed
+        if (txBase64 && response.data.fees?.tokens) {
+          const feeTokens = BigInt(response.data.fees.tokens);
+          if (feeTokens >= amount) {
+            txBase64 = undefined;
+          } else if (feeTokens > 0n) {
+            const adjustedResponse = await requestMagicBlockTransfer(token, {
+              ...payload,
+              amount: Number(amount - feeTokens),
+            });
+            if (adjustedResponse.ok) txBase64 = adjustedResponse.data.transactionBase64 ?? txBase64;
+          }
+        }
 
-    // ── Step 2: settle on base chain ────────────────────────────────────────
-    const settleSig = await (program.methods as any)
-      .settle(sessionIdBytes)
-      .accounts({
-        operator:     server.publicKey,
-        facade:       facadeWallet,
-        intent,
-        facade_ata:   facadeAta,
-        merchant_ata: merchantAta,
-        token_program: TOKEN_PROGRAM_ID,
-      })
-      .signers([server, facade])
-      .rpc();
-    console.log(`[solana] settle ok — tx: ${settleSig}`);
-    anchorSettleOk = true;
-    return settleSig;
-  } catch (err) {
-    console.warn("[solana] Anchor settle flow failed, using plain-SPL fallback:", err);
+        if (txBase64) {
+          const vtx = VersionedTransaction.deserialize(Buffer.from(txBase64, "base64"));
+          const facadeSig = nacl.sign.detached(vtx.message.serialize(), facade.secretKey);
+          vtx.addSignature(facade.publicKey, Buffer.from(facadeSig));
+          const sig = await base.sendRawTransaction(vtx.serialize(), { skipPreflight: true });
+          await base.confirmTransaction(sig, "confirmed");
+
+          const txCheck = await base.getTransaction(sig, { maxSupportedTransactionVersion: 0 });
+          if (txCheck?.meta?.err) throw new Error("MB tx execution failed");
+
+          // Close facade ATA to reclaim rent
+          try {
+            const closeTx = new Transaction().add(
+              createCloseAccountInstruction(facadeAtaPk, server.publicKey, facade.publicKey)
+            );
+            await sendAndConfirmTransaction(base, closeTx, [server, facade]);
+          } catch {}
+
+          return sig;
+        }
+      }
+    } catch (mbErr) {
+      console.warn("[settle] MB API error, falling back to SPL:", mbErr);
+    }
   }
 
-  if (anchorSettleOk) {
-    // Should not reach here but satisfies TypeScript
-    throw new Error("unexpected state");
-  }
-
-  // ── Plain-SPL fallback (no MagicBlock privacy) ───────────────────────────
-  console.log("[solana] falling back to plain SPL transfer");
+  // Fallback: plain on-chain SPL transfer
   const tx = new Transaction().add(
-    createTransferInstruction(
-      facadeAta,
-      merchantAta,
-      facadeWallet,
-      amount,
-      [],
-      TOKEN_PROGRAM_ID
-    ),
-    createCloseAccountInstruction(
-      facadeAta,
-      server.publicKey,
-      facadeWallet,
-      [],
-      TOKEN_PROGRAM_ID
-    )
+    createAssociatedTokenAccountIdempotentInstruction(server.publicKey, merchantAta, server.publicKey, usdcMint),
+    createTransferInstruction(facadeAtaPk, merchantAta, facade.publicKey, amount),
+    createCloseAccountInstruction(facadeAtaPk, server.publicKey, facade.publicKey)
   );
   return sendAndConfirmTransaction(base, tx, [server, facade]);
 }
 
-// ── Vault helpers ─────────────────────────────────────────────────────────────
+// ── Vault ─────────────────────────────────────────────────────────────────────
 
 export function getVaultAddress(): { wallet: string; ata: string } {
   let walletAddress = DEFAULT_SERVER_WALLET;
   try {
     if (process.env.SERVER_KEYPAIR) {
-      walletAddress = Keypair.fromSecretKey(
-        bs58.decode(process.env.SERVER_KEYPAIR)
-      ).publicKey.toBase58();
+      walletAddress = Keypair.fromSecretKey(bs58.decode(process.env.SERVER_KEYPAIR)).publicKey.toBase58();
     }
-  } catch { /* use default */ }
-
-  return {
-    wallet: walletAddress,
-    ata:    process.env.MERCHANT_USDC_ATA ?? DEFAULT_VAULT_ATA,
-  };
+  } catch {}
+  return { wallet: walletAddress, ata: process.env.MERCHANT_USDC_ATA ?? DEFAULT_VAULT_ATA };
 }
 
 export async function getVaultBalance(): Promise<bigint> {
-  const { base, merchantAta } = cfg();
-  const acct = await getAccount(base, merchantAta);
-  return acct.amount;
+  const { merchantAta, base } = cfg();
+  try {
+    const acct = await getAccount(base, merchantAta);
+    return acct.amount;
+  } catch {
+    return 0n;
+  }
 }
 
-export async function withdrawFromVault(
-  destination: string,
-  amount: bigint
-): Promise<string> {
-  const { usdcMint, merchantAta, base, server } = cfg();
-  const acct      = await getAccount(base, merchantAta);
+export async function withdrawFromVault(destination: string, amount: bigint): Promise<string> {
+  const { server, usdcMint, merchantAta, base } = cfg();
+  const acct = await getAccount(base, merchantAta);
   const available = acct.amount;
   if (available === 0n) throw new Error("vault is empty");
   const sendAmount = amount === 0n ? available : amount;
-  if (sendAmount > available)
-    throw new Error(`only ${Number(available) / 1e6} USDC available`);
+  if (sendAmount > available) throw new Error(`only ${Number(available) / 1e6} USDC available`);
 
-  const destPk  = new PublicKey(destination);
+  const destPk = new PublicKey(destination);
   const destAta = getAssociatedTokenAddressSync(usdcMint, destPk);
 
   const tx = new Transaction().add(
-    createAssociatedTokenAccountInstruction(server.publicKey, destAta, destPk, usdcMint),
+    createAssociatedTokenAccountIdempotentInstruction(server.publicKey, destAta, destPk, usdcMint),
     createTransferInstruction(merchantAta, destAta, server.publicKey, sendAmount)
   );
   return sendAndConfirmTransaction(base, tx, [server]);

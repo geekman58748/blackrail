@@ -557,6 +557,7 @@
   }
 
   let _pollInterval = null;
+  let _settleInProgress = false;
   function listenForOnChainPayment() {
     if (!SESSION_ID) return;
     clearInterval(_pollInterval);
@@ -565,22 +566,35 @@
         clearInterval(_pollInterval); return;
       }
       try {
-        const r = await fetch(API_BASE + '/api/sessions/' + SESSION_ID + '/balance', { headers: checkoutHeaders });
+        const r = await fetch(API_BASE + '/api/sessions/' + SESSION_ID + '/balance');
         const d = await r.json();
-        if (!r.ok) throw new Error(d.error || 'Balance check failed');
-        const received = d.er && d.balance ? BigInt(d.balance) : 0n;
+        if (!r.ok) { console.warn('[poll] balance error:', d.error); return; }
+        const received = BigInt(d.balance || '0');
         const required = PAYMENT_AMOUNT > 0 ? BigInt(Math.round(PAYMENT_AMOUNT * 1e6)) : 1n;
-        if (received >= required && received > 0n) {
-          const settlement = await fetch(API_BASE + '/api/sessions/' + SESSION_ID + '/settle', {
-            method: 'POST',
-            headers: checkoutHeaders,
-          });
-          const settlementData = await settlement.json();
-          if (!settlement.ok) throw new Error(settlementData.error || 'Settlement failed');
-          clearInterval(_pollInterval);
-          transitionToState(2);
+        console.log('[poll] balance:', d.balance, 'received:', received.toString(), 'required:', required.toString());
+        if (received >= required && received > 0n && !_settleInProgress) {
+          _settleInProgress = true;
+          console.log('[settle] payment detected, settling...');
+          try {
+            const settlement = await fetch(API_BASE + '/api/sessions/' + SESSION_ID + '/settle', {
+              method: 'POST',
+              headers: checkoutHeaders,
+            });
+            const settlementData = await settlement.json();
+            console.log('[settle] response:', settlement.status, settlementData);
+            if (!settlement.ok) {
+              console.error('[settle] failed:', settlementData.error);
+              _settleInProgress = false;
+              return;
+            }
+            clearInterval(_pollInterval);
+            transitionToState(2);
+          } catch(settleErr) {
+            console.error('[settle] network error:', settleErr);
+            _settleInProgress = false;
+          }
         }
-      } catch(e) {}
+      } catch(e) { console.warn('[poll] error:', e.message); }
     }, 5000);
   }
 

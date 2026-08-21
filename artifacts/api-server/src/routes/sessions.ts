@@ -108,7 +108,7 @@ router.get("/sessions/:id/balance", async (req, res): Promise<void> => {
   if (!row) { res.status(404).json({ error: "not found" }); return; }
   // Public: anyone can poll the facade balance during checkout
   const balance = await getFacadeBalance(row.facadeAddress);
-  res.json({ balance: balance.toString(), er: true });
+  res.json({ balance: balance.toString() });
 });
 
 router.post("/sessions/:id/settle", async (req, res): Promise<void> => {

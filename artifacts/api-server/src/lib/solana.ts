@@ -159,7 +159,7 @@ export async function settleFacade(
   const MB_MIN = 500_000n;
   if (amount >= MB_MIN) {
     try {
-      const token = await getMbToken(facade);
+      const token = await getMbToken(server);
       const payload = {
         from: facade.publicKey.toBase58(),
         to: server.publicKey.toBase58(),

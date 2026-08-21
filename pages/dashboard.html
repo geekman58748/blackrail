@@ -1064,8 +1064,7 @@
       });
       if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error || 'API error'); }
       const session = await res.json();
-      const apiCheckoutURL = new URL(session.checkoutUrl);
-      const checkoutURL = new URL('checkout.html' + apiCheckoutURL.search + apiCheckoutURL.hash, window.location.href).href;
+      const checkoutURL = session.checkoutUrl;
       const amountLabel = session.amount ? '$' + session.amount + ' USDC' : 'Open Amount';
 
       preview.innerHTML = `

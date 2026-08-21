@@ -58,7 +58,7 @@ export function merchantPrincipal(res: Response): MerchantPrincipal {
 
 export function capabilityMatches(raw: string | undefined, expectedHash: string | null): boolean {
   if (!raw || !expectedHash) return false;
-  const actual = Buffer.from(createHash("sha256").update(raw).digest("hex"));
-  const expected = Buffer.from(expectedHash);
+  const actual = createHash("sha256").update(raw).digest();
+  const expected = Buffer.from(expectedHash, "hex");
   return actual.length === expected.length && timingSafeEqual(actual, expected);
 }

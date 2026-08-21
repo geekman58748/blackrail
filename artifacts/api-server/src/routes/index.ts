@@ -10,8 +10,8 @@ const router: IRouter = Router();
 
 router.use(healthRouter);
 router.use(authRouter);
-router.use(paymentsRouter);
 router.use(sessionsRouter);
+router.use(paymentsRouter);
 router.use(apiKeysRouter);
 router.use(vaultRouter);
 

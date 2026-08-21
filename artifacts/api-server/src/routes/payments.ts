@@ -12,9 +12,8 @@ router.get("/vault/balance", async (_req, res): Promise<void> => {
   res.json({ balance: (Number(raw) / 1e6).toFixed(6), configured: true, wallet, ata });
 });
 
-router.use(requireMerchant);
 
-router.post("/vault/withdraw", async (req, res): Promise<void> => {
+router.post("/vault/withdraw", requireMerchant, async (req, res): Promise<void> => {
   const secret = req.headers["x-withdraw-secret"];
   if (!secret || secret !== process.env.WITHDRAW_SECRET) {
     res.status(401).json({ error: "unauthorized" });
@@ -34,7 +33,7 @@ router.post("/vault/withdraw", async (req, res): Promise<void> => {
   }
 });
 
-router.get("/payments/stats", async (_req, res): Promise<void> => {
+router.get("/payments/stats", requireMerchant, async (_req, res): Promise<void> => {
   const { merchantId } = merchantPrincipal(res);
   const query = db.select().from(paymentsTable).orderBy(desc(paymentsTable.createdAt));
   const all = await query.where(eq(paymentsTable.merchantId, merchantId));
@@ -45,7 +44,7 @@ router.get("/payments/stats", async (_req, res): Promise<void> => {
   res.json({ totalUSDC, totalPayments: all.length, recent });
 });
 
-router.get("/payments", async (_req, res): Promise<void> => {
+router.get("/payments", requireMerchant, async (_req, res): Promise<void> => {
   const { merchantId } = merchantPrincipal(res);
   const query = db.select().from(paymentsTable).orderBy(desc(paymentsTable.createdAt));
   const rows = await query.where(eq(paymentsTable.merchantId, merchantId));

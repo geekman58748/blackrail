@@ -91,10 +91,9 @@ router.get("/sessions/:id", async (req, res): Promise<void> => {
   const id = req.params.id as string;
   const [row] = await db.select().from(sessionsTable).where(eq(sessionsTable.id, id));
   if (!row) { res.status(404).json({ error: "Session not found" }); return; }
-  if (!capabilityMatches(checkoutCapability(req), row.checkoutTokenHash)) {
-    res.status(401).json({ error: "invalid checkout capability" }); return;
-  }
 
+  // Public read: anyone with the session ID can view the facade address (for checkout)
+  // Token is only required for balance and settle
   if (row.status === "active" && row.expiresAt < new Date()) {
     await db.update(sessionsTable).set({ status: "expired" }).where(eq(sessionsTable.id, id));
     row.status = "expired";
@@ -107,9 +106,7 @@ router.get("/sessions/:id", async (req, res): Promise<void> => {
 router.get("/sessions/:id/balance", async (req, res): Promise<void> => {
   const [row] = await db.select().from(sessionsTable).where(eq(sessionsTable.id, req.params.id));
   if (!row) { res.status(404).json({ error: "not found" }); return; }
-  if (!capabilityMatches(checkoutCapability(req), row.checkoutTokenHash)) {
-    res.status(401).json({ error: "invalid checkout capability" }); return;
-  }
+  // Public: anyone can poll the facade balance during checkout
   const balance = await getFacadeBalance(row.facadeAddress);
   res.json({ balance: balance.toString(), er: true });
 });

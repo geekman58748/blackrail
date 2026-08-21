@@ -1088,41 +1088,37 @@
 <script>
 const configuredApiBase = window.BLACKRAIL_CONFIG?.apiBase || localStorage.getItem('blackrail_api_base') || '';
 const API_BASE = configuredApiBase.replace(/\/+$/, '');
-const MERCHANT_API_KEY = localStorage.getItem('blackrail_api_key');
 
 function apiFetch(path, options = {}) {
-  const token = localStorage.getItem('blackrail_api_key');
-  const privyToken = localStorage.getItem('privy_token');
+  const sessionToken = localStorage.getItem('blackrail_session_token');
   const headers = new Headers(options.headers || {});
-  if (token) headers.set('x-api-key', token);
-  else if (privyToken) headers.set('Authorization', 'Bearer ' + privyToken);
+  if (sessionToken) headers.set('Authorization', 'Bearer ' + sessionToken);
   if (options.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
   return fetch(API_BASE + path, { ...options, headers });
 }
 
 // ── Auth gate ─────────────────────────────────────────────────────────────────
 (function() {
-  const hasApiKey = !!localStorage.getItem('blackrail_api_key');
-  const hasPrivyToken = !!localStorage.getItem('privy_token');
-  if (!hasApiKey && !hasPrivyToken) {
+  const hasSession = !!localStorage.getItem('blackrail_session_token');
+  if (!hasSession) {
+    window.location.href = 'login.html';
   }
 })();
 
-// ── Wallet: load from storage, or create on-demand via Privy ─────────────────
+// ── Wallet: load from storage ────────────────────────────────────────────────
 function showWalletAddr(addr) {
   const short = addr.slice(0, 6) + '…' + addr.slice(-4);
   const pill = document.getElementById('sidebar-wallet');
   if (pill) { pill.textContent = short; pill.style.display = 'block'; }
-  // Pre-fill withdraw input with Privy wallet as convenience default
   const input = document.getElementById('withdraw-dest-input');
   if (input && !input.value) input.value = addr;
 }
 
 async function loadWallet() {
-  const merchantId = localStorage.getItem('blackrail_merchant_id');
+  const walletAddr = localStorage.getItem('blackrail_wallet_address');
   const pill = document.getElementById('sidebar-wallet');
-  if (pill && merchantId) {
-    const short = merchantId.slice(0, 6) + '…' + merchantId.slice(-4);
+  if (pill && walletAddr) {
+    const short = walletAddr.slice(0, 6) + '…' + walletAddr.slice(-4);
     pill.textContent = short;
     pill.style.display = 'block';
   }
@@ -1138,7 +1134,7 @@ function copyVaultAta() {
 }
 
 function copyWallet() {
-  const addr = localStorage.getItem('blackrail_merchant_id') || localStorage.getItem('blackrail_api_key');
+  const addr = localStorage.getItem('blackrail_wallet_address');
   if (!addr) return;
   navigator.clipboard.writeText(addr).then(() => {
     const pill = document.getElementById('sidebar-wallet');
@@ -1147,14 +1143,15 @@ function copyWallet() {
   });
 }
 
-function doLogout() {
+async function doLogout() {
+  try { await apiFetch('/api/auth/logout', { method: 'POST' }); } catch {}
+  localStorage.removeItem('blackrail_session_token');
+  localStorage.removeItem('blackrail_user_id');
+  localStorage.removeItem('blackrail_user_email');
+  localStorage.removeItem('blackrail_wallet_address');
   localStorage.removeItem('blackrail_api_key');
   localStorage.removeItem('blackrail_merchant_id');
-  localStorage.removeItem('privy_token');
-  localStorage.removeItem('privy_user_id');
-  localStorage.removeItem('privy_wallet');
-  localStorage.removeItem('privy_oauth_provider');
-  window.location.replace('../index.html');
+  window.location.replace('login.html');
 }
 
 loadWallet();
@@ -1162,7 +1159,7 @@ loadWallet();
 async function withdrawFunds() {
   const statusEl = document.getElementById('withdraw-status');
   const input = document.getElementById('withdraw-dest-input');
-  const addr = (input ? input.value.trim() : '') || localStorage.getItem('privy_wallet');
+  const addr = (input ? input.value.trim() : '') || localStorage.getItem('blackrail_wallet_address');
   if (!addr) { if(statusEl) statusEl.textContent = 'Paste a destination wallet address first'; return; }
 
   if(statusEl) statusEl.textContent = 'Requesting withdrawal…';

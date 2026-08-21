@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BlackRail — Sign In</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<script src="../runtime-config.js"></script>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{--white:#ffffff;--off-white:#f1f3f9;--muted:#8c8f9f;--bg:#07080e;--accent-green:#a8c4b0}
+  body{background:var(--bg);color:var(--off-white);font-family:'Inter',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+  .bg-scene{position:fixed;inset:0;pointer-events:none;z-index:0}
+  .grid-overlay{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.02) 1px,transparent 1px);background-size:60px 60px;mask-image:radial-gradient(ellipse at center,rgba(0,0,0,0.8) 0%,transparent 75%)}
+  .light-core{position:absolute;top:30%;left:50%;transform:translate(-50%,-50%);width:560px;height:560px;background:radial-gradient(circle,rgba(255,255,255,0.04) 0%,rgba(200,205,220,0.015) 45%,transparent 80%);filter:blur(60px)}
+  .card{position:relative;z-index:2;width:100%;max-width:400px;background:linear-gradient(160deg,#0e1018 0%,#090b12 100%);border:1px solid rgba(255,255,255,0.08);border-radius:20px;padding:40px 32px;backdrop-filter:blur(30px);box-shadow:0 0 0 1px rgba(255,255,255,0.04) inset,0 48px 100px rgba(0,0,0,0.7)}
+  .card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,0.1) 50%,transparent 100%);border-radius:20px 20px 0 0}
+  .brand{display:flex;align-items:center;gap:9px;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:18px;color:var(--white);margin-bottom:32px}
+  .logo{width:24px;height:24px;background:#000;border:1px solid rgba(255,255,255,0.14);border-radius:6px;display:flex;align-items:center;justify-content:center}
+  h1{font-family:'Plus Jakarta Sans',sans-serif;font-size:24px;font-weight:700;color:var(--white);margin-bottom:8px}
+  .subtitle{font-size:14px;color:var(--muted);margin-bottom:28px;line-height:1.5}
+  label{display:block;font-size:12px;font-weight:500;color:rgba(140,143,159,0.8);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;font-family:'JetBrains Mono',monospace}
+  input[type="email"]{width:100%;padding:12px 16px;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.08);border-radius:12px;color:var(--white);font-size:15px;font-family:'Inter',sans-serif;outline:none;transition:border-color 0.2s}
+  input[type="email"]:focus{border-color:rgba(255,255,255,0.2)}
+  input[type="email"]::placeholder{color:rgba(140,143,159,0.4)}
+  .btn{width:100%;padding:12px;border-radius:100px;background:var(--white);color:#08080f;border:none;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.22s ease;margin-top:16px;font-family:'Inter',sans-serif}
+  .btn:hover{transform:translateY(-1px);background:rgba(255,255,255,0.9)}
+  .btn:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+  .btn-secondary{background:rgba(255,255,255,0.05);color:rgba(200,202,216,0.8);border:1px solid rgba(255,255,255,0.1)}
+  .btn-secondary:hover{background:rgba(255,255,255,0.1)}
+  .divider{display:flex;align-items:center;gap:12px;margin:20px 0;color:rgba(140,143,159,0.4);font-size:12px;font-family:'JetBrains Mono',monospace;letter-spacing:0.05em}
+  .divider::before,.divider::after{content:'';flex:1;height:1px;background:rgba(255,255,255,0.06)}
+  .error{background:rgba(204,123,123,0.1);border:1px solid rgba(204,123,123,0.2);border-radius:10px;padding:10px 14px;font-size:13px;color:#cc7b7b;margin-top:12px;display:none}
+  .success{background:rgba(168,196,176,0.1);border:1px solid rgba(168,196,176,0.2);border-radius:10px;padding:10px 14px;font-size:13px;color:var(--accent-green);margin-top:12px;display:none}
+  .link-sent{text-align:center;padding:20px 0}
+  .link-sent h2{font-family:'Plus Jakarta Sans',sans-serif;font-size:20px;color:var(--white);margin-bottom:8px}
+  .link-sent p{font-size:14px;color:var(--muted);line-height:1.5}
+  .link-sent .email{color:var(--white);font-weight:500}
+  .back-link{display:inline-block;margin-top:16px;font-size:13px;color:var(--muted);cursor:pointer;text-decoration:none}
+  .back-link:hover{color:var(--white)}
+  .footer{margin-top:24px;text-align:center;font-size:12px;color:rgba(140,143,159,0.4)}
+  .footer a{color:rgba(140,143,159,0.6);text-decoration:none}
+  .footer a:hover{color:var(--white)}
+</style>
+</head>
+<body>
+<div class="bg-scene">
+  <div class="grid-overlay"></div>
+  <div class="light-core"></div>
+</div>
+
+<div class="card">
+  <!-- State 1: Email input -->
+  <div id="stateEmail">
+    <div class="brand">
+      <div class="logo"><svg width="11" height="11" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="5" height="5" rx="1" fill="currentColor" opacity=".9"/><rect x="8" y="1" width="5" height="5" rx="1" fill="currentColor" opacity=".5"/><rect x="1" y="8" width="5" height="5" rx="1" fill="currentColor" opacity=".5"/><rect x="8" y="8" width="5" height="5" rx="1" fill="currentColor" opacity=".9"/></svg></div>
+      <span>BlackRail</span>
+    </div>
+    <h1>Sign in</h1>
+    <p class="subtitle">Enter your email to receive a sign-in link. No wallet connection needed.</p>
+    
+    <label>Email address</label>
+    <input type="email" id="emailInput" placeholder="you@example.com" autocomplete="email" />
+    
+    <button class="btn" id="btnSend" onclick="sendMagicLink()">Send magic link</button>
+    
+    <div class="error" id="errorMsg"></div>
+    <div class="success" id="successMsg"></div>
+    
+    <div class="footer">
+      <p>By signing in you agree to the <a href="#">Terms</a></p>
+    </div>
+  </div>
+
+  <!-- State 2: Link sent -->
+  <div id="stateSent" style="display:none">
+    <div class="brand">
+      <div class="logo"><svg width="11" height="11" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="5" height="5" rx="1" fill="currentColor" opacity=".9"/><rect x="8" y="1" width="5" height="5" rx="1" fill="currentColor" opacity=".5"/><rect x="1" y="8" width="5" height="5" rx="1" fill="currentColor" opacity=".5"/><rect x="8" y="8" width="5" height="5" rx="1" fill="currentColor" opacity=".9"/></svg></div>
+      <span>BlackRail</span>
+    </div>
+    <div class="link-sent">
+      <h2>Check your inbox</h2>
+      <p>We sent a sign-in link to <span class="email" id="sentEmail"></span></p>
+      <p style="margin-top:8px;font-size:13px;color:rgba(140,143,159,0.5)">Link expires in 15 minutes</p>
+      <a class="back-link" onclick="showEmailState()">← Use a different email</a>
+    </div>
+  </div>
+</div>
+
+<script>
+  const API_BASE = (window.BLACKRAIL_CONFIG?.apiBase || localStorage.getItem('blackrail_api_base') || '').replace(/\/+$/, '');
+
+  // Check if already logged in
+  (function() {
+    const sessionToken = localStorage.getItem('blackrail_session_token');
+    if (sessionToken) {
+      window.location.href = 'dashboard.html';
+    }
+  })();
+
+  function showEmailState() {
+    document.getElementById('stateEmail').style.display = 'block';
+    document.getElementById('stateSent').style.display = 'none';
+    document.getElementById('errorMsg').style.display = 'none';
+    document.getElementById('successMsg').style.display = 'none';
+  }
+
+  async function sendMagicLink() {
+    const email = document.getElementById('emailInput').value.trim();
+    const errorMsg = document.getElementById('errorMsg');
+    const successMsg = document.getElementById('successMsg');
+    const btn = document.getElementById('btnSend');
+
+    errorMsg.style.display = 'none';
+    successMsg.style.display = 'none';
+
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      errorMsg.textContent = 'Please enter a valid email address';
+      errorMsg.style.display = 'block';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Sending...';
+
+    try {
+      const res = await fetch(API_BASE + '/api/auth/magic-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || 'Failed to send magic link');
+
+      // Store email for callback
+      localStorage.setItem('blackrail_pending_email', email);
+
+      // Show sent state
+      document.getElementById('sentEmail').textContent = email;
+      document.getElementById('stateEmail').style.display = 'none';
+      document.getElementById('stateSent').style.display = 'block';
+
+      // In dev mode, show the link
+      if (data._dev_link) {
+        successMsg.textContent = 'Dev mode: ' + data._dev_link;
+        successMsg.style.display = 'block';
+        window.open(data._dev_link, '_blank');
+      }
+    } catch (e) {
+      errorMsg.textContent = e.message || 'Something went wrong';
+      errorMsg.style.display = 'block';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Send magic link';
+    }
+  }
+
+  // Enter key to submit
+  document.getElementById('emailInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') sendMagicLink();
+  });
+</script>
+</body>
+</html>

@@ -1,98 +1,83 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
+<meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>BlackRail — Authenticating...</title>
 <script src="../runtime-config.js"></script>
 <style>
-  body{background:#07080e;color:#f1f3f9;font-family:Inter,sans-serif;display:flex;
-       align-items:center;justify-content:center;min-height:100vh;margin:0;}
-  .box{text-align:center;}
-  .spinner{width:40px;height:40px;border:2px solid rgba(255,255,255,0.1);
-           border-top-color:#a0a3b5;border-radius:50%;
-           animation:spin .8s linear infinite;margin:0 auto 20px;}
+  body{background:#07080e;color:#f1f3f9;font-family:Inter,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0}
+  .box{text-align:center}
+  .spinner{width:40px;height:40px;border:2px solid rgba(255,255,255,0.1);border-top-color:#a0a3b5;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 20px}
   @keyframes spin{to{transform:rotate(360deg)}}
-  .err{margin-top:16px;font-size:13px;color:#ff5f57;max-width:320px;}
+  .status{font-size:14px;color:#8c8f9f;margin-top:12px}
+  .err{margin-top:16px;font-size:13px;color:#ff5f57;max-width:320px}
+  .success{margin-top:16px;font-size:13px;color:#a8c4b0}
 </style>
 </head>
 <body>
 <div class="box">
   <div class="spinner" id="spinner"></div>
   <div style="font-size:15px;font-weight:600;">Completing sign-in...</div>
-  <div style="font-size:13px;color:#8c8f9f;margin-top:6px;">You'll be redirected in a moment</div>
+  <div class="status" id="status">Verifying your magic link...</div>
   <div class="err" id="err" style="display:none"></div>
+  <div class="success" id="success" style="display:none"></div>
 </div>
 <script>
-(function(){
-  // Must match the API server's PRIVY_APP_ID env var (see index.html).
-  var APP_ID   = window.BLACKRAIL_CONFIG && window.BLACKRAIL_CONFIG.privyAppId;
-  var BASE     = 'https://auth.privy.io/api/v1';
-  var HEADERS  = { 'Content-Type': 'application/json', 'privy-app-id': APP_ID };
+(function() {
+  const API_BASE = (window.BLACKRAIL_CONFIG?.apiBase || '').replace(/\/+$/, '');
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get('token');
 
-  var params   = new URLSearchParams(window.location.search);
-  var code     = params.get('code');
-  var state    = params.get('state');
-  var provider = localStorage.getItem('privy_oauth_provider') || 'google';
-
-  if (!APP_ID) {
-    document.getElementById('spinner').style.display = 'none';
-    var el = document.getElementById('err');
-    el.textContent = 'Privy app configuration is missing. Set BLACKRAIL_PRIVY_APP_ID so it matches the API server PRIVY_APP_ID.';
-    el.style.display = 'block';
+  if (!token) {
+    showError('No token found. Please use the link from your email.');
     return;
   }
 
-  if (!code) {
-    window.location.replace('../index.html');
-    return;
-  }
-
-  fetch(BASE + '/oauth/authenticate', {
+  fetch(API_BASE + '/api/auth/verify', {
     method: 'POST',
-    headers: HEADERS,
-    body: JSON.stringify({ code: code, state: state, provider: provider })
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token }),
   })
-  .then(function(r){ return r.json(); })
-  .then(function(d){
-    if (d && d.user) {
-      localStorage.removeItem('privy_oauth_provider');
-      var u = d.user || {};
-      var email = (u.email || (u.linked_accounts || []).find(function(a){ return a.type === 'email'; })?.address || '').trim();
-      var identity = (u.id || email || '').trim();
-      if (!identity) {
-        throw new Error('Privy login succeeded, but no user identity was returned.');
-      }
-      return fetch((window.BLACKRAIL_CONFIG && window.BLACKRAIL_CONFIG.apiBase ? window.BLACKRAIL_CONFIG.apiBase.replace(/\/+$/, '') : '') + '/api/auth/bootstrap', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ merchantId: identity, email: email })
-      })
-      .then(function(r){ return r.json().then(function(body){ return { ok: r.ok, status: r.status, body: body }; }); })
-      .then(function(result){
-        if (!result.ok || !result.body || !result.body.apiKey) {
-          throw new Error(result.body && (result.body.error || result.body.message) || 'Bootstrap failed');
-        }
-        localStorage.setItem('blackrail_merchant_id', result.body.merchantId || identity);
-        localStorage.setItem('blackrail_api_key', result.body.apiKey);
-        // Keep the Privy token so future API calls can still authenticate if the
-        // session is refreshed or the app is reloaded before a new bootstrap key is issued.
-        // We do not delete it here, because clearing it causes immediate auth loss.
-        window.location.replace('dashboard.html');
-      });
-    } else {
-      document.getElementById('spinner').style.display = 'none';
-      var el = document.getElementById('err');
-      el.textContent = d.message || d.error || 'Sign-in did not return a user profile.';
-      el.style.display = 'block';
-    }
+  .then(r => r.json().then(data => ({ ok: r.ok, data })))
+  .then(({ ok, data }) => {
+    if (!ok) throw new Error(data.error || 'Verification failed');
+
+    // Store session
+    localStorage.setItem('blackrail_session_token', data.sessionToken);
+    localStorage.setItem('blackrail_user_id', String(data.user.id));
+    localStorage.setItem('blackrail_user_email', data.user.email);
+    localStorage.setItem('blackrail_wallet_address', data.wallet.publicKey);
+
+    // Clear any old Privy stuff
+    localStorage.removeItem('privy_token');
+    localStorage.removeItem('privy_user_id');
+    localStorage.removeItem('privy_wallet');
+    localStorage.removeItem('privy_oauth_provider');
+    localStorage.removeItem('blackrail_api_key');
+    localStorage.removeItem('blackrail_merchant_id');
+
+    showSuccess('Signed in! Redirecting...');
+
+    setTimeout(() => {
+      window.location.replace('dashboard.html');
+    }, 800);
   })
-  .catch(function(e){
-    document.getElementById('spinner').style.display = 'none';
-    var el = document.getElementById('err');
-    el.textContent = 'Network error: ' + e.message;
-    el.style.display = 'block';
+  .catch(e => {
+    showError(e.message || 'Sign-in failed. Please try again.');
   });
+
+  function showError(msg) {
+    document.getElementById('spinner').style.display = 'none';
+    document.getElementById('err').textContent = msg;
+    document.getElementById('err').style.display = 'block';
+  }
+
+  function showSuccess(msg) {
+    document.getElementById('spinner').style.display = 'none';
+    document.getElementById('success').textContent = msg;
+    document.getElementById('success').style.display = 'block';
+  }
 })();
 </script>
 </body>

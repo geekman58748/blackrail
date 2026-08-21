@@ -1153,179 +1153,20 @@ animateStars();
   border-radius:6px;font-size:12px;color:#ff6b6b;text-align:center;
 }
 </style>
-<div id="signinOverlay">
-  <div class="signin-card">
-    <button class="signin-close" onclick="closeSignIn()">✕</button>
-
-    <div class="signin-logo">
-      <div class="signin-logo-icon"><svg width="12" height="12" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="5" height="5" rx="1" fill="currentColor" opacity=".9"/><rect x="8" y="1" width="5" height="5" rx="1" fill="currentColor" opacity=".5"/><rect x="1" y="8" width="5" height="5" rx="1" fill="currentColor" opacity=".5"/><rect x="8" y="8" width="5" height="5" rx="1" fill="currentColor" opacity=".9"/></svg></div>
-      <span class="signin-logo-name">BlackRail</span>
-    </div>
-
-    <div class="signin-rule"></div>
-
-    <div class="signin-heading">Merchant Access</div>
-    <div class="signin-sub">[ PRIVATE · AUTHENTICATED ]</div>
-
-    <!-- Step 1: provider selection -->
-    <div id="privy-step1">
-      <input id="privy-email" type="email" class="signin-input" placeholder="merchant@domain.com" />
-      <button id="privy-send-btn" class="signin-submit" onclick="privySendEmail()">Send Access Code</button>
-    </div>
-
-    <!-- Step 2: OTP input -->
-    <div id="privy-step2" style="display:none;">
-      <div class="signin-otp-label">Check your inbox — enter the 6-digit code</div>
-      <input id="privy-otp" type="text" maxlength="6" placeholder="000000" class="signin-otp-input" />
-      <button id="privy-verify-btn" class="signin-submit" onclick="privyVerifyOtp()">Verify &amp; Enter</button>
-      <button class="signin-back" onclick="document.getElementById('privy-step2').style.display='none';document.getElementById('privy-step1').style.display='block';">&#8592; back</button>
-    </div>
-
-    <div id="privy-error" class="signin-error"></div>
-  </div>
-</div>
-
 <script>
-// Modal controls — plain script, never blocked by Privy import
+// Sign-in redirects to login page
 window.openSignIn = function() {
-  document.getElementById('signinOverlay').style.display = 'flex';
-  document.body.style.overflow = 'hidden';
+  window.location.href = 'pages/login.html';
 };
 window.closeSignIn = function() {
-  document.getElementById('signinOverlay').style.display = 'none';
-  document.body.style.overflow = '';
+  // no-op
 };
-</script>
 
-
-
-<script>
+// If already logged in, show dashboard link
 (function() {
-  // Must match the API server's PRIVY_APP_ID env var, or logins succeed
-  // against Privy but fail (and get signed out) at the API. Sourced from
-  // runtime-config.js, generated at build time from BLACKRAIL_PRIVY_APP_ID.
-  var APP_ID   = window.BLACKRAIL_CONFIG && window.BLACKRAIL_CONFIG.privyAppId;
-  var DASHBOARD = 'pages/dashboard.html';
-  var CALLBACK  = 'pages/auth-callback.html';
-  var BASE      = 'https://auth.privy.io/api/v1';
-  var HEADERS   = { 'Content-Type': 'application/json', 'privy-app-id': APP_ID };
-  var email_    = '';
-
-  /* ── already logged in? ── */
-  if (localStorage.getItem('privy_token')) {
-    window.addEventListener('DOMContentLoaded', function() {
-      // only redirect if they deliberately navigate to landing while logged in
-      // don't auto-redirect so they can still see the page
-    });
+  if (localStorage.getItem('blackrail_session_token')) {
+    // User is logged in — could show dashboard link
   }
-
-  function showError(msg) {
-    var el = document.getElementById('privy-error');
-    if (!el) return;
-    el.textContent = msg;
-    el.style.display = 'block';
-    setTimeout(function(){ el.style.display = 'none'; }, 5000);
-  }
-
-  function setBusy(id, busy) {
-    var el = document.getElementById(id);
-    if (!el) return;
-    el.disabled = busy;
-    el.style.opacity = busy ? '0.55' : '1';
-  }
-
-  function savePrivySession(d) {
-    var token = d && (d.token || d.access_token || d.session_token);
-    if (token) localStorage.setItem('privy_token', token);
-    return token;
-  }
-
-  function requirePrivyConfig() {
-    if (!APP_ID) {
-      showError('Privy is misconfigured. Set BLACKRAIL_PRIVY_APP_ID to match the API server PRIVY_APP_ID.');
-      return false;
-    }
-    return true;
-  }
-
-  /* ── OAuth: Google / Twitter ── */
-  window.privyLogin = function(provider) {
-    if (!requirePrivyConfig()) return;
-    var redirectURI = window.location.origin + '/pages/' + CALLBACK.replace('pages/', '');
-    fetch(BASE + '/oauth/init', {
-      method: 'POST',
-      headers: HEADERS,
-      body: JSON.stringify({ provider: provider, redirect_uri: redirectURI })
-    })
-    .then(function(r){ return r.json(); })
-    .then(function(d){
-      if (d.url) {
-        localStorage.setItem('privy_oauth_provider', provider);
-        window.location.href = d.url;
-      } else {
-        showError(d.message || d.error || 'OAuth init failed — check Privy dashboard has ' + provider + ' enabled.');
-      }
-    })
-    .catch(function(e){ showError('Network error: ' + e.message); });
-  };
-
-  /* ── Email: send code ── */
-  window.privySendEmail = function() {
-    if (!requirePrivyConfig()) return;
-    var input = document.getElementById('privy-email');
-    var val   = input ? input.value.trim() : '';
-    if (!val || val.indexOf('@') < 0) { showError('Enter a valid email'); return; }
-    email_ = val;
-    setBusy('privy-send-btn', true);
-    fetch(BASE + '/passwordless/init', {
-      method: 'POST',
-      headers: HEADERS,
-      body: JSON.stringify({ email: email_ })
-    })
-    .then(function(r){ return r.json(); })
-    .then(function(d){
-      setBusy('privy-send-btn', false);
-      if (d.success || d.method) {
-        document.getElementById('privy-step1').style.display = 'none';
-        document.getElementById('privy-step2').style.display = 'block';
-        var otp = document.getElementById('privy-otp');
-        if (otp) otp.focus();
-      } else {
-        showError(d.message || d.error || 'Could not send code — is email enabled in your Privy app?');
-      }
-    })
-    .catch(function(e){ setBusy('privy-send-btn', false); showError('Network error: ' + e.message); });
-  };
-
-  /* ── Email: verify code ── */
-  window.privyVerifyOtp = function() {
-    if (!requirePrivyConfig()) return;
-    var input = document.getElementById('privy-otp');
-    var code  = input ? input.value.trim() : '';
-    if (code.length < 6) { showError('Enter the 6-digit code'); return; }
-    setBusy('privy-verify-btn', true);
-    fetch(BASE + '/passwordless/authenticate', {
-      method: 'POST',
-      headers: HEADERS,
-      body: JSON.stringify({ email: email_, code: code })
-    })
-    .then(function(r){ return r.json(); })
-    .then(function(d){
-      setBusy('privy-verify-btn', false);
-      if (savePrivySession(d)) {
-        var u = d.user || {};
-        if (u.id) localStorage.setItem('privy_user_id', u.id);
-        var accts = u.linked_accounts || [];
-        var w = accts.find(function(a){ return a.type === 'wallet' && (a.wallet_client === 'privy' || a.wallet_client_type === 'privy'); });
-        if (!w) w = accts.find(function(a){ return a.type === 'wallet'; });
-        if (w && w.address) localStorage.setItem('privy_wallet', w.address);
-        window.location.href = DASHBOARD;
-      } else {
-        showError(d.message || d.error || 'Sign-in did not return a session token.');
-      }
-    })
-    .catch(function(e){ setBusy('privy-verify-btn', false); showError('Network error: ' + e.message); });
-  };
 })();
 </script>
 

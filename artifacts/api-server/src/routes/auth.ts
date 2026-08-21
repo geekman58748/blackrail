@@ -3,6 +3,7 @@ import { randomBytes, createHash } from "crypto";
 import { eq } from "drizzle-orm";
 import { Keypair } from "@solana/web3.js";
 import bs58 from "bs58";
+import { Resend } from "resend";
 import {
   db,
   usersTable,
@@ -10,6 +11,8 @@ import {
   magicLinksTable,
   loginSessionsTable,
 } from "@workspace/db";
+
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 const router = Router();
 
@@ -70,16 +73,36 @@ router.post("/auth/magic-link", async (req, res): Promise<void> => {
   // Store magic link
   await db.insert(magicLinksTable).values({ token, email: normalizedEmail, expiresAt });
 
-  // In production, send email here. For now, log the link.
   const appUrl = process.env.PUBLIC_APP_URL || "https://blackrail.xyz";
   const magicLink = `${appUrl}/pages/auth-callback.html?token=${token}`;
 
   console.log(`[auth] Magic link for ${normalizedEmail}: ${magicLink}`);
 
-  // TODO: Replace with email service (Resend, SendGrid, etc.)
-  // await sendEmail(normalizedEmail, "Sign in to BlackRail", magicLink);
+  // Send email via Resend
+  if (resend) {
+    try {
+      await resend.emails.send({
+        from: process.env.EMAIL_FROM || "BlackRail <onboarding@resend.dev>",
+        to: normalizedEmail,
+        subject: "Sign in to BlackRail",
+        html: `
+          <div style="font-family:sans-serif;max-width:400px;margin:0 auto;padding:40px 20px">
+            <h2 style="color:#111;font-size:20px;margin-bottom:8px">Sign in to BlackRail</h2>
+            <p style="color:#666;font-size:14px;line-height:1.5">Click the button below to sign in. This link expires in 15 minutes.</p>
+            <a href="${magicLink}" style="display:inline-block;padding:12px 24px;background:#111;color:#fff;text-decoration:none;border-radius:100px;font-size:14px;font-weight:600;margin:16px 0">Sign in</a>
+            <p style="color:#999;font-size:12px">If you didn't request this, ignore this email.</p>
+          </div>
+        `,
+      });
+      console.log(`[auth] Email sent to ${normalizedEmail}`);
+    } catch (e) {
+      console.error("[auth] Failed to send email:", e);
+    }
+  }
 
-  res.json({ ok: true, message: "Magic link sent", _dev_link: magicLink });
+  const response: Record<string, unknown> = { ok: true, message: "Magic link sent" };
+  if (!resend) response._dev_link = magicLink;
+  res.json(response);
 });
 
 // ── POST /auth/verify — verify magic link token, create session ───────────────

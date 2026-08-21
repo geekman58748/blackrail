@@ -22,6 +22,7 @@
     "esbuild": "0.27.3",
     "esbuild-plugin-pino": "^2.3.3",
     "express": "^5.2.1",
+    "resend": "^4.0.0",
     "pino": "^9.14.0",
     "pino-http": "^10.5.0",
     "pino-pretty": "^13.1.3",

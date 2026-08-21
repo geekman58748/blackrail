@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BlackRail — Settings</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<script src="../runtime-config.js"></script>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{--white:#ffffff;--off-white:#f1f3f9;--muted:#8c8f9f;--bg:#07080e;--accent-green:#a8c4b0;--accent-red:#cc7b7b}
+  body{background:var(--bg);color:var(--off-white);font-family:'Inter',sans-serif;min-height:100vh;padding:40px 20px}
+  .container{max-width:600px;margin:0 auto}
+  .brand{display:flex;align-items:center;gap:9px;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:18px;color:var(--white);margin-bottom:32px}
+  .logo{width:24px;height:24px;background:#000;border:1px solid rgba(255,255,255,0.14);border-radius:6px;display:flex;align-items:center;justify-content:center}
+  h1{font-family:'Plus Jakarta Sans',sans-serif;font-size:28px;font-weight:700;color:var(--white);margin-bottom:8px}
+  .subtitle{font-size:14px;color:var(--muted);margin-bottom:32px}
+  .section{background:linear-gradient(160deg,#0e1018 0%,#090b12 100%);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:24px;margin-bottom:16px}
+  .section-title{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:500;color:rgba(140,143,159,0.6);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:16px}
+  .field{margin-bottom:16px}
+  .field:last-child{margin-bottom:0}
+  .field-label{font-size:13px;color:var(--muted);margin-bottom:6px}
+  .field-value{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--white);background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px;word-break:break-all}
+  .field-value .address{flex:1;overflow:hidden;text-overflow:ellipsis}
+  .btn-sm{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:var(--white);font-size:11px;font-weight:600;padding:6px 12px;border-radius:8px;cursor:pointer;transition:all 0.2s;flex-shrink:0;font-family:'Inter',sans-serif}
+  .btn-sm:hover{background:rgba(255,255,255,0.12)}
+  .btn-danger{color:var(--accent-red);border-color:rgba(204,123,123,0.2)}
+  .btn-danger:hover{background:rgba(204,123,123,0.1)}
+  .btn-reveal{color:var(--accent-green);border-color:rgba(168,196,176,0.2)}
+  .btn-reveal:hover{background:rgba(168,196,176,0.1)}
+  .balance{font-family:'Plus Jakarta Sans',sans-serif;font-size:32px;font-weight:800;color:var(--white);margin-bottom:4px}
+  .balance span{font-size:18px;color:rgba(255,255,255,0.5);font-weight:600}
+  .balance-usd{font-size:13px;color:var(--muted)}
+  .private-key-box{display:none;background:rgba(0,0,0,0.5);border:1px solid rgba(204,123,123,0.2);border-radius:8px;padding:12px;margin-top:12px}
+  .private-key-box.show{display:block}
+  .private-key-box pre{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent-red);word-break:break-all;line-height:1.6;margin:0}
+  .warning{background:rgba(204,123,123,0.08);border:1px solid rgba(204,123,123,0.15);border-radius:8px;padding:10px 14px;font-size:12px;color:rgba(204,123,123,0.8);margin-top:12px;line-height:1.5}
+  .back-link{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);text-decoration:none;margin-bottom:24px;cursor:pointer}
+  .back-link:hover{color:var(--white)}
+  .email-tag{font-size:12px;color:var(--muted);background:rgba(255,255,255,0.04);padding:4px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.06);display:inline-block}
+</style>
+</head>
+<body>
+<div class="container">
+  <a class="back-link" href="dashboard.html">← Back to Dashboard</a>
+  
+  <div class="brand">
+    <div class="logo"><svg width="11" height="11" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="5" height="5" rx="1" fill="currentColor" opacity=".9"/><rect x="8" y="1" width="5" height="5" rx="1" fill="currentColor" opacity=".5"/><rect x="1" y="8" width="5" height="5" rx="1" fill="currentColor" opacity=".5"/><rect x="8" y="8" width="5" height="5" rx="1" fill="currentColor" opacity=".9"/></svg></div>
+    <span>BlackRail</span>
+  </div>
+
+  <h1>Settings</h1>
+  <p class="subtitle">Manage your account and wallet</p>
+
+  <!-- Account -->
+  <div class="section">
+    <div class="section-title">Account</div>
+    <div class="field">
+      <div class="field-label">Email</div>
+      <div class="field-value">
+        <span class="address" id="userEmail">Loading...</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Wallet -->
+  <div class="section">
+    <div class="section-title">Wallet</div>
+    <div class="field">
+      <div class="field-label">Public Address</div>
+      <div class="field-value">
+        <span class="address" id="walletAddress">Loading...</span>
+        <button class="btn-sm" onclick="copyAddress()">Copy</button>
+      </div>
+    </div>
+    <div class="field">
+      <div class="field-label">USDC Balance</div>
+      <div class="balance" id="walletBalance">— <span>USDC</span></div>
+      <div class="balance-usd" id="walletBalanceUsd"></div>
+    </div>
+    <div class="field">
+      <button class="btn-sm btn-reveal" onclick="revealPrivateKey()">Reveal Private Key</button>
+      <div class="private-key-box" id="privateKeyBox">
+        <pre id="privateKeyText"></pre>
+        <div class="warning">
+          ⚠️ Never share your private key. Anyone with it can steal your funds. 
+          Do not screenshot or copy it to clipboard on a shared device.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Danger Zone -->
+  <div class="section" style="border-color:rgba(204,123,123,0.15)">
+    <div class="section-title" style="color:rgba(204,123,123,0.6)">Session</div>
+    <div class="field">
+      <button class="btn-sm btn-danger" onclick="doLogout()">Sign out</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const configuredApiBase = window.BLACKRAIL_CONFIG?.apiBase || localStorage.getItem('blackrail_api_base') || '';
+  const API_BASE = configuredApiBase.replace(/\/+$/, '');
+
+  // Auth gate
+  (function() {
+    if (!localStorage.getItem('blackrail_session_token')) {
+      window.location.href = 'login.html';
+    }
+  })();
+
+  function apiFetch(path, options = {}) {
+    const sessionToken = localStorage.getItem('blackrail_session_token');
+    const headers = new Headers(options.headers || {});
+    if (sessionToken) headers.set('Authorization', 'Bearer ' + sessionToken);
+    if (options.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
+    return fetch(API_BASE + path, { ...options, headers });
+  }
+
+  // Load user data
+  async function loadUser() {
+    const email = localStorage.getItem('blackrail_user_email');
+    if (email) {
+      document.getElementById('userEmail').textContent = email;
+    }
+
+    const walletAddr = localStorage.getItem('blackrail_wallet_address');
+    if (walletAddr) {
+      document.getElementById('walletAddress').textContent = walletAddr;
+    }
+
+    // Fetch fresh data from API
+    try {
+      const res = await apiFetch('/api/auth/me');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.user?.email) {
+          document.getElementById('userEmail').textContent = data.user.email;
+          localStorage.setItem('blackrail_user_email', data.user.email);
+        }
+        if (data.wallet?.publicKey) {
+          document.getElementById('walletAddress').textContent = data.wallet.publicKey;
+          localStorage.setItem('blackrail_wallet_address', data.wallet.publicKey);
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to load user data:', e);
+    }
+  }
+
+  // Load wallet balance
+  async function loadBalance() {
+    try {
+      const res = await apiFetch('/api/vault/balance');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.balance) {
+          const bal = parseFloat(data.balance);
+          document.getElementById('walletBalance').innerHTML = bal.toFixed(2) + ' <span>USDC</span>';
+          document.getElementById('walletBalanceUsd').textContent = '≈ $' + bal.toFixed(2) + ' USD';
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to load balance:', e);
+    }
+  }
+
+  // Copy address
+  function copyAddress() {
+    const addr = localStorage.getItem('blackrail_wallet_address');
+    if (addr) {
+      navigator.clipboard.writeText(addr);
+      const btn = event.target;
+      btn.textContent = 'Copied!';
+      setTimeout(() => btn.textContent = 'Copy', 1500);
+    }
+  }
+
+  // Reveal private key
+  async function revealPrivateKey() {
+    const box = document.getElementById('privateKeyBox');
+    if (box.classList.contains('show')) {
+      box.classList.remove('show');
+      return;
+    }
+
+    try {
+      const res = await apiFetch('/api/auth/reveal-key', { method: 'POST' });
+      if (!res.ok) throw new Error('Failed to decrypt wallet');
+      const data = await res.json();
+      document.getElementById('privateKeyText').textContent = data.privateKey;
+      box.classList.add('show');
+    } catch (e) {
+      alert('Failed to reveal private key: ' + e.message);
+    }
+  }
+
+  // Logout
+  async function doLogout() {
+    try { await apiFetch('/api/auth/logout', { method: 'POST' }); } catch {}
+    localStorage.removeItem('blackrail_session_token');
+    localStorage.removeItem('blackrail_user_id');
+    localStorage.removeItem('blackrail_user_email');
+    localStorage.removeItem('blackrail_wallet_address');
+    window.location.href = 'login.html';
+  }
+
+  // Init
+  loadUser();
+  loadBalance();
+</script>
+</body>
+</html>

@@ -10,7 +10,6 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@privy-io/node": "^0.28.0",
     "@solana/spl-token": "^0.4.13",
     "@solana/web3.js": "^1.98.2",
     "tweetnacl": "^1.0.3",

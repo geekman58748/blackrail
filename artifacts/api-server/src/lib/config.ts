@@ -10,8 +10,6 @@ export function validateRuntimeConfig() {
       "WITHDRAW_SECRET",
       "CORS_ORIGINS",
       "PUBLIC_APP_URL",
-      "PRIVY_APP_SECRET",
-      "PRIVY_APP_ID",
     ] as const) {
       if (!process.env[name]?.trim()) throw new Error(`${name} is required in production`);
     }

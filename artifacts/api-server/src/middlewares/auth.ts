@@ -1,10 +1,9 @@
 import type { NextFunction, Request, Response } from "express";
 import { createHash, timingSafeEqual } from "node:crypto";
-import { InvalidAuthTokenError } from "@privy-io/node";
-import { apiKeysTable, db, eq } from "@workspace/db";
-import { getPrivyClient } from "../lib/privy.js";
+import { eq } from "drizzle-orm";
+import { apiKeysTable, db, loginSessionsTable, usersTable, walletsTable } from "@workspace/db";
 
-export type MerchantPrincipal = { merchantId: string; method: "api-key" | "privy" };
+export type MerchantPrincipal = { merchantId: string; method: "api-key" | "session" };
 
 function credential(req: Request): string | null {
   const key = req.header("x-api-key")?.trim();
@@ -22,31 +21,26 @@ async function apiKeyPrincipal(raw: string): Promise<MerchantPrincipal | null> {
   return { merchantId: key.merchantId, method: "api-key" };
 }
 
-async function privyPrincipal(token: string): Promise<MerchantPrincipal | null> {
-  try {
-    const claims = await getPrivyClient().utils().auth().verifyAccessToken(token);
-    return claims.user_id ? { merchantId: claims.user_id, method: "privy" } : null;
-  } catch (error) {
-    if (error instanceof InvalidAuthTokenError) {
-      console.warn("Privy access token rejected", {
-        name: error.name,
-        message: error.message,
-      });
-      return null;
-    }
-    console.error("Privy access token verification failed unexpectedly", {
-      name: error instanceof Error ? error.name : typeof error,
-      message: error instanceof Error ? error.message : String(error),
-    });
-    throw error;
-  }
+async function sessionPrincipal(raw: string): Promise<MerchantPrincipal | null> {
+  // Session tokens are 64-char hex strings
+  if (raw.length !== 64 || !/^[0-9a-f]+$/.test(raw)) return null;
+
+  const [session] = await db
+    .select()
+    .from(loginSessionsTable)
+    .where(eq(loginSessionsTable.token, raw));
+
+  if (!session || session.expiresAt < new Date()) return null;
+
+  // Use user ID as merchant ID
+  return { merchantId: String(session.userId), method: "session" };
 }
 
 export async function requireMerchant(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const raw = credential(req);
     if (!raw) { res.status(401).json({ error: "merchant authentication required" }); return; }
-    const principal = await apiKeyPrincipal(raw) ?? await privyPrincipal(raw);
+    const principal = await apiKeyPrincipal(raw) ?? await sessionPrincipal(raw);
     if (!principal) { res.status(401).json({ error: "invalid merchant credential" }); return; }
     res.locals.merchant = principal;
     next();
@@ -60,11 +54,6 @@ export function merchantPrincipal(res: Response): MerchantPrincipal {
   const principal = res.locals.merchant as MerchantPrincipal | undefined;
   if (!principal) throw new Error("merchant principal missing");
   return principal;
-}
-
-export function requirePrivy(_req: Request, res: Response, next: NextFunction): void {
-  if (merchantPrincipal(res).method !== "privy") { res.status(403).json({ error: "Privy login required" }); return; }
-  next();
 }
 
 export function capabilityMatches(raw: string | undefined, expectedHash: string | null): boolean {

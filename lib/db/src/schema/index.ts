@@ -79,3 +79,68 @@ export const insertApiKeySchema = createInsertSchema(apiKeysTable).omit({
 });
 export type InsertApiKey = z.infer<typeof insertApiKeySchema>;
 export type ApiKey = typeof apiKeysTable.$inferSelect;
+
+// ── USERS ────────────────────────────────────────────────────────────────────
+export const usersTable = pgTable("users", {
+  id: serial("id").primaryKey(),
+  email: varchar("email", { length: 255 }).notNull().unique(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertUserSchema = createInsertSchema(usersTable).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertUser = z.infer<typeof insertUserSchema>;
+export type User = typeof usersTable.$inferSelect;
+
+// ── WALLETS ──────────────────────────────────────────────────────────────────
+export const walletsTable = pgTable("wallets", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => usersTable.id),
+  publicKey: varchar("public_key", { length: 100 }).notNull(),
+  encryptedPrivateKey: text("encrypted_private_key").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("wallets_user_id_unique").on(table.userId),
+]);
+
+export const insertWalletSchema = createInsertSchema(walletsTable).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertWallet = z.infer<typeof insertWalletSchema>;
+export type Wallet = typeof walletsTable.$inferSelect;
+
+// ── MAGIC LINKS ──────────────────────────────────────────────────────────────
+export const magicLinksTable = pgTable("magic_links", {
+  id: serial("id").primaryKey(),
+  token: varchar("token", { length: 64 }).notNull().unique(),
+  email: varchar("email", { length: 255 }).notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  used: boolean("used").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertMagicLinkSchema = createInsertSchema(magicLinksTable).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertMagicLink = z.infer<typeof insertMagicLinkSchema>;
+export type MagicLink = typeof magicLinksTable.$inferSelect;
+
+// ── LOGIN SESSIONS ───────────────────────────────────────────────────────────
+export const loginSessionsTable = pgTable("login_sessions", {
+  id: serial("id").primaryKey(),
+  token: varchar("token", { length: 64 }).notNull().unique(),
+  userId: integer("user_id").notNull().references(() => usersTable.id),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertLoginSessionSchema = createInsertSchema(loginSessionsTable).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertLoginSession = z.infer<typeof insertLoginSessionSchema>;
+export type LoginSession = typeof loginSessionsTable.$inferSelect;

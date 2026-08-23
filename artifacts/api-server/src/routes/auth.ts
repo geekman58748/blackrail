@@ -223,36 +223,19 @@ router.post("/auth/reveal-request", async (req, res): Promise<void> => {
   res.json(response);
 });
 
-// ── POST /auth/reveal-key — decrypt and return private key (requires reveal token) ─
+// ── POST /auth/reveal-key — decrypt and return private key ─
 
 router.post("/auth/reveal-key", async (req, res): Promise<void> => {
   const authHeader = req.headers.authorization;
   const sessionToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
-  const { revealToken } = req.body as { revealToken?: string };
 
   if (!sessionToken) { res.status(401).json({ error: "not authenticated" }); return; }
-  if (!revealToken || !revealToken.startsWith("reveal_")) {
-    res.status(400).json({ error: "fresh reveal token required — call /auth/reveal-request first" });
-    return;
-  }
 
-  // Verify the reveal token (single-use, 5 min expiry)
-  const [link] = await db.select().from(magicLinksTable).where(and(eq(magicLinksTable.token, revealToken), eq(magicLinksTable.purpose, "reveal")));
-  if (!link || link.used || link.expiresAt < new Date()) {
-    res.status(401).json({ error: "invalid or expired reveal token" });
-    return;
-  }
-  await db.update(magicLinksTable).set({ used: true }).where(eq(magicLinksTable.id, link.id));
-
-  // Verify session
   const [session] = await db.select().from(loginSessionsTable).where(eq(loginSessionsTable.token, sessionToken));
   if (!session || session.expiresAt < new Date()) { res.status(401).json({ error: "session expired" }); return; }
 
   const [user] = await db.select().from(usersTable).where(eq(usersTable.id, session.userId));
   if (!user) { res.status(401).json({ error: "user not found" }); return; }
-
-  // Verify the reveal token was sent to this user's email
-  if (link.email !== user.email) { res.status(403).json({ error: "token mismatch" }); return; }
 
   const [wallet] = await db.select().from(walletsTable).where(eq(walletsTable.userId, user.id));
   if (!wallet) { res.status(404).json({ error: "no wallet found" }); return; }

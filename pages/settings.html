@@ -406,7 +406,7 @@
   // API Keys
   async function loadApiKeys() {
     try {
-      const res = await apiFetch('/api/keys');
+      const res = await apiFetch('/api/api-keys');
       if (res.ok) {
         const keys = await res.json();
         const list = document.getElementById('apiKeyList');
@@ -432,7 +432,7 @@
     btn.textContent = 'Creating...';
     btn.disabled = true;
     try {
-      const res = await apiFetch('/api/keys', { method: 'POST', body: JSON.stringify({ label: 'API Key' }) });
+      const res = await apiFetch('/api/api-keys', { method: 'POST', body: JSON.stringify({ label: 'API Key' }) });
       if (res.ok) {
         const data = await res.json();
         if (data.key) {
@@ -448,7 +448,7 @@
   async function revokeApiKey(id) {
     if (!confirm('Revoke this API key?')) return;
     try {
-      await apiFetch('/api/keys/' + id, { method: 'DELETE' });
+      await apiFetch('/api/api-keys/' + id, { method: 'DELETE' });
       loadApiKeys();
     } catch {}
   }

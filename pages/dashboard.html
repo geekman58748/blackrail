@@ -1665,7 +1665,7 @@ async function settingsCopyKey() {
 
 async function loadSettingsApiKeys() {
   try {
-    const res = await apiFetch('/api/keys');
+    const res = await apiFetch('/api/api-keys');
     if (res.ok) {
       const keys = await res.json();
       const list = document.getElementById('settingsApiKeyList');
@@ -1684,7 +1684,7 @@ async function settingsCreateApiKey() {
   const btn = document.getElementById('settingsCreateKeyBtn');
   btn.textContent = '...';
   try {
-    const res = await apiFetch('/api/keys', { method: 'POST', body: JSON.stringify({ label: 'API Key' }) });
+    const res = await apiFetch('/api/api-keys', { method: 'POST', body: JSON.stringify({ label: 'API Key' }) });
     if (res.ok) {
       const data = await res.json();
       if (data.key) alert('Your API key (copy now, won\'t show again):\n\n' + data.key);
@@ -1696,7 +1696,7 @@ async function settingsCreateApiKey() {
 
 async function settingsRevokeKey(id) {
   if (!confirm('Revoke this API key?')) return;
-  try { await apiFetch('/api/keys/' + id, { method: 'DELETE' }); loadSettingsApiKeys(); } catch {}
+  try { await apiFetch('/api/api-keys/' + id, { method: 'DELETE' }); loadSettingsApiKeys(); } catch {}
 }
 
 async function doLogout() {

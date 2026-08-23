@@ -115,7 +115,7 @@ export type Wallet = typeof walletsTable.$inferSelect;
 // ── MAGIC LINKS ──────────────────────────────────────────────────────────────
 export const magicLinksTable = pgTable("magic_links", {
   id: serial("id").primaryKey(),
-  token: varchar("token", { length: 64 }).notNull().unique(),
+  token: varchar("token", { length: 80 }).notNull().unique(),
   email: varchar("email", { length: 255 }).notNull(),
   purpose: varchar("purpose", { length: 20 }).notNull().default("login"),
   expiresAt: timestamp("expires_at").notNull(),

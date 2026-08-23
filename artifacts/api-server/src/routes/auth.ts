@@ -241,7 +241,18 @@ router.post("/auth/reveal-key", async (req, res): Promise<void> => {
   if (!wallet) { res.status(404).json({ error: "no wallet found" }); return; }
 
   try {
-    const privateKey = decryptSecret(wallet.encryptedPrivateKey);
+    let privateKey: string;
+    try {
+      privateKey = decryptSecret(wallet.encryptedPrivateKey);
+    } catch {
+      // Fallback: wallets created before FACADE_ENCRYPTION_KEY used email-derived key
+      const { createDecipheriv, createHash } = await import("node:crypto");
+      const key = createHash("sha256").update(user.email).digest();
+      const [, _ver, ivRaw, tagRaw, ciphertextRaw] = wallet.encryptedPrivateKey.split(":");
+      const decipher = createDecipheriv("aes-256-gcm", key, Buffer.from(ivRaw, "base64url"));
+      decipher.setAuthTag(Buffer.from(tagRaw, "base64url"));
+      privateKey = Buffer.concat([decipher.update(Buffer.from(ciphertextRaw, "base64url")), decipher.final()]).toString("utf8");
+    }
     res.json({ publicKey: wallet.publicKey, privateKey });
   } catch (e) {
     res.status(500).json({ error: "failed to decrypt wallet" });

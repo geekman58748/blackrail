@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { randomBytes, createHash } from "crypto";
+import { randomBytes } from "crypto";
 import { eq } from "drizzle-orm";
 import { Keypair } from "@solana/web3.js";
 import bs58 from "bs58";
@@ -11,39 +11,12 @@ import {
   magicLinksTable,
   loginSessionsTable,
 } from "@workspace/db";
+import { encryptSecret, decryptSecret } from "../lib/secrets.js";
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+const isProd = process.env.NODE_ENV === "production";
 
 const router = Router();
-
-// ── Wallet encryption (AES-GCM via Node crypto) ─────────────────────────────
-
-function encryptPrivateKey(privateKey: string, password: string): string {
-  const { createCipheriv, randomBytes: rb } = require("node:crypto");
-  const key = createHash("sha256").update(password).digest();
-  const iv = rb(12);
-  const cipher = createCipheriv("aes-256-gcm", key, iv);
-  const encrypted = Buffer.concat([cipher.update(privateKey, "utf8"), cipher.final()]);
-  const tag = cipher.getAuthTag();
-  return [
-    "enc:v1",
-    iv.toString("base64url"),
-    tag.toString("base64url"),
-    encrypted.toString("base64url"),
-  ].join(":");
-}
-
-function decryptPrivateKey(encrypted: string, password: string): string {
-  const { createDecipheriv } = require("node:crypto");
-  const key = createHash("sha256").update(password).digest();
-  const [, _ver, ivRaw, tagRaw, ciphertextRaw] = encrypted.split(":");
-  const iv = Buffer.from(ivRaw, "base64url");
-  const tag = Buffer.from(tagRaw, "base64url");
-  const ciphertext = Buffer.from(ciphertextRaw, "base64url");
-  const decipher = createDecipheriv("aes-256-gcm", key, iv);
-  decipher.setAuthTag(tag);
-  return Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString("utf8");
-}
 
 // ── POST /auth/magic-link — send magic link to email ──────────────────────────
 
@@ -101,7 +74,7 @@ router.post("/auth/magic-link", async (req, res): Promise<void> => {
   }
 
   const response: Record<string, unknown> = { ok: true, message: "Magic link sent" };
-  if (!resend) response._dev_link = magicLink;
+  if (!resend && !isProd) response._dev_link = magicLink;
   res.json(response);
 });
 
@@ -144,7 +117,7 @@ router.post("/auth/verify", async (req, res): Promise<void> => {
     const keypair = Keypair.generate();
     const publicKey = keypair.publicKey.toBase58();
     const privateKey = bs58.encode(keypair.secretKey);
-    const encryptedPk = encryptPrivateKey(privateKey, link.email);
+    const encryptedPk = encryptSecret(privateKey);
 
     [wallet] = await db.insert(walletsTable).values({
       userId: user.id,
@@ -212,41 +185,80 @@ router.get("/auth/me", async (req, res): Promise<void> => {
   });
 });
 
-// ── POST /auth/reveal-key — decrypt and return private key ────────────────────
+// ── POST /auth/reveal-request — send fresh verification email for key reveal ─
+
+router.post("/auth/reveal-request", async (req, res): Promise<void> => {
+  const authHeader = req.headers.authorization;
+  const sessionToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
+  if (!sessionToken) { res.status(401).json({ error: "not authenticated" }); return; }
+
+  const [session] = await db.select().from(loginSessionsTable).where(eq(loginSessionsTable.token, sessionToken));
+  if (!session || session.expiresAt < new Date()) { res.status(401).json({ error: "session expired" }); return; }
+
+  const [user] = await db.select().from(usersTable).where(eq(usersTable.id, session.userId));
+  if (!user) { res.status(401).json({ error: "user not found" }); return; }
+
+  // Generate reveal token (5 min expiry)
+  const revealToken = "reveal_" + randomBytes(32).toString("hex");
+  const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+  await db.insert(magicLinksTable).values({ token: revealToken, email: user.email, expiresAt });
+
+  const appUrl = process.env.PUBLIC_APP_URL || "https://blackrail.xyz";
+  const revealLink = `${appUrl}/pages/auth-callback.html?token=${revealToken}`;
+  console.log(`[auth] Reveal link for ${user.email}: ${revealLink}`);
+
+  if (resend) {
+    try {
+      await resend.emails.send({
+        from: process.env.EMAIL_FROM || "BlackRail <onboarding@resend.dev>",
+        to: user.email,
+        subject: "Confirm Private Key Export — BlackRail",
+        html: `<div style="font-family:sans-serif;max-width:400px;margin:0 auto;padding:40px 20px"><h2 style="color:#111;font-size:20px;margin-bottom:8px">Confirm Key Export</h2><p style="color:#666;font-size:14px;line-height:1.5">Click below to authorize revealing your private key. This link expires in 5 minutes.</p><a href="${revealLink}" style="display:inline-block;padding:12px 24px;background:#111;color:#fff;text-decoration:none;border-radius:100px;font-size:14px;font-weight:600;margin:16px 0">Confirm Export</a><p style="color:#999;font-size:12px">If you didn\'t request this, ignore this email.</p></div>`,
+      });
+    } catch (e) { console.error("[auth] Failed to send reveal email:", e); }
+  }
+
+  const response: Record<string, unknown> = { ok: true, message: "Verification email sent" };
+  if (!resend && !isProd) response._dev_link = revealLink;
+  res.json(response);
+});
+
+// ── POST /auth/reveal-key — decrypt and return private key (requires reveal token) ─
 
 router.post("/auth/reveal-key", async (req, res): Promise<void> => {
   const authHeader = req.headers.authorization;
   const sessionToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
+  const { revealToken } = req.body as { revealToken?: string };
 
-  if (!sessionToken) {
-    res.status(401).json({ error: "not authenticated" });
+  if (!sessionToken) { res.status(401).json({ error: "not authenticated" }); return; }
+  if (!revealToken || !revealToken.startsWith("reveal_")) {
+    res.status(400).json({ error: "fresh reveal token required — call /auth/reveal-request first" });
     return;
   }
 
-  const [session] = await db
-    .select()
-    .from(loginSessionsTable)
-    .where(eq(loginSessionsTable.token, sessionToken));
-
-  if (!session || session.expiresAt < new Date()) {
-    res.status(401).json({ error: "session expired" });
+  // Verify the reveal token (single-use, 5 min expiry)
+  const [link] = await db.select().from(magicLinksTable).where(eq(magicLinksTable.token, revealToken));
+  if (!link || link.used || link.expiresAt < new Date()) {
+    res.status(401).json({ error: "invalid or expired reveal token" });
     return;
   }
+  await db.update(magicLinksTable).set({ used: true }).where(eq(magicLinksTable.id, link.id));
+
+  // Verify session
+  const [session] = await db.select().from(loginSessionsTable).where(eq(loginSessionsTable.token, sessionToken));
+  if (!session || session.expiresAt < new Date()) { res.status(401).json({ error: "session expired" }); return; }
 
   const [user] = await db.select().from(usersTable).where(eq(usersTable.id, session.userId));
-  if (!user) {
-    res.status(401).json({ error: "user not found" });
-    return;
-  }
+  if (!user) { res.status(401).json({ error: "user not found" }); return; }
+
+  // Verify the reveal token was sent to this user's email
+  if (link.email !== user.email) { res.status(403).json({ error: "token mismatch" }); return; }
 
   const [wallet] = await db.select().from(walletsTable).where(eq(walletsTable.userId, user.id));
-  if (!wallet) {
-    res.status(404).json({ error: "no wallet found" });
-    return;
-  }
+  if (!wallet) { res.status(404).json({ error: "no wallet found" }); return; }
 
   try {
-    const privateKey = decryptPrivateKey(wallet.encryptedPrivateKey, user.email);
+    const privateKey = decryptSecret(wallet.encryptedPrivateKey);
     res.json({ publicKey: wallet.publicKey, privateKey });
   } catch (e) {
     res.status(500).json({ error: "failed to decrypt wallet" });

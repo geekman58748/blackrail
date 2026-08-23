@@ -38,7 +38,7 @@ async function getUserFromToken(req: any) {
 
 // ── RPC / config ─────────────────────────────────────────────────────────────
 
-const DEFAULT_USDC_MINT = "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU";
+import { DEFAULT_USDC_MINT } from "../lib/config.js";
 
 function getRpcUrl(): string {
   const cluster = process.env.SOLANA_CLUSTER?.trim() || "devnet";
@@ -111,16 +111,8 @@ router.post("/wallet/withdraw", async (req, res): Promise<void> => {
 
   let privateKey: string;
   try {
-    const { createDecipheriv, createHash } = await import("node:crypto");
-    const key = createHash("sha256").update(user.email).digest();
-    const enc = wallet.encryptedPrivateKey;
-    const [, _ver, ivRaw, tagRaw, ciphertextRaw] = enc.split(":");
-    const decipher = createDecipheriv("aes-256-gcm", key, Buffer.from(ivRaw, "base64url"));
-    decipher.setAuthTag(Buffer.from(tagRaw, "base64url"));
-    privateKey = Buffer.concat([
-      decipher.update(Buffer.from(ciphertextRaw, "base64url")),
-      decipher.final(),
-    ]).toString("utf8");
+    const { decryptSecret } = await import("../lib/secrets.js");
+    privateKey = decryptSecret(wallet.encryptedPrivateKey);
   } catch (e) {
     res.status(500).json({ error: "failed to decrypt wallet key" });
     return;

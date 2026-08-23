@@ -18,7 +18,7 @@ import nacl from "tweetnacl";
 
 const DEFAULT_MB_API = "https://payments.magicblock.app";
 const DEFAULT_CLUSTER = "devnet";
-const DEFAULT_USDC_MINT = "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU";
+import { DEFAULT_USDC_MINT } from "./config.js";
 const DEFAULT_VAULT_ATA = "B82AzAWZsvVUwW1iddK8H45E1rj6QKS36X9FPFtHmbjM";
 const DEFAULT_SERVER_WALLET = "2QGJqSPWogpnrsrEagH4Mn28JjvuxMjrNMPbUst56j6Y";
 

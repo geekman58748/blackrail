@@ -245,4 +245,4 @@ The market it targets already processes hundreds of billions of dollars annually
 
 ---
 
-*Built at MagicBlock Founders Camp 2026.*
+*Built for MagicBlock Founders Camp 2026.*

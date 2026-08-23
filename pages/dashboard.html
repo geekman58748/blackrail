@@ -1483,15 +1483,33 @@ async function revealModalKey() {
     if (revealBtn) revealBtn.textContent = 'Show Key';
     return;
   }
+  // Check for existing reveal token
+  const revealToken = localStorage.getItem('blackrail_reveal_token');
+  if (revealToken) {
+    try {
+      const res = await apiFetch('/api/auth/reveal-key', { method: 'POST', body: JSON.stringify({ revealToken }) });
+      if (!res.ok) throw new Error('Failed to decrypt');
+      const data = await res.json();
+      _walletPrivateKey = data.privateKey;
+      if (keyDisplay) { keyDisplay.textContent = data.privateKey; keyDisplay.style.display = 'block'; }
+      if (revealBtn) revealBtn.textContent = 'Hide Key';
+      localStorage.removeItem('blackrail_reveal_token');
+      return;
+    } catch (e) { /* token expired, request new one */ }
+  }
+  // No valid reveal token — send verification email
   try {
-    const res = await apiFetch('/api/auth/reveal-key', { method: 'POST' });
-    if (!res.ok) throw new Error('Failed to decrypt');
+    const res = await apiFetch('/api/auth/reveal-request', { method: 'POST' });
     const data = await res.json();
-    _walletPrivateKey = data.privateKey;
-    if (keyDisplay) { keyDisplay.textContent = data.privateKey; keyDisplay.style.display = 'block'; }
-    if (revealBtn) revealBtn.textContent = 'Hide Key';
+    if (data._dev_link) {
+      // Dev mode: open the link directly
+      window.open(data._dev_link, '_blank');
+      alert('Dev mode: reveal link opened. Click it, then click Show Key again.');
+    } else {
+      alert('Check your email for a confirmation link. Click it, then come back and click Show Key again.');
+    }
   } catch (e) {
-    alert('Failed to reveal key: ' + e.message);
+    alert('Failed to send verification: ' + e.message);
   }
 }
 
@@ -1615,14 +1633,25 @@ function copySettingsAddress() {
 async function settingsRevealKey() {
   const box = document.getElementById('settingsKeyBox');
   if (box.style.display === 'block') { box.style.display = 'none'; return; }
+  const revealToken = localStorage.getItem('blackrail_reveal_token');
+  if (revealToken) {
+    try {
+      const res = await apiFetch('/api/auth/reveal-key', { method: 'POST', body: JSON.stringify({ revealToken }) });
+      if (!res.ok) throw new Error('Failed to decrypt');
+      const data = await res.json();
+      _settingsPrivateKey = data.privateKey;
+      document.getElementById('settingsKeyText').textContent = data.privateKey;
+      box.style.display = 'block';
+      localStorage.removeItem('blackrail_reveal_token');
+      return;
+    } catch (e) { /* token expired, request new one */ }
+  }
   try {
-    const res = await apiFetch('/api/auth/reveal-key', { method: 'POST' });
-    if (!res.ok) throw new Error('Failed to decrypt');
+    const res = await apiFetch('/api/auth/reveal-request', { method: 'POST' });
     const data = await res.json();
-    _settingsPrivateKey = data.privateKey;
-    document.getElementById('settingsKeyText').textContent = data.privateKey;
-    box.style.display = 'block';
-  } catch (e) { alert('Failed to reveal key: ' + e.message); }
+    if (data._dev_link) { window.open(data._dev_link, '_blank'); alert('Dev mode: reveal link opened. Click it, then click Reveal Key again.'); }
+    else { alert('Check your email for a confirmation link. Click it, then come back and click Reveal Key again.'); }
+  } catch (e) { alert('Failed to send verification: ' + e.message); }
 }
 
 async function settingsCopyKey() {

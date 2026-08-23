@@ -370,13 +370,24 @@
   async function revealPrivateKey() {
     const box = document.getElementById('privateKeyBox');
     if (box.classList.contains('show')) { box.classList.remove('show'); return; }
+    const revealToken = localStorage.getItem('blackrail_reveal_token');
+    if (revealToken) {
+      try {
+        const res = await apiFetch('/api/auth/reveal-key', { method: 'POST', body: JSON.stringify({ revealToken }) });
+        if (!res.ok) throw new Error('Failed to decrypt');
+        const data = await res.json();
+        document.getElementById('privateKeyText').textContent = data.privateKey;
+        box.classList.add('show');
+        localStorage.removeItem('blackrail_reveal_token');
+        return;
+      } catch (e) { /* token expired, request new one */ }
+    }
     try {
-      const res = await apiFetch('/api/auth/reveal-key', { method: 'POST' });
-      if (!res.ok) throw new Error('Failed to decrypt');
+      const res = await apiFetch('/api/auth/reveal-request', { method: 'POST' });
       const data = await res.json();
-      document.getElementById('privateKeyText').textContent = data.privateKey;
-      box.classList.add('show');
-    } catch (e) { alert('Failed to reveal key: ' + e.message); }
+      if (data._dev_link) { window.open(data._dev_link, '_blank'); alert('Dev mode: reveal link opened. Click it, then click Reveal Key again.'); }
+      else { alert('Check your email for a confirmation link. Click it, then come back and click Reveal Key again.'); }
+    } catch (e) { alert('Failed to send verification: ' + e.message); }
   }
 
   async function copyPrivateKey() {

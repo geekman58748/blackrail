@@ -1,5 +1,8 @@
 import { isWithdrawConfigured } from "./solana.js";
 
+/** Default USDC mint for Solana devnet (4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU) */
+export const DEFAULT_USDC_MINT = "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU";
+
 export function validateRuntimeConfig() {
   const configured = isWithdrawConfigured();
   if (configured && !process.env.FACADE_ENCRYPTION_KEY?.trim()) {

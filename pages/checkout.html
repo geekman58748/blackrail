@@ -560,6 +560,8 @@
 
   let _pollInterval = null;
   let _settleInProgress = false;
+  let _settleRetries = 0;
+  const MAX_SETTLE_RETRIES = 3;
 
   function updateStatus(text, color) {
     const el = document.getElementById('pollStatus');
@@ -584,7 +586,13 @@
         const fmt = (n) => (Number(n) / 1e6).toFixed(2);
         updateStatus('Checking... ' + fmt(received) + ' / ' + fmt(required) + ' USDC', 'rgba(120,124,145,0.6)');
         if (received >= required && received > 0n && !_settleInProgress) {
+          if (_settleRetries >= MAX_SETTLE_RETRIES) {
+            updateStatus('Settlement failed after ' + MAX_SETTLE_RETRIES + ' attempts. Please refresh.', '#cc7b7b');
+            clearInterval(_pollInterval);
+            return;
+          }
           _settleInProgress = true;
+          _settleRetries++;
           updateStatus('Payment detected! Settling...', '#a8c4b0');
           console.log('[settle] payment detected, settling...');
           try {
@@ -595,8 +603,8 @@
             const settlementData = await settlement.json();
             console.log('[settle] response:', settlement.status, settlementData);
             if (!settlement.ok) {
-              console.error('[settle] failed:', settlementData.error);
-              updateStatus('Settle failed: ' + (settlementData.error || 'unknown'), '#cc7b7b');
+              console.error('[settle] failed:', settlementData.error, settlementData.detail);
+              updateStatus('Settle failed: ' + (settlementData.detail || settlementData.error || 'unknown'), '#cc7b7b');
               _settleInProgress = false;
               return;
             }

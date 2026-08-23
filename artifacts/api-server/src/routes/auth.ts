@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { randomBytes } from "crypto";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { Keypair } from "@solana/web3.js";
 import bs58 from "bs58";
 import { Resend } from "resend";
@@ -44,7 +44,7 @@ router.post("/auth/magic-link", async (req, res): Promise<void> => {
   }
 
   // Store magic link
-  await db.insert(magicLinksTable).values({ token, email: normalizedEmail, expiresAt });
+  await db.insert(magicLinksTable).values({ token, email: normalizedEmail, purpose: "login", expiresAt });
 
   const appUrl = process.env.PUBLIC_APP_URL || "https://blackrail.xyz";
   const magicLink = `${appUrl}/pages/auth-callback.html?token=${token}`;
@@ -88,7 +88,7 @@ router.post("/auth/verify", async (req, res): Promise<void> => {
   }
 
   // Find the magic link
-  const [link] = await db.select().from(magicLinksTable).where(eq(magicLinksTable.token, token));
+  const [link] = await db.select().from(magicLinksTable).where(and(eq(magicLinksTable.token, token), eq(magicLinksTable.purpose, "login")));
   if (!link) {
     res.status(401).json({ error: "invalid token" });
     return;
@@ -201,7 +201,7 @@ router.post("/auth/reveal-request", async (req, res): Promise<void> => {
   // Generate reveal token (5 min expiry)
   const revealToken = "reveal_" + randomBytes(32).toString("hex");
   const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
-  await db.insert(magicLinksTable).values({ token: revealToken, email: user.email, expiresAt });
+  await db.insert(magicLinksTable).values({ token: revealToken, email: user.email, purpose: "reveal", expiresAt });
 
   const appUrl = process.env.PUBLIC_APP_URL || "https://blackrail.xyz";
   const revealLink = `${appUrl}/pages/auth-callback.html?token=${revealToken}`;
@@ -237,7 +237,7 @@ router.post("/auth/reveal-key", async (req, res): Promise<void> => {
   }
 
   // Verify the reveal token (single-use, 5 min expiry)
-  const [link] = await db.select().from(magicLinksTable).where(eq(magicLinksTable.token, revealToken));
+  const [link] = await db.select().from(magicLinksTable).where(and(eq(magicLinksTable.token, revealToken), eq(magicLinksTable.purpose, "reveal")));
   if (!link || link.used || link.expiresAt < new Date()) {
     res.status(401).json({ error: "invalid or expired reveal token" });
     return;

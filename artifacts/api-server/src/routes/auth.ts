@@ -253,20 +253,28 @@ router.post("/auth/reveal-key", async (req, res): Promise<void> => {
 
   try {
     let privateKey: string;
+    const prefix = wallet.encryptedPrivateKey.substring(0, 10);
+    console.log(`[auth] reveal-key user=${user.email} enc_prefix=${prefix} enc_len=${wallet.encryptedPrivateKey.length}`);
     try {
       privateKey = decryptSecret(wallet.encryptedPrivateKey);
-    } catch {
+      console.log(`[auth] reveal-key decryptSecret succeeded for ${user.email}`);
+    } catch (e1: any) {
+      console.log(`[auth] reveal-key decryptSecret failed: ${e1?.message}, trying email fallback`);
       // Fallback: wallets created before FACADE_ENCRYPTION_KEY used email-derived key
       const { createDecipheriv, createHash } = await import("node:crypto");
       const key = createHash("sha256").update(user.email).digest();
-      const [, _ver, ivRaw, tagRaw, ciphertextRaw] = wallet.encryptedPrivateKey.split(":");
+      const parts = wallet.encryptedPrivateKey.split(":");
+      const [, _ver, ivRaw, tagRaw, ciphertextRaw] = parts;
+      console.log(`[auth] reveal-key fallback parts=${parts.length}, iv=${!!ivRaw}, tag=${!!tagRaw}, ct=${!!ciphertextRaw}`);
       const decipher = createDecipheriv("aes-256-gcm", key, Buffer.from(ivRaw, "base64url"));
       decipher.setAuthTag(Buffer.from(tagRaw, "base64url"));
       privateKey = Buffer.concat([decipher.update(Buffer.from(ciphertextRaw, "base64url")), decipher.final()]).toString("utf8");
+      console.log(`[auth] reveal-key email fallback succeeded for ${user.email}`);
     }
     console.log(`[auth] reveal-key user=${user.email} wallet=${wallet.publicKey} pkLen=${privateKey.length}`);
     res.json({ publicKey: wallet.publicKey, privateKey });
-  } catch (e) {
+  } catch (e: any) {
+    console.error(`[auth] reveal-key FAILED for ${user?.email}: ${e?.message || e}`);
     res.status(500).json({ error: "failed to decrypt wallet" });
   }
 });

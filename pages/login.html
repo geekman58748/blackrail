@@ -7,114 +7,453 @@
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
 <script src="../runtime-config.js"></script>
 <style>
-  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-  :root{--white:#ffffff;--off-white:#f1f3f9;--muted:#8c8f9f;--bg:#07080e;--accent-green:#a8c4b0}
-  body{background:var(--bg);color:var(--off-white);font-family:'Inter',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
-  .bg-scene{position:fixed;inset:0;pointer-events:none;z-index:0}
-  .grid-overlay{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.02) 1px,transparent 1px);background-size:60px 60px;mask-image:radial-gradient(ellipse at center,rgba(0,0,0,0.8) 0%,transparent 75%)}
-  .light-core{position:absolute;top:30%;left:50%;transform:translate(-50%,-50%);width:560px;height:560px;background:radial-gradient(circle,rgba(255,255,255,0.04) 0%,rgba(200,205,220,0.015) 45%,transparent 80%);filter:blur(60px)}
-  .card{position:relative;z-index:2;width:100%;max-width:400px;background:linear-gradient(160deg,#0e1018 0%,#090b12 100%);border:1px solid rgba(255,255,255,0.08);border-radius:20px;padding:40px 32px;backdrop-filter:blur(30px);box-shadow:0 0 0 1px rgba(255,255,255,0.04) inset,0 48px 100px rgba(0,0,0,0.7)}
-  .card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,0.1) 50%,transparent 100%);border-radius:20px 20px 0 0}
-  .brand{display:flex;align-items:center;gap:9px;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:18px;color:var(--white);margin-bottom:32px}
-  .logo{width:24px;height:24px;background:#000;border:1px solid rgba(255,255,255,0.14);border-radius:6px;display:flex;align-items:center;justify-content:center}
-  h1{font-family:'Plus Jakarta Sans',sans-serif;font-size:24px;font-weight:700;color:var(--white);margin-bottom:8px}
-  .subtitle{font-size:14px;color:var(--muted);margin-bottom:28px;line-height:1.5}
-  label{display:block;font-size:12px;font-weight:500;color:rgba(140,143,159,0.8);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;font-family:'JetBrains Mono',monospace}
-  input[type="email"]{width:100%;padding:12px 16px;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.08);border-radius:12px;color:var(--white);font-size:15px;font-family:'Inter',sans-serif;outline:none;transition:border-color 0.2s}
-  input[type="email"]:focus{border-color:rgba(255,255,255,0.2)}
-  input[type="email"]::placeholder{color:rgba(140,143,159,0.4)}
-  .btn{width:100%;padding:12px;border-radius:100px;background:var(--white);color:#08080f;border:none;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.22s ease;margin-top:16px;font-family:'Inter',sans-serif}
-  .btn:hover{transform:translateY(-1px);background:rgba(255,255,255,0.9)}
-  .btn:disabled{opacity:0.5;cursor:not-allowed;transform:none}
-  .btn-secondary{background:rgba(255,255,255,0.05);color:rgba(200,202,216,0.8);border:1px solid rgba(255,255,255,0.1)}
-  .btn-secondary:hover{background:rgba(255,255,255,0.1)}
-  .divider{display:flex;align-items:center;gap:12px;margin:20px 0;color:rgba(140,143,159,0.4);font-size:12px;font-family:'JetBrains Mono',monospace;letter-spacing:0.05em}
-  .divider::before,.divider::after{content:'';flex:1;height:1px;background:rgba(255,255,255,0.06)}
-  .error{background:rgba(204,123,123,0.1);border:1px solid rgba(204,123,123,0.2);border-radius:10px;padding:10px 14px;font-size:13px;color:#cc7b7b;margin-top:12px;display:none}
-  .success{background:rgba(168,196,176,0.1);border:1px solid rgba(168,196,176,0.2);border-radius:10px;padding:10px 14px;font-size:13px;color:var(--accent-green);margin-top:12px;display:none}
-  .link-sent{text-align:center;padding:20px 0}
-  .link-sent h2{font-family:'Plus Jakarta Sans',sans-serif;font-size:20px;color:var(--white);margin-bottom:8px}
+  :root{
+    --white:#ffffff;
+    --off-white:#f1f3f9;
+    --muted:#8c8f9f;
+    --bg:#07080e;
+    --surface:#0e1018;
+    --border:rgba(255,255,255,0.08);
+    --border-soft:rgba(255,255,255,0.05);
+    --accent:#a8c4b0;
+    --panel-right:#0c0d14;
+    --input-bg:rgba(0,0,0,0.4);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:'Inter',sans-serif;
+    background:var(--bg);
+    color:var(--off-white);
+    -webkit-font-smoothing:antialiased;
+    overflow:hidden;
+  }
+  .layout{
+    display:grid;
+    grid-template-columns:minmax(420px,42%) 1fr;
+    min-height:100vh;
+  }
+
+  /* ── LEFT PANEL ── */
+  .left{
+    background:var(--bg);
+    display:flex;
+    flex-direction:column;
+    padding:40px 64px 60px;
+    position:relative;
+    overflow:hidden;
+  }
+  .left::before{
+    content:"";
+    position:absolute;
+    top:30%;left:50%;
+    transform:translate(-50%,-50%);
+    width:560px;height:560px;
+    background:radial-gradient(circle,rgba(255,255,255,0.04) 0%,rgba(200,205,220,0.015) 45%,transparent 80%);
+    filter:blur(60px);
+    pointer-events:none;
+  }
+
+  .home-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    width:fit-content;
+    background:rgba(255,255,255,0.05);
+    border:1px solid var(--border);
+    color:var(--off-white);
+    font-size:14px;
+    font-weight:500;
+    padding:10px 18px 10px 14px;
+    border-radius:999px;
+    cursor:pointer;
+    font-family:'Inter',sans-serif;
+    transition:background 0.15s;
+  }
+  .home-btn:hover{background:rgba(255,255,255,0.1)}
+  .home-btn svg{width:14px;height:14px}
+
+  .form-wrap{
+    max-width:420px;
+    width:100%;
+    margin:0 auto;
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    padding-top:40px;
+  }
+
+  .logo-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:44px;
+  }
+  .logo-mark{
+    width:28px;height:28px;
+    background:var(--accent);
+    border-radius:7px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .logo-mark svg{width:14px;height:14px}
+  .logo-text{
+    font-size:22px;
+    font-weight:700;
+    letter-spacing:-0.3px;
+    font-family:'Plus Jakarta Sans',sans-serif;
+    color:var(--white);
+  }
+
+  h1.title{
+    text-align:center;
+    font-size:34px;
+    font-weight:800;
+    margin-bottom:10px;
+    letter-spacing:-0.5px;
+    font-family:'Plus Jakarta Sans',sans-serif;
+  }
+  p.subtitle{
+    text-align:center;
+    color:var(--muted);
+    font-size:15px;
+    margin-bottom:28px;
+    line-height:1.5;
+  }
+  hr.divider-line{
+    border:none;
+    border-top:1px solid rgba(255,255,255,0.06);
+    margin-bottom:32px;
+  }
+
+  label.field-label{
+    display:block;
+    font-size:14px;
+    font-weight:600;
+    margin-bottom:10px;
+    color:var(--white);
+  }
+
+  .input-box{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    background:var(--input-bg);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:14px 16px;
+    margin-bottom:22px;
+    transition:border-color 0.2s;
+  }
+  .input-box:focus-within{border-color:rgba(255,255,255,0.2)}
+  .input-box svg{width:18px;height:18px;color:#5a5a5a;flex-shrink:0}
+  .input-box input{
+    background:transparent;
+    border:none;
+    outline:none;
+    color:var(--white);
+    font-size:15px;
+    width:100%;
+    font-family:'Inter',sans-serif;
+  }
+  .input-box input::placeholder{color:rgba(140,143,159,0.4)}
+
+  button.continue-btn{
+    width:100%;
+    background:var(--white);
+    color:#08080f;
+    border:none;
+    border-radius:100px;
+    padding:16px;
+    font-size:15px;
+    font-weight:700;
+    cursor:pointer;
+    margin-top:6px;
+    margin-bottom:24px;
+    font-family:'Inter',sans-serif;
+    transition:all 0.22s ease;
+  }
+  button.continue-btn:hover{transform:translateY(-1px);background:rgba(255,255,255,0.92)}
+  button.continue-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+
+  .error{
+    background:rgba(204,123,123,0.1);
+    border:1px solid rgba(204,123,123,0.2);
+    border-radius:10px;
+    padding:10px 14px;
+    font-size:13px;
+    color:#cc7b7b;
+    margin-bottom:16px;
+    display:none;
+  }
+
+  .link-sent{text-align:center;padding:16px 0}
+  .link-sent h2{
+    font-family:'Plus Jakarta Sans',sans-serif;
+    font-size:22px;
+    color:var(--white);
+    margin-bottom:8px;
+  }
   .link-sent p{font-size:14px;color:var(--muted);line-height:1.5}
-  .link-sent .email{color:var(--white);font-weight:500}
-  .back-link{display:inline-block;margin-top:16px;font-size:13px;color:var(--muted);cursor:pointer;text-decoration:none}
+  .link-sent .email{color:var(--white);font-weight:600}
+  .back-link{
+    display:inline-block;
+    margin-top:18px;
+    font-size:13px;
+    color:var(--muted);
+    cursor:pointer;
+    text-decoration:none;
+  }
   .back-link:hover{color:var(--white)}
-  .footer{margin-top:24px;text-align:center;font-size:12px;color:rgba(140,143,159,0.4)}
-  .footer a{color:rgba(140,143,159,0.6);text-decoration:none}
+
+  .footer{
+    text-align:center;
+    font-size:12px;
+    color:rgba(140,143,159,0.35);
+    margin-top:8px;
+  }
+  .footer a{color:rgba(140,143,159,0.55);text-decoration:none}
   .footer a:hover{color:var(--white)}
+
+  /* ── RIGHT PANEL ── */
+  .right{
+    position:relative;
+    background:var(--panel-right);
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+    padding:32px 56px 80px;
+  }
+  .right::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    background:radial-gradient(circle at 30% 20%,rgba(168,196,176,0.025),transparent 40%);
+  }
+
+  .right-top{
+    position:relative;
+    z-index:2;
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    gap:12px;
+  }
+  .status-badge{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    background:rgba(168,196,176,0.08);
+    border:1px solid rgba(168,196,176,0.15);
+    color:var(--accent);
+    font-size:12px;
+    font-weight:600;
+    padding:8px 16px;
+    border-radius:999px;
+    letter-spacing:0.5px;
+  }
+  .status-badge .dot{
+    width:6px;height:6px;
+    background:var(--accent);
+    border-radius:50%;
+    animation:pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+
+  /* Geometric art layer */
+  .art-layer{
+    position:absolute;
+    top:0;left:0;right:0;
+    height:75%;
+    z-index:1;
+    opacity:0.7;
+  }
+
+  .right-bottom{
+    position:relative;
+    z-index:2;
+    max-width:700px;
+  }
+  .badge{
+    display:inline-block;
+    background:rgba(255,255,255,0.04);
+    border:1px solid rgba(255,255,255,0.08);
+    color:var(--muted);
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:1.5px;
+    padding:8px 16px;
+    border-radius:999px;
+    margin-bottom:28px;
+  }
+  h2.headline{
+    font-size:48px;
+    line-height:1.15;
+    font-weight:400;
+    color:rgba(140,143,159,0.6);
+    margin-bottom:24px;
+    letter-spacing:-1px;
+    font-family:'Plus Jakarta Sans',sans-serif;
+  }
+  h2.headline b{color:var(--white);font-weight:700}
+  p.tagline{
+    color:rgba(140,143,159,0.7);
+    font-size:16px;
+    line-height:1.6;
+    max-width:580px;
+  }
+
+  /* ── Dev link display ── */
+  .dev-link{
+    background:rgba(168,196,176,0.08);
+    border:1px solid rgba(168,196,176,0.2);
+    border-radius:10px;
+    padding:10px 14px;
+    font-size:12px;
+    color:var(--accent);
+    margin-top:12px;
+    word-break:break-all;
+    display:none;
+  }
+  .dev-link a{color:var(--white);text-decoration:underline}
+
+  @media(max-width:980px){
+    .layout{grid-template-columns:1fr}
+    .right{display:none}
+    .left{padding:32px 24px}
+  }
 </style>
 </head>
 <body>
-<div class="bg-scene">
-  <div class="grid-overlay"></div>
-  <div class="light-core"></div>
-</div>
+<div class="layout">
 
-<div class="card">
-  <!-- State 1: Email input -->
-  <div id="stateEmail">
-    <div class="brand">
-      <div class="logo"><svg width="11" height="11" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="5" height="5" rx="1" fill="currentColor" opacity=".9"/><rect x="8" y="1" width="5" height="5" rx="1" fill="currentColor" opacity=".5"/><rect x="1" y="8" width="5" height="5" rx="1" fill="currentColor" opacity=".5"/><rect x="8" y="8" width="5" height="5" rx="1" fill="currentColor" opacity=".9"/></svg></div>
-      <span>BlackRail</span>
-    </div>
-    <h1>Sign in</h1>
-    <p class="subtitle">Enter your email to receive a sign-in link. No wallet connection needed.</p>
-    
-    <label>Email address</label>
-    <input type="email" id="emailInput" placeholder="you@example.com" autocomplete="email" />
-    
-    <button class="btn" id="btnSend" onclick="sendMagicLink()">Send magic link</button>
-    
-    <div class="error" id="errorMsg"></div>
-    <div class="success" id="successMsg"></div>
-    
-    <div class="footer">
-      <p>By signing in you agree to the <a href="#">Terms</a></p>
+  <!-- LEFT: SIGN IN FORM -->
+  <div class="left">
+    <button class="home-btn" onclick="window.location.href='https://blackrail.xyz'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+      Home
+    </button>
+
+    <div class="form-wrap">
+      <div class="logo-row">
+        <span class="logo-mark">
+          <svg viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="5" height="5" rx="1" fill="#07080e" opacity=".9"/><rect x="8" y="1" width="5" height="5" rx="1" fill="#07080e" opacity=".5"/><rect x="1" y="8" width="5" height="5" rx="1" fill="#07080e" opacity=".5"/><rect x="8" y="8" width="5" height="5" rx="1" fill="#07080e" opacity=".9"/></svg>
+        </span>
+        <span class="logo-text">BlackRail</span>
+      </div>
+
+      <!-- State 1: Email input -->
+      <div id="stateEmail">
+        <h1 class="title">Sign In</h1>
+        <p class="subtitle">Enter your email to receive a sign-in link. No wallet connection needed.</p>
+        <hr class="divider-line">
+
+        <label class="field-label">Email Address</label>
+        <div class="input-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 6l-10 7L2 6"></path><path d="M2 6h20v12H2z"></path></svg>
+          <input type="email" id="emailInput" placeholder="Enter personal email here" autocomplete="email">
+        </div>
+
+        <button class="continue-btn" id="btnSend" onclick="sendMagicLink()">Continue</button>
+
+        <div class="error" id="errorMsg"></div>
+        <div class="dev-link" id="devLink"></div>
+
+        <div class="footer">
+          <p>By signing in you agree to the <a href="#">Terms</a></p>
+        </div>
+      </div>
+
+      <!-- State 2: Link sent -->
+      <div id="stateSent" style="display:none">
+        <div class="link-sent">
+          <h2>Check your inbox</h2>
+          <p>We sent a sign-in link to<br><span class="email" id="sentEmail"></span></p>
+          <p style="margin-top:8px;font-size:13px;color:rgba(140,143,159,0.5)">Link expires in 15 minutes</p>
+          <a class="back-link" onclick="showEmailState()">← Use a different email</a>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- State 2: Link sent -->
-  <div id="stateSent" style="display:none">
-    <div class="brand">
-      <div class="logo"><svg width="11" height="11" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="5" height="5" rx="1" fill="currentColor" opacity=".9"/><rect x="8" y="1" width="5" height="5" rx="1" fill="currentColor" opacity=".5"/><rect x="1" y="8" width="5" height="5" rx="1" fill="currentColor" opacity=".5"/><rect x="8" y="8" width="5" height="5" rx="1" fill="currentColor" opacity=".9"/></svg></div>
-      <span>BlackRail</span>
+  <!-- RIGHT: PROMO PANEL -->
+  <div class="right">
+    <svg class="art-layer" viewBox="0 0 900 700" preserveAspectRatio="xMidYMin slice">
+      <g stroke="rgba(168,196,176,0.15)" stroke-width="1.2" fill="none" opacity="0.8">
+        <!-- Large hexagon top right -->
+        <polygon points="700,40 800,95 800,205 700,260 600,205 600,95"></polygon>
+        <polygon points="700,40 800,95 700,150 600,95"></polygon>
+        <line x1="700" y1="150" x2="700" y2="260"></line>
+        <line x1="600" y1="95" x2="700" y2="150"></line>
+        <line x1="800" y1="95" x2="700" y2="150"></line>
+
+        <!-- Diamond middle -->
+        <polygon points="820,180 900,225 900,315 820,360 740,315 740,225"></polygon>
+        <polygon points="820,180 900,225 820,270 740,225"></polygon>
+
+        <!-- Small cube left -->
+        <polygon points="330,280 380,308 380,364 330,392 280,364 280,308"></polygon>
+        <polygon points="330,280 380,308 330,336 280,308"></polygon>
+        <line x1="330" y1="336" x2="330" y2="392"></line>
+
+        <!-- Big hexagon lower left -->
+        <polygon points="270,420 400,495 400,645 270,720 140,645 140,495"></polygon>
+        <polygon points="270,420 400,495 270,570 140,495"></polygon>
+        <line x1="270" y1="570" x2="270" y2="720"></line>
+        <line x1="140" y1="495" x2="270" y2="570"></line>
+        <line x1="400" y1="495" x2="270" y2="570"></line>
+
+        <!-- Diamond bottom middle -->
+        <polygon points="470,540 570,595 570,705 470,760 370,705 370,595"></polygon>
+        <polygon points="470,540 570,595 470,650 370,595"></polygon>
+        <line x1="470" y1="650" x2="470" y2="760"></line>
+        <line x1="370" y1="595" x2="470" y2="650"></line>
+        <line x1="570" y1="595" x2="470" y2="650"></line>
+      </g>
+    </svg>
+
+    <div class="right-top">
+      <span class="status-badge"><span class="dot"></span> DEVNET</span>
     </div>
-    <div class="link-sent">
-      <h2>Check your inbox</h2>
-      <p>We sent a sign-in link to <span class="email" id="sentEmail"></span></p>
-      <p style="margin-top:8px;font-size:13px;color:rgba(140,143,159,0.5)">Link expires in 15 minutes</p>
-      <a class="back-link" onclick="showEmailState()">← Use a different email</a>
+
+    <div class="right-bottom">
+      <span class="badge">PRIVACY-FIRST PAYMENTS</span>
+      <h2 class="headline">No <b>signatures.</b> Just send <b>USDC</b> to an address.</h2>
+      <p class="tagline">One-time facade addresses protect buyer identity. Payments settle to your wallet instantly via MagicBlock ephemeral rollups. No wallet popups, no approvals — pay like you're sending to a friend.</p>
     </div>
   </div>
+
 </div>
 
 <script>
-  const API_BASE = (window.BLACKRAIL_CONFIG?.apiBase || localStorage.getItem('blackrail_api_base') || '').replace(/\/+$/, '');
+  const API_BASE = (window.BLACKRAIL_CONFIG?.apiBase || localStorage.getItem('blackrail_api_base') || '').replace(/\\/+$/, '');
 
-  // Check if already logged in
+  // Already logged in → dashboard
   (function() {
     const sessionToken = localStorage.getItem('blackrail_session_token');
-    if (sessionToken) {
-      window.location.href = 'dashboard.html';
-    }
+    if (sessionToken) window.location.href = 'dashboard.html';
   })();
 
   function showEmailState() {
     document.getElementById('stateEmail').style.display = 'block';
     document.getElementById('stateSent').style.display = 'none';
     document.getElementById('errorMsg').style.display = 'none';
-    document.getElementById('successMsg').style.display = 'none';
+    document.getElementById('devLink').style.display = 'none';
   }
 
   async function sendMagicLink() {
     const email = document.getElementById('emailInput').value.trim();
     const errorMsg = document.getElementById('errorMsg');
-    const successMsg = document.getElementById('successMsg');
+    const devLink = document.getElementById('devLink');
     const btn = document.getElementById('btnSend');
 
     errorMsg.style.display = 'none';
-    successMsg.style.display = 'none';
+    devLink.style.display = 'none';
 
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (!email || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
       errorMsg.textContent = 'Please enter a valid email address';
       errorMsg.style.display = 'block';
       return;
@@ -130,21 +469,18 @@
         body: JSON.stringify({ email }),
       });
       const data = await res.json();
-
       if (!res.ok) throw new Error(data.error || 'Failed to send magic link');
 
-      // Store email for callback
       localStorage.setItem('blackrail_pending_email', email);
 
-      // Show sent state
       document.getElementById('sentEmail').textContent = email;
       document.getElementById('stateEmail').style.display = 'none';
       document.getElementById('stateSent').style.display = 'block';
 
-      // In dev mode, show the link
+      // Dev mode: show the link directly
       if (data._dev_link) {
-        successMsg.textContent = 'Dev mode: ' + data._dev_link;
-        successMsg.style.display = 'block';
+        devLink.innerHTML = 'Dev mode: <a href="' + data._dev_link + '" target="_blank">Click to sign in</a>';
+        devLink.style.display = 'block';
         window.open(data._dev_link, '_blank');
       }
     } catch (e) {
@@ -152,11 +488,10 @@
       errorMsg.style.display = 'block';
     } finally {
       btn.disabled = false;
-      btn.textContent = 'Send magic link';
+      btn.textContent = 'Continue';
     }
   }
 
-  // Enter key to submit
   document.getElementById('emailInput').addEventListener('keydown', (e) => {
     if (e.key === 'Enter') sendMagicLink();
   });

@@ -279,6 +279,49 @@ router.post("/auth/reveal-key", async (req, res): Promise<void> => {
   }
 });
 
+// ── POST /auth/regenerate-wallet — generate new keypair if old one is undecryptable ──
+
+router.post("/auth/regenerate-wallet", async (req, res): Promise<void> => {
+  const authHeader = req.headers.authorization;
+  const sessionToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
+  if (!sessionToken) { res.status(401).json({ error: "not authenticated" }); return; }
+
+  const [session] = await db.select().from(loginSessionsTable).where(eq(loginSessionsTable.token, sessionToken));
+  if (!session || session.expiresAt < new Date()) { res.status(401).json({ error: "session expired" }); return; }
+
+  const [user] = await db.select().from(usersTable).where(eq(usersTable.id, session.userId));
+  if (!user) { res.status(401).json({ error: "user not found" }); return; }
+
+  // Verify old key can't be decrypted first — only allow if current wallet is broken
+  const [wallet] = await db.select().from(walletsTable).where(eq(walletsTable.userId, user.id));
+  if (!wallet) { res.status(404).json({ error: "no wallet found" }); return; }
+
+  let canDecrypt = false;
+  try {
+    decryptSecret(wallet.encryptedPrivateKey);
+    canDecrypt = true;
+  } catch { /* expected — wallet is broken */ }
+
+  if (canDecrypt) {
+    res.status(400).json({ error: "existing wallet is still decryptable, no regeneration needed" });
+    return;
+  }
+
+  // Generate new keypair
+  const keypair = Keypair.generate();
+  const publicKey = keypair.publicKey.toBase58();
+  const privateKey = bs58.encode(keypair.secretKey);
+  const encryptedPk = encryptSecret(privateKey);
+
+  // Update wallet
+  await db.update(walletsTable)
+    .set({ publicKey, encryptedPrivateKey: encryptedPk })
+    .where(eq(walletsTable.userId, user.id));
+
+  console.log(`[auth] Wallet regenerated for ${user.email}: ${publicKey}`);
+  res.json({ ok: true, publicKey });
+});
+
 // ── POST /auth/logout — invalidate session ────────────────────────────────────
 
 router.post("/auth/logout", async (req, res): Promise<void> => {

@@ -1491,7 +1491,25 @@ async function revealModalKey() {
     if (keyDisplay) { keyDisplay.textContent = data.privateKey; keyDisplay.style.display = 'block'; }
     if (revealBtn) revealBtn.textContent = 'Hide Key';
   } catch (e) {
-    alert('Failed to reveal key: ' + e.message);
+    // Key might be unrecoverable — offer regeneration
+    if (confirm('Failed to reveal key: ' + e.message + '\n\nYour wallet may need to be regenerated (old encryption key mismatch).\nRegenerate? This creates a NEW wallet address.')) {
+      await regenerateWallet();
+    }
+  }
+}
+
+async function regenerateWallet() {
+  try {
+    const res = await apiFetch('/api/auth/regenerate-wallet', { method: 'POST' });
+    if (!res.ok) {
+      const d = await res.json();
+      throw new Error(d.error || 'Failed');
+    }
+    const data = await res.json();
+    alert('New wallet created: ' + data.publicKey.slice(0, 8) + '...\nReload the page to see it.');
+    location.reload();
+  } catch (e) {
+    alert('Regeneration failed: ' + e.message);
   }
 }
 

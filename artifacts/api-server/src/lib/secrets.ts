@@ -22,7 +22,7 @@ export function decryptSecret(value: string): string {
     if (process.env.ALLOW_LEGACY_PLAINTEXT_FACADE_KEYS === "true") return value;
     throw new Error("plaintext facade key rejected");
   }
-  const [, ivRaw, tagRaw, ciphertextRaw] = value.split(":");
+  const [, _ver, ivRaw, tagRaw, ciphertextRaw] = value.split(":");
   if (!ivRaw || !tagRaw || !ciphertextRaw) throw new Error("invalid encrypted facade key");
   for (const key of keys()) {
     try {

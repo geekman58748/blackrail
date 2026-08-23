@@ -429,7 +429,7 @@
 </div>
 
 <script>
-  const API_BASE = (window.BLACKRAIL_CONFIG?.apiBase || localStorage.getItem('blackrail_api_base') || '').replace(/\\/+$/, '');
+  const API_BASE = (window.BLACKRAIL_CONFIG?.apiBase || localStorage.getItem('blackrail_api_base') || '').replace(/\/+$/, '');
 
   // Already logged in → dashboard
   (function() {
@@ -453,7 +453,7 @@
     errorMsg.style.display = 'none';
     devLink.style.display = 'none';
 
-    if (!email || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       errorMsg.textContent = 'Please enter a valid email address';
       errorMsg.style.display = 'block';
       return;

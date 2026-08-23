@@ -152,8 +152,11 @@ router.post("/sessions/:id/settle", async (req, res): Promise<void> => {
 
   try {
     // Look up user's wallet to send settlement to their dedicated address
-    const [wallet] = await db.select().from(walletsTable).where(eq(walletsTable.userId, Number(claimed.merchantId)));
+    const merchantUserId = Number(claimed.merchantId);
+    console.log(`[settle] merchantId=${claimed.merchantId}, userId=${merchantUserId}`);
+    const [wallet] = await db.select().from(walletsTable).where(eq(walletsTable.userId, merchantUserId));
     const destinationAddress = wallet?.publicKey ?? undefined;
+    console.log(`[settle] wallet=${wallet?.publicKey ?? 'NONE'}, destination=${destinationAddress ?? 'FALLBACK to server'}`);
     const sig = await settleFacade(decryptSecret(claimed.facadeKeypairB58!), claimed.facadeAddress, claimed.id, destinationAddress);
     const settledAt = new Date();
     await db.transaction(async (tx) => {

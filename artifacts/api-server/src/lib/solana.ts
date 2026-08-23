@@ -164,9 +164,10 @@ export async function settleFacade(
   if (amount >= MB_MIN) {
     try {
       const token = await getMbToken(server);
+      const destWallet = destinationAddress ? new PublicKey(destinationAddress) : server.publicKey;
       const payload = {
         from: facade.publicKey.toBase58(),
-        to: server.publicKey.toBase58(),
+        to: destWallet.toBase58(),
         mint: usdcMint.toBase58(),
         amount: Number(amount),
         visibility: "private",

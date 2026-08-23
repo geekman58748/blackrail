@@ -125,6 +125,7 @@ router.post("/auth/verify", async (req, res): Promise<void> => {
   let [wallet] = await db.select().from(walletsTable).where(eq(walletsTable.userId, user.id));
   if (!wallet) {
     const keypair = Keypair.generate();
+    console.log(`[auth] Generated new keypair: ${keypair.publicKey.toBase58()} (secretKey length: ${keypair.secretKey.length})`);
     const publicKey = keypair.publicKey.toBase58();
     const privateKey = bs58.encode(keypair.secretKey);
     const encryptedPk = encryptSecret(privateKey);
@@ -263,6 +264,7 @@ router.post("/auth/reveal-key", async (req, res): Promise<void> => {
       decipher.setAuthTag(Buffer.from(tagRaw, "base64url"));
       privateKey = Buffer.concat([decipher.update(Buffer.from(ciphertextRaw, "base64url")), decipher.final()]).toString("utf8");
     }
+    console.log(`[auth] reveal-key user=${user.email} wallet=${wallet.publicKey} pkLen=${privateKey.length}`);
     res.json({ publicKey: wallet.publicKey, privateKey });
   } catch (e) {
     res.status(500).json({ error: "failed to decrypt wallet" });

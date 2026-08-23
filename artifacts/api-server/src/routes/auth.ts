@@ -52,10 +52,14 @@ router.post("/auth/magic-link", async (req, res): Promise<void> => {
   console.log(`[auth] Magic link for ${normalizedEmail}: ${magicLink}`);
 
   // Send email via Resend
+  let emailSent = false;
+  let emailError = '';
   if (resend) {
     try {
-      await resend.emails.send({
-        from: process.env.EMAIL_FROM || "BlackRail <onboarding@resend.dev>",
+      const fromAddr = process.env.EMAIL_FROM || 'BlackRail <onboarding@resend.dev>';
+      console.log(`[auth] Sending email from="${fromAddr}" to="${normalizedEmail}"`);
+      const sendResult = await resend.emails.send({
+        from: fromAddr,
         to: normalizedEmail,
         subject: "Sign in to BlackRail",
         html: `
@@ -67,14 +71,20 @@ router.post("/auth/magic-link", async (req, res): Promise<void> => {
           </div>
         `,
       });
-      console.log(`[auth] Email sent to ${normalizedEmail}`);
-    } catch (e) {
-      console.error("[auth] Failed to send email:", e);
+      emailSent = true;
+      console.log(`[auth] Email sent to ${normalizedEmail}, id=${sendResult.data?.id || 'unknown'}`);
+    } catch (e: any) {
+      emailError = e?.message || String(e);
+      console.error(`[auth] Failed to send email to ${normalizedEmail}:`, emailError);
     }
+  } else {
+    emailError = 'Resend not configured (RESEND_API_KEY missing)';
+    console.warn(`[auth] ${emailError}`);
   }
 
   const response: Record<string, unknown> = { ok: true, message: "Magic link sent" };
   if (!resend && !isProd) response._dev_link = magicLink;
+  if (emailError) response._email_warning = emailError;
   res.json(response);
 });
 

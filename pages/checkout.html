@@ -368,6 +368,8 @@
     <div class="instruction-note">
       Open Phantom, Backpack, or Solflare. Send <strong id="instrAmount">the exact amount</strong> to this address. No wallet connect required.
     </div>
+
+    <div id="pollStatus" style="margin-top:12px;font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(120,124,145,0.5);letter-spacing:0.06em;text-align:center;"></div>
   </div>
 
   <!-- STATE 2: CONFIRMED -->
@@ -426,7 +428,7 @@
   if (window.location.hash) history.replaceState(null, '', window.location.pathname + window.location.search);
 
   // Pull real facade address from session API
-  (async function loadSession() {
+  const _sessionLoaded = (async function loadSession() {
     if (!SESSION_ID) return;
     try {
       const res  = await fetch(API_BASE + '/api/sessions/' + SESSION_ID, { headers: checkoutHeaders });
@@ -558,9 +560,16 @@
 
   let _pollInterval = null;
   let _settleInProgress = false;
+
+  function updateStatus(text, color) {
+    const el = document.getElementById('pollStatus');
+    if (el) { el.textContent = text; el.style.color = color || 'rgba(120,124,145,0.6)'; }
+  }
+
   function listenForOnChainPayment() {
     if (!SESSION_ID) return;
     clearInterval(_pollInterval);
+    updateStatus('Watching for payment...', 'rgba(120,124,145,0.6)');
     _pollInterval = setInterval(async () => {
       if (!document.getElementById('stateWaiting').classList.contains('active-state')) {
         clearInterval(_pollInterval); return;
@@ -568,12 +577,15 @@
       try {
         const r = await fetch(API_BASE + '/api/sessions/' + SESSION_ID + '/balance');
         const d = await r.json();
-        if (!r.ok) { console.warn('[poll] balance error:', d.error); return; }
+        if (!r.ok) { console.warn('[poll] balance error:', d.error); updateStatus('Balance check failed', '#cc7b7b'); return; }
         const received = BigInt(d.balance || '0');
         const required = PAYMENT_AMOUNT > 0 ? BigInt(Math.round(PAYMENT_AMOUNT * 1e6)) : 1n;
         console.log('[poll] balance:', d.balance, 'received:', received.toString(), 'required:', required.toString());
+        const fmt = (n) => (Number(n) / 1e6).toFixed(2);
+        updateStatus('Checking... ' + fmt(received) + ' / ' + fmt(required) + ' USDC', 'rgba(120,124,145,0.6)');
         if (received >= required && received > 0n && !_settleInProgress) {
           _settleInProgress = true;
+          updateStatus('Payment detected! Settling...', '#a8c4b0');
           console.log('[settle] payment detected, settling...');
           try {
             const settlement = await fetch(API_BASE + '/api/sessions/' + SESSION_ID + '/settle', {
@@ -584,6 +596,7 @@
             console.log('[settle] response:', settlement.status, settlementData);
             if (!settlement.ok) {
               console.error('[settle] failed:', settlementData.error);
+              updateStatus('Settle failed: ' + (settlementData.error || 'unknown'), '#cc7b7b');
               _settleInProgress = false;
               return;
             }
@@ -591,10 +604,11 @@
             transitionToState(2);
           } catch(settleErr) {
             console.error('[settle] network error:', settleErr);
+            updateStatus('Settle error: ' + settleErr.message, '#cc7b7b');
             _settleInProgress = false;
           }
         }
-      } catch(e) { console.warn('[poll] error:', e.message); }
+      } catch(e) { console.warn('[poll] error:', e.message); updateStatus('Poll error: ' + e.message, '#cc7b7b'); }
     }, 5000);
   }
 
@@ -602,8 +616,12 @@
     transitionToState(1);
   }
 
-  // Initialize Flow on load
-  transitionToState(1);
+  // Initialize Flow — wait for session to load first, then start polling
+  _sessionLoaded.then(() => {
+    transitionToState(1);
+  }).catch(() => {
+    transitionToState(1);
+  });
 </script>
 </body>
 </html>

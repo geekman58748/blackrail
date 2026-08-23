@@ -818,10 +818,10 @@
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
             Wallet Details
           </button>
-          <a href="settings.html" style="flex:1;padding:10px;background:rgba(168,173,196,0.06);border:1px solid rgba(168,173,196,0.15);border-radius:10px;color:var(--cyan);font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;font-family:var(--font-sans);text-decoration:none" onmouseover="this.style.borderColor='rgba(168,173,196,0.3)'" onmouseout="this.style.borderColor='rgba(168,173,196,0.15)'">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            Security & Keys
-          </a>
+          <button onclick="showWithdrawModal()" style="flex:1;padding:10px;background:rgba(168,173,196,0.06);border:1px solid rgba(168,173,196,0.15);border-radius:10px;color:var(--cyan);font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;font-family:var(--font-sans)" onmouseover="this.style.borderColor='rgba(168,173,196,0.3)'" onmouseout="this.style.borderColor='rgba(168,173,196,0.15)'">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+            Withdraw
+          </button>
         </div>
       </div>
 
@@ -858,6 +858,68 @@
             <div style="display:flex;justify-content:space-between;font-size:10px;font-family:var(--font-mono);margin-bottom:6px"><span style="color:var(--text-muted)">Token</span><span style="color:var(--text-primary)">USDC (6 decimals)</span></div>
             <div style="display:flex;justify-content:space-between;font-size:10px;font-family:var(--font-mono)"><span style="color:var(--text-muted)">Provider</span><span style="color:var(--text-primary)">BlackRail Auto-Wallet</span></div>
           </div>
+        </div>
+      </div>
+
+      <!-- WITHDRAW MODAL -->
+      <div id="withdrawModal" style="display:none;position:fixed;inset:0;z-index:100;align-items:center;justify-content:center;padding:20px">
+        <div style="position:absolute;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(12px)" onclick="hideWithdrawModal()"></div>
+        <div style="position:relative;width:100%;max-width:440px;background:linear-gradient(180deg,var(--bg-surface) 0%,#0c0e14 100%);border:1px solid var(--border-bright);border-radius:20px;padding:32px;box-shadow:0 32px 100px rgba(0,0,0,0.6)">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px">
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="width:36px;height:36px;border-radius:10px;background:rgba(168,173,196,0.08);border:1px solid rgba(168,173,196,0.15);display:flex;align-items:center;justify-content:center">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+              </div>
+              <div>
+                <div style="font-size:14px;font-weight:700;color:var(--text-primary)">Withdraw USDC</div>
+                <div style="font-size:10px;font-family:var(--font-mono);color:var(--text-muted);letter-spacing:0.06em">Solana Devnet · Instant</div>
+              </div>
+            </div>
+            <button onclick="hideWithdrawModal()" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:20px;line-height:1;padding:4px">×</button>
+          </div>
+          <!-- From -->
+          <div style="background:rgba(0,0,0,0.25);border:1px solid var(--border-subtle);border-radius:14px;padding:16px;margin-bottom:2px;position:relative">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+              <span style="font-size:10px;font-family:var(--font-mono);color:var(--text-muted);text-transform:uppercase;letter-spacing:0.1em">From</span>
+              <span style="font-size:10px;font-family:var(--font-mono);color:var(--text-muted)">Balance: <span id="withdrawBalance" style="color:var(--text-primary)">0.00</span> USDC</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="width:32px;height:32px;border-radius:8px;background:rgba(168,173,196,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
+              </div>
+              <div style="flex:1;overflow:hidden">
+                <div style="font-size:11px;font-weight:600;color:var(--text-primary);margin-bottom:2px">BlackRail Wallet</div>
+                <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="withdrawFromAddr">—</div>
+              </div>
+            </div>
+          </div>
+          <!-- Arrow -->
+          <div style="display:flex;justify-content:center;position:relative;z-index:2;margin:-6px 0">
+            <div style="width:32px;height:32px;border-radius:50%;background:var(--bg-surface);border:1px solid var(--border-bright);display:flex;align-items:center;justify-content:center">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+            </div>
+          </div>
+          <!-- To -->
+          <div style="background:rgba(0,0,0,0.25);border:1px solid var(--border-subtle);border-radius:14px;padding:16px;margin-bottom:16px">
+            <div style="font-size:10px;font-family:var(--font-mono);color:var(--text-muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:10px">To</div>
+            <input type="text" id="withdrawDestInput" placeholder="Paste Solana wallet address" style="width:100%;font-family:var(--font-mono);font-size:12px;color:var(--text-primary);background:rgba(0,0,0,0.3);border:1px solid var(--border-subtle);border-radius:10px;padding:12px 14px;outline:none;box-sizing:border-box" onfocus="this.style.borderColor='rgba(168,173,196,0.3)'" onblur="this.style.borderColor='var(--border-subtle)'" />
+          </div>
+          <!-- Amount -->
+          <div style="background:rgba(0,0,0,0.25);border:1px solid var(--border-subtle);border-radius:14px;padding:16px;margin-bottom:16px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+              <span style="font-size:10px;font-family:var(--font-mono);color:var(--text-muted);text-transform:uppercase;letter-spacing:0.1em">Amount</span>
+              <button onclick="setMaxWithdraw()" style="background:none;border:none;font-size:10px;font-family:var(--font-mono);color:var(--cyan);cursor:pointer;padding:0">MAX</button>
+            </div>
+            <div style="display:flex;align-items:baseline;gap:8px">
+              <input type="number" id="withdrawAmountInput" placeholder="0.00" step="0.01" min="0" style="flex:1;font-size:28px;font-weight:800;color:var(--text-primary);background:none;border:none;outline:none;font-family:var(--font-sans)" oninput="updateWithdrawUsd()" />
+              <span style="font-size:14px;font-weight:600;color:var(--text-muted)">USDC</span>
+            </div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:4px" id="withdrawUsdEquiv">≈ $0.00 USD</div>
+          </div>
+          <!-- Status -->
+          <div id="withdrawModalStatus" style="font-size:11px;font-family:var(--font-mono);margin-bottom:12px;min-height:16px"></div>
+          <!-- Submit -->
+          <button onclick="doWithdrawFromModal()" id="withdrawSubmitBtn" style="width:100%;padding:14px;background:linear-gradient(135deg,rgba(168,173,196,0.12),rgba(168,173,196,0.06));border:1px solid rgba(168,173,196,0.2);border-radius:12px;color:var(--cyan);font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font-sans);letter-spacing:0.02em" onmouseover="this.style.borderColor='rgba(168,173,196,0.4)';this.style.color='var(--text-primary)'" onmouseout="this.style.borderColor='rgba(168,173,196,0.2)';this.style.color='var(--cyan)'">Withdraw</button>
         </div>
       </div>
 
@@ -1316,6 +1378,75 @@ async function copyModalKey() {
     const btn = document.getElementById('copyKeyBtn');
     if (btn) { btn.textContent = 'Copied!'; setTimeout(() => btn.textContent = 'Copy Key', 1500); }
   }
+}
+
+let _withdrawBalance = 0;
+
+async function showWithdrawModal() {
+  const modal = document.getElementById('withdrawModal');
+  if (modal) modal.style.display = 'flex';
+  const addrEl = document.getElementById('withdrawFromAddr');
+  const balEl = document.getElementById('withdrawBalance');
+  if (addrEl) addrEl.textContent = localStorage.getItem('blackrail_wallet_address') || '—';
+  // Fetch balance
+  try {
+    const res = await apiFetch('/api/wallet/balance');
+    if (res.ok) {
+      const data = await res.json();
+      _withdrawBalance = Number(data.balance || 0) / 1e6;
+      if (balEl) balEl.textContent = _withdrawBalance.toFixed(2);
+    }
+  } catch {}
+}
+
+function hideWithdrawModal() {
+  const modal = document.getElementById('withdrawModal');
+  if (modal) modal.style.display = 'none';
+  document.getElementById('withdrawDestInput').value = '';
+  document.getElementById('withdrawAmountInput').value = '';
+  document.getElementById('withdrawModalStatus').innerHTML = '';
+  document.getElementById('withdrawUsdEquiv').textContent = '≈ $0.00 USD';
+}
+
+function setMaxWithdraw() {
+  const input = document.getElementById('withdrawAmountInput');
+  if (input) { input.value = _withdrawBalance.toFixed(2); updateWithdrawUsd(); }
+}
+
+function updateWithdrawUsd() {
+  const val = parseFloat(document.getElementById('withdrawAmountInput').value) || 0;
+  document.getElementById('withdrawUsdEquiv').textContent = '≈ $' + val.toFixed(2) + ' USD';
+}
+
+async function doWithdrawFromModal() {
+  const dest = document.getElementById('withdrawDestInput').value.trim();
+  const amount = document.getElementById('withdrawAmountInput').value.trim();
+  const statusEl = document.getElementById('withdrawModalStatus');
+  const btn = document.getElementById('withdrawSubmitBtn');
+  if (!dest || !amount) { statusEl.innerHTML = '<span style="color:var(--rose)">Fill in all fields</span>'; return; }
+  btn.textContent = 'Withdrawing...';
+  btn.disabled = true;
+  statusEl.innerHTML = '<span style="color:var(--text-muted)">Signing transaction...</span>';
+  try {
+    const res = await apiFetch('/api/wallet/withdraw', {
+      method: 'POST',
+      body: JSON.stringify({ destination: dest, amount }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      statusEl.innerHTML = '<span style="color:var(--rose)">' + (data.error || 'Failed') + '</span>';
+    } else {
+      statusEl.innerHTML = '<span style="color:var(--emerald)">Sent ✓ ' + data.signature.slice(0, 16) + '...</span>';
+      document.getElementById('withdrawDestInput').value = '';
+      document.getElementById('withdrawAmountInput').value = '';
+      document.getElementById('withdrawUsdEquiv').textContent = '≈ $0.00 USD';
+      loadWalletCard();
+    }
+  } catch (e) {
+    statusEl.innerHTML = '<span style="color:var(--rose)">Network error</span>';
+  }
+  btn.textContent = 'Withdraw';
+  btn.disabled = false;
 }
 
 async function doLogout() {

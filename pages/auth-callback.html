@@ -49,13 +49,8 @@
     localStorage.setItem('blackrail_user_email', data.user.email);
     localStorage.setItem('blackrail_wallet_address', data.wallet.publicKey);
 
-    // Clear any old Privy stuff
-    localStorage.removeItem('privy_token');
-    localStorage.removeItem('privy_user_id');
-    localStorage.removeItem('privy_wallet');
-    localStorage.removeItem('privy_oauth_provider');
-    localStorage.removeItem('blackrail_api_key');
-    localStorage.removeItem('blackrail_merchant_id');
+    // Clear legacy auth tokens
+    ['privy_token','privy_user_id','privy_wallet','privy_oauth_provider','blackrail_api_key','blackrail_merchant_id'].forEach(k => localStorage.removeItem(k));
 
     showSuccess('Signed in! Redirecting...');
 

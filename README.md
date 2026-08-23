@@ -237,14 +237,12 @@ The market it targets already processes hundreds of billions of dollars annually
 - Vault USDC ATA: `B82AzAWZsvVUwW1iddK8H45E1rj6QKS36X9FPFtHmbjM` (the vault owner's USDC token account)
 - Network: Solana devnet
 
-## Mainnet
+## Trust Model (Current → Next)
 
-Mainnet-ready — two steps:
-1. Deploy the Anchor program on mainnet and update `ANCHOR_PROGRAM_ID` in Railway env vars
-2. Update `SOLANA_RPC_URL`, `USDC_MINT`, and `MAGICBLOCK_API_URL` to mainnet values
+**Today (devnet, demo-scale):** Single-key custodial vault. The server holds one `SERVER_KEYPAIR` that controls settlement. This is intentional for rapid iteration — every settlement path is auditable in `solana.ts`.
 
-No architecture changes required.
+**Next (mainnet):** Program-enforced multisig/threshold vault. The on-chain program will enforce settlement rules (minimum amounts, time locks, authorized signers) so no single key can sweep funds unilaterally. This is the critical trust-minimization step before handling real volume.
 
 ---
 
-*Built at MagicBlock Blitz 2026.*# supernova pipeline test
+*Built at MagicBlock Founders Camp 2026.*

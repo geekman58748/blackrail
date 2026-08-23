@@ -12,3 +12,7 @@ target/
 **/target/
 .DS_Store
 **/.DS_Store
+
+# Generated files
+runtime-config.js
+programs/

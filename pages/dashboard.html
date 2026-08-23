@@ -211,6 +211,27 @@
     opacity: 0.8;
   }
 
+  .btn-pill {
+    padding: 8px 16px; border-radius: 8px; font-size: 11px; font-weight: 600;
+    cursor: pointer; font-family: var(--font-mono); letter-spacing: 0.04em;
+    background: rgba(255,255,255,0.04); border: 1px solid var(--border-subtle);
+    color: var(--text-secondary); transition: all 0.15s;
+  }
+  .btn-pill:hover { border-color: rgba(255,255,255,0.14); color: var(--text-primary); }
+
+  .toggle-pill {
+    width: 36px; height: 20px; border-radius: 10px; cursor: pointer;
+    background: rgba(255,255,255,0.1); border: 1px solid var(--border-subtle);
+    position: relative; transition: all 0.2s; flex-shrink: 0;
+  }
+  .toggle-pill.on { background: rgba(168,196,176,0.2); border-color: rgba(168,196,176,0.3); }
+  .toggle-pill::after {
+    content: ''; position: absolute; top: 2px; left: 2px;
+    width: 14px; height: 14px; border-radius: 50%;
+    background: var(--text-muted); transition: all 0.2s;
+  }
+  .toggle-pill.on::after { left: 18px; background: var(--emerald); }
+
   .sidebar-footer {
     padding: 16px 20px;
     border-top: 1px solid var(--border-subtle);
@@ -759,7 +780,7 @@
         </div>
       </div>
       <div id="sidebar-wallet" style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);padding:6px 8px;background:#08090d;border:1px solid var(--border-subtle);border-radius:6px;margin-bottom:8px;display:none;word-break:break-all;cursor:pointer;" title="Click to copy" onclick="copyWallet()"></div>
-      <a href="settings.html" style="display:block;width:100%;padding:8px;background:transparent;border:1px solid rgba(255,255,255,0.07);border-radius:4px;color:rgba(120,123,140,0.8);font-size:10px;font-weight:500;font-family:var(--font-mono);letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;transition:all .15s;text-align:center;text-decoration:none;margin-bottom:8px" onmouseover="this.style.borderColor='rgba(255,255,255,0.14)';this.style.color='rgba(200,200,210,0.9)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.07)';this.style.color='rgba(120,123,140,0.8)'">Settings</a>
+      <button onclick="switchNav('settings', document.querySelectorAll('.nav-btn')[5])" style="width:100%;padding:8px;background:transparent;border:1px solid rgba(255,255,255,0.07);border-radius:4px;color:rgba(120,123,140,0.8);font-size:10px;font-weight:500;font-family:var(--font-mono);letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;transition:all .15s;text-align:center;margin-bottom:8px" onmouseover="this.style.borderColor='rgba(255,255,255,0.14)';this.style.color='rgba(200,200,210,0.9)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.07)';this.style.color='rgba(120,123,140,0.8)'">Settings</button>
       <button onclick="doLogout()" style="width:100%;padding:8px;background:transparent;border:1px solid rgba(255,255,255,0.07);border-radius:4px;color:rgba(120,123,140,0.8);font-size:10px;font-weight:500;font-family:var(--font-mono);letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='rgba(255,255,255,0.14)';this.style.color='rgba(200,200,210,0.9)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.07)';this.style.color='rgba(120,123,140,0.8)'">Sign Out</button>
     </div>
   </aside>
@@ -1167,12 +1188,116 @@
     <div id="settings" class="page-view">
       <div class="view-header">
         <div class="view-title-group">
+          <span class="view-label">[ BLACKRAIL · CONFIG ]</span>
           <h1>Settings</h1>
-          <p>Facade behavior, auto-sweep thresholds, and notification webhooks</p>
+          <p>Manage your wallet, keys, and account preferences</p>
         </div>
       </div>
-      <div class="glass-card" style="padding:28px;">
-        <p style="color:var(--text-secondary)">Settings configurations & webhook endpoint mappings.</p>
+
+      <!-- Wallet Section -->
+      <div class="glass-card" style="padding:24px;margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--border-subtle)">
+          <div style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--text-primary)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
+            Wallet
+          </div>
+          <span style="font-size:9px;font-family:var(--font-mono);color:var(--text-muted);background:rgba(255,255,255,0.04);padding:3px 8px;border-radius:4px;letter-spacing:0.06em">SOLANA DEVNET</span>
+        </div>
+        <div style="margin-bottom:16px">
+          <div style="font-size:10px;font-family:var(--font-mono);color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">Address</div>
+          <div style="display:flex;gap:8px">
+            <div style="flex:1;font-family:var(--font-mono);font-size:12px;color:var(--text-primary);background:rgba(0,0,0,0.3);border:1px solid var(--border-subtle);border-radius:8px;padding:10px 14px;word-break:break-all" id="settingsWalletAddr">Loading...</div>
+            <button class="btn-pill" onclick="copySettingsAddress()" id="settingsCopyBtn">Copy</button>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:10px;font-family:var(--font-mono);color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">USDC Balance</div>
+          <div style="display:flex;align-items:baseline;gap:8px">
+            <span style="font-size:28px;font-weight:800;color:var(--text-primary)" id="settingsBalance">—</span>
+            <span style="font-size:14px;font-weight:600;color:var(--text-muted)">USDC</span>
+          </div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:2px" id="settingsBalanceUsd"></div>
+        </div>
+      </div>
+
+      <!-- Private Key Section -->
+      <div class="glass-card" style="padding:24px;margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--border-subtle)">
+          <div style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--text-primary)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--rose)" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+            Private Key
+          </div>
+          <span style="font-size:9px;font-family:var(--font-mono);color:var(--text-muted);background:rgba(255,255,255,0.04);padding:3px 8px;border-radius:4px;letter-spacing:0.06em">ENCRYPTED</span>
+        </div>
+        <p style="font-size:12px;color:var(--text-muted);line-height:1.6;margin-bottom:14px">Your key is encrypted server-side. Reveal to export for self-custody in Phantom, Solflare, or any Solana wallet.</p>
+        <div style="display:flex;gap:8px;margin-bottom:0">
+          <button class="btn-pill" onclick="settingsRevealKey()" id="settingsRevealBtn">Reveal Key</button>
+          <button class="btn-pill" onclick="settingsCopyKey()" id="settingsCopyKeyBtn">Copy Key</button>
+        </div>
+        <div id="settingsKeyBox" style="display:none;background:rgba(0,0,0,0.4);border:1px solid rgba(204,123,123,0.12);border-radius:8px;padding:12px;margin-top:12px">
+          <pre id="settingsKeyText" style="font-family:var(--font-mono);font-size:10px;color:var(--rose);word-break:break-all;line-height:1.6;margin:0"></pre>
+          <div style="background:rgba(204,123,123,0.05);border:1px solid rgba(204,123,123,0.1);border-radius:8px;padding:10px 14px;font-size:11px;color:rgba(204,123,123,0.7);line-height:1.5;margin-top:10px">⚠️ Never share your private key. Anyone with it can steal your funds.</div>
+        </div>
+      </div>
+
+      <!-- API Keys Section -->
+      <div class="glass-card" style="padding:24px;margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--border-subtle)">
+          <div style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--text-primary)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+            API Keys
+          </div>
+          <button class="btn-pill" onclick="settingsCreateApiKey()" id="settingsCreateKeyBtn">+ New</button>
+        </div>
+        <p style="font-size:12px;color:var(--text-muted);line-height:1.6;margin-bottom:14px">Use API keys to programmatically create payment links via the REST API.</p>
+        <ul id="settingsApiKeyList" style="list-style:none">
+          <li style="font-size:12px;color:var(--text-muted);text-align:center;padding:20px 0">Loading...</li>
+        </ul>
+      </div>
+
+      <!-- Preferences -->
+      <div class="glass-card" style="padding:24px;margin-bottom:16px">
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--border-subtle)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Preferences
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border-subtle)">
+          <div><div style="font-size:13px;color:var(--text-primary)">Email on Payment</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">Receive an email when a payment settles</div></div>
+          <div class="toggle-pill on" onclick="this.classList.toggle('on')"></div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border-subtle)">
+          <div><div style="font-size:13px;color:var(--text-primary)">Private Settlement</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">Use MagicBlock routing when available</div></div>
+          <div class="toggle-pill on" onclick="this.classList.toggle('on')"></div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0">
+          <div><div style="font-size:13px;color:var(--text-primary)">Testnet Badge</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">Show network indicator on checkout</div></div>
+          <div class="toggle-pill on" onclick="this.classList.toggle('on')"></div>
+        </div>
+      </div>
+
+      <!-- Account -->
+      <div class="glass-card" style="padding:24px;margin-bottom:16px">
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--border-subtle)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          Account
+        </div>
+        <div style="margin-bottom:12px">
+          <div style="font-size:10px;font-family:var(--font-mono);color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px">Email</div>
+          <div style="font-family:var(--font-mono);font-size:12px;color:var(--text-primary);background:rgba(0,0,0,0.3);border:1px solid var(--border-subtle);border-radius:8px;padding:10px 14px" id="settingsEmail">Loading...</div>
+        </div>
+        <div>
+          <div style="font-size:10px;font-family:var(--font-mono);color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px">Member Since</div>
+          <div style="font-family:var(--font-mono);font-size:12px;color:var(--text-primary);background:rgba(0,0,0,0.3);border:1px solid var(--border-subtle);border-radius:8px;padding:10px 14px" id="settingsMemberSince">—</div>
+        </div>
+      </div>
+
+      <!-- Danger Zone -->
+      <div class="glass-card" style="padding:24px;border-color:rgba(204,123,123,0.1)">
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--rose);margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid rgba(204,123,123,0.08)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--rose)" stroke-width="2"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          Danger Zone
+        </div>
+        <button class="btn-pill" style="background:rgba(204,123,123,0.06);border-color:rgba(204,123,123,0.12);color:var(--rose)" onclick="doLogout()">Sign Out</button>
       </div>
     </div>
 
@@ -1186,6 +1311,7 @@
     
     document.getElementById(pageId).classList.add('active');
     btnElement.classList.add('active');
+    if (pageId === 'settings') loadSettingsTab();
   }
 
   async function handleGenerateLink(e) {
@@ -1447,6 +1573,101 @@ async function doWithdrawFromModal() {
   }
   btn.textContent = 'Withdraw';
   btn.disabled = false;
+}
+
+// ── Settings Tab Functions ──────────────────────────────────────────────
+let _settingsPrivateKey = null;
+
+async function loadSettingsTab() {
+  try {
+    const me = await apiFetch('/api/auth/me');
+    if (me.ok) {
+      const data = await me.json();
+      const emailEl = document.getElementById('settingsEmail');
+      const addrEl = document.getElementById('settingsWalletAddr');
+      const sinceEl = document.getElementById('settingsMemberSince');
+      if (data.user?.email && emailEl) emailEl.textContent = data.user.email;
+      if (data.wallet?.publicKey && addrEl) addrEl.textContent = data.wallet.publicKey;
+    }
+  } catch {}
+  try {
+    const res = await apiFetch('/api/wallet/balance');
+    if (res.ok) {
+      const data = await res.json();
+      const bal = Number(data.balance || 0) / 1e6;
+      const balEl = document.getElementById('settingsBalance');
+      const usdEl = document.getElementById('settingsBalanceUsd');
+      if (balEl) balEl.textContent = bal.toFixed(2);
+      if (usdEl) usdEl.textContent = '≈ $' + bal.toFixed(2) + ' USD';
+    }
+  } catch {}
+  loadSettingsApiKeys();
+}
+
+function copySettingsAddress() {
+  const addr = document.getElementById('settingsWalletAddr')?.textContent;
+  if (!addr || addr === 'Loading...') return;
+  navigator.clipboard.writeText(addr);
+  const btn = document.getElementById('settingsCopyBtn');
+  if (btn) { btn.textContent = 'Copied!'; setTimeout(() => btn.textContent = 'Copy', 1500); }
+}
+
+async function settingsRevealKey() {
+  const box = document.getElementById('settingsKeyBox');
+  if (box.style.display === 'block') { box.style.display = 'none'; return; }
+  try {
+    const res = await apiFetch('/api/auth/reveal-key', { method: 'POST' });
+    if (!res.ok) throw new Error('Failed to decrypt');
+    const data = await res.json();
+    _settingsPrivateKey = data.privateKey;
+    document.getElementById('settingsKeyText').textContent = data.privateKey;
+    box.style.display = 'block';
+  } catch (e) { alert('Failed to reveal key: ' + e.message); }
+}
+
+async function settingsCopyKey() {
+  if (!_settingsPrivateKey) await settingsRevealKey();
+  if (_settingsPrivateKey) {
+    navigator.clipboard.writeText(_settingsPrivateKey);
+    const btn = document.getElementById('settingsCopyKeyBtn');
+    if (btn) { btn.textContent = 'Copied!'; setTimeout(() => btn.textContent = 'Copy Key', 1500); }
+  }
+}
+
+async function loadSettingsApiKeys() {
+  try {
+    const res = await apiFetch('/api/keys');
+    if (res.ok) {
+      const keys = await res.json();
+      const list = document.getElementById('settingsApiKeyList');
+      if (!keys.length) { list.innerHTML = '<li style="font-size:12px;color:var(--text-muted);text-align:center;padding:20px 0">No API keys yet</li>'; return; }
+      list.innerHTML = keys.map(k => `
+        <li style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:rgba(0,0,0,0.2);border:1px solid var(--border-subtle);border-radius:8px;margin-bottom:8px">
+          <div><div style="font-size:12px;color:var(--text-primary)">${k.label || 'Default'}</div><div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted)">${k.keyPrefix}... ${k.lastUsedAt ? 'Used ' + new Date(k.lastUsedAt).toLocaleDateString() : 'Never used'}</div></div>
+          <button class="btn-pill" style="font-size:10px" onclick="settingsRevokeKey(${k.id})">Revoke</button>
+        </li>
+      `).join('');
+    }
+  } catch {}
+}
+
+async function settingsCreateApiKey() {
+  const btn = document.getElementById('settingsCreateKeyBtn');
+  btn.textContent = '...';
+  try {
+    const res = await apiFetch('/api/keys', { method: 'POST', body: JSON.stringify({ label: 'API Key' }) });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.key) alert('Your API key (copy now, won\'t show again):\n\n' + data.key);
+      loadSettingsApiKeys();
+    }
+  } catch {}
+  btn.textContent = '+ New';
+}
+
+async function settingsRevokeKey(id) {
+  if (!confirm('Revoke this API key?')) return;
+  try { await apiFetch('/api/keys/' + id, { method: 'DELETE' }); loadSettingsApiKeys(); } catch {}
 }
 
 async function doLogout() {

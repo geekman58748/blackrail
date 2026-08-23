@@ -1,6 +1,6 @@
 import { Router, type Request } from "express";
 import { randomBytes } from "crypto";
-import { and, db, eq, or, sessionsTable, paymentsTable } from "@workspace/db";
+import { and, db, eq, or, sessionsTable, paymentsTable, walletsTable } from "@workspace/db";
 import { CreateSessionBody } from "@workspace/api-zod";
 import {
   createFacade,
@@ -151,7 +151,10 @@ router.post("/sessions/:id/settle", async (req, res): Promise<void> => {
   if (!claimed) { res.status(409).json({ error: "session settlement already in progress" }); return; }
 
   try {
-    const sig = await settleFacade(decryptSecret(claimed.facadeKeypairB58!), claimed.facadeAddress, claimed.id);
+    // Look up user's wallet to send settlement to their dedicated address
+    const [wallet] = await db.select().from(walletsTable).where(eq(walletsTable.userId, Number(claimed.merchantId)));
+    const destinationAddress = wallet?.publicKey ?? undefined;
+    const sig = await settleFacade(decryptSecret(claimed.facadeKeypairB58!), claimed.facadeAddress, claimed.id, destinationAddress);
     const settledAt = new Date();
     await db.transaction(async (tx) => {
       await tx.update(sessionsTable).set({

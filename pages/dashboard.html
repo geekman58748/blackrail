@@ -777,6 +777,90 @@
         </div>
       </div>
 
+      <!-- WALLET CARD -->
+      <div class="glass-card" style="padding:24px;margin-bottom:24px;border:1px solid rgba(168,173,196,0.15);background:linear-gradient(135deg,rgba(15,17,23,0.95),rgba(10,12,18,0.98))">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div style="width:40px;height:40px;border-radius:12px;background:rgba(168,173,196,0.08);border:1px solid rgba(168,173,196,0.15);display:flex;align-items:center;justify-content:center">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
+            </div>
+            <div>
+              <div style="font-size:14px;font-weight:700;color:var(--text-primary)">Your Wallet</div>
+              <div style="font-size:10px;font-family:var(--font-mono);color:var(--text-muted);letter-spacing:0.06em">Solana Devnet · Auto-generated on signup</div>
+            </div>
+          </div>
+          <span style="font-size:10px;font-family:var(--font-mono);color:#a8c4b0;background:rgba(168,196,176,0.1);padding:4px 10px;border-radius:20px;display:flex;align-items:center;gap:6px">
+            <span style="width:6px;height:6px;border-radius:50%;background:#a8c4b0;animation:pulse 2s infinite"></span> Active
+          </span>
+        </div>
+        <!-- Address -->
+        <div style="background:rgba(0,0,0,0.25);border:1px solid var(--border-subtle);border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <div style="font-size:10px;font-family:var(--font-mono);color:var(--text-muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">Wallet Address</div>
+            <div style="font-family:var(--font-mono);font-size:12px;color:var(--text-primary);word-break:break-all" id="walletCardAddress">Loading...</div>
+          </div>
+          <button onclick="copyWalletAddress()" style="background:rgba(255,255,255,0.06);border:1px solid var(--border-subtle);color:var(--text-secondary);font-size:10px;font-weight:600;padding:6px 12px;border-radius:8px;cursor:pointer;font-family:var(--font-mono);flex-shrink:0;margin-left:12px" onmouseover="this.style.borderColor='rgba(255,255,255,0.14)';this.style.color='var(--text-primary)'" onmouseout="this.style.borderColor='var(--border-subtle)';this.style.color='var(--text-secondary)'" id="copyAddrBtn">Copy</button>
+        </div>
+        <!-- Balance -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+          <div style="background:rgba(0,0,0,0.25);border:1px solid var(--border-subtle);border-radius:10px;padding:14px 16px">
+            <div style="font-size:10px;font-family:var(--font-mono);color:var(--text-muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px">USDC Balance</div>
+            <div style="font-size:24px;font-weight:800;color:var(--text-primary)" id="walletCardBalance">—</div>
+          </div>
+          <div style="background:rgba(0,0,0,0.25);border:1px solid var(--border-subtle);border-radius:10px;padding:14px 16px">
+            <div style="font-size:10px;font-family:var(--font-mono);color:var(--text-muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px">Payments Received</div>
+            <div style="font-size:24px;font-weight:800;color:var(--text-primary)" id="walletCardCount">0</div>
+          </div>
+        </div>
+        <!-- Quick Actions -->
+        <div style="display:flex;gap:10px">
+          <button onclick="showWalletModal()" style="flex:1;padding:10px;background:rgba(255,255,255,0.04);border:1px solid var(--border-subtle);border-radius:10px;color:var(--text-secondary);font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;font-family:var(--font-sans)" onmouseover="this.style.borderColor='rgba(168,173,196,0.3)';this.style.color='var(--text-primary)'" onmouseout="this.style.borderColor='var(--border-subtle)';this.style.color='var(--text-secondary)'">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            Wallet Details
+          </button>
+          <a href="settings.html" style="flex:1;padding:10px;background:rgba(168,173,196,0.06);border:1px solid rgba(168,173,196,0.15);border-radius:10px;color:var(--cyan);font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;font-family:var(--font-sans);text-decoration:none" onmouseover="this.style.borderColor='rgba(168,173,196,0.3)'" onmouseout="this.style.borderColor='rgba(168,173,196,0.15)'">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            Security & Keys
+          </a>
+        </div>
+      </div>
+
+      <!-- WALLET MODAL -->
+      <div id="walletModal" style="display:none;position:fixed;inset:0;z-index:100;align-items:center;justify-content:center;padding:20px">
+        <div style="position:absolute;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(8px)" onclick="hideWalletModal()"></div>
+        <div style="position:relative;width:100%;max-width:440px;background:var(--bg-surface);border:1px solid var(--border-bright);border-radius:16px;padding:28px;box-shadow:0 24px 80px rgba(0,0,0,0.5)">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border-subtle)">
+            <div style="display:flex;align-items:center;gap:8px">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
+              <span style="font-size:13px;font-weight:700;color:var(--text-primary)">Wallet Details</span>
+            </div>
+            <button onclick="hideWalletModal()" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:18px;line-height:1">×</button>
+          </div>
+          <div style="background:rgba(0,0,0,0.3);border:1px solid var(--border-subtle);border-radius:10px;padding:14px;margin-bottom:14px">
+            <div style="font-size:10px;font-family:var(--font-mono);color:var(--text-muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px">Full Address</div>
+            <div style="font-family:var(--font-mono);font-size:11px;color:var(--text-primary);word-break:break-all;line-height:1.6" id="modalAddress"></div>
+            <button onclick="copyWalletAddress()" style="width:100%;margin-top:8px;text-align:center;font-size:11px;font-family:var(--font-mono);color:var(--cyan);background:none;border:none;cursor:pointer">Copy address</button>
+          </div>
+          <div style="background:rgba(204,123,123,0.05);border:1px solid rgba(204,123,123,0.12);border-radius:10px;padding:14px;margin-bottom:14px">
+            <div style="font-size:11px;font-weight:700;color:var(--rose);display:flex;align-items:center;gap:6px;margin-bottom:6px">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+              Private Key
+            </div>
+            <p style="font-size:11px;color:var(--text-muted);line-height:1.5;margin-bottom:10px">Your key is encrypted server-side. Reveal to export for self-custody.</p>
+            <div style="display:flex;gap:8px">
+              <button onclick="revealModalKey()" style="flex:1;padding:8px;background:rgba(255,255,255,0.04);border:1px solid var(--border-subtle);border-radius:8px;color:var(--text-secondary);font-size:10px;font-family:var(--font-mono);cursor:pointer" id="revealKeyBtn">Show Key</button>
+              <button onclick="copyModalKey()" style="flex:1;padding:8px;background:rgba(255,255,255,0.04);border:1px solid var(--border-subtle);border-radius:8px;color:var(--text-secondary);font-size:10px;font-family:var(--font-mono);cursor:pointer" id="copyKeyBtn">Copy Key</button>
+            </div>
+            <div id="modalKeyDisplay" style="display:none;background:rgba(0,0,0,0.4);border:1px solid rgba(204,123,123,0.15);border-radius:8px;padding:10px;margin-top:10px;font-family:var(--font-mono);font-size:10px;color:var(--rose);word-break:break-all;line-height:1.6"></div>
+          </div>
+          <div style="background:rgba(0,0,0,0.2);border:1px solid var(--border-subtle);border-radius:10px;padding:14px">
+            <div style="display:flex;justify-content:space-between;font-size:10px;font-family:var(--font-mono);margin-bottom:6px"><span style="color:var(--text-muted)">Network</span><span style="color:var(--text-primary)">Solana Devnet</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:10px;font-family:var(--font-mono);margin-bottom:6px"><span style="color:var(--text-muted)">Token</span><span style="color:var(--text-primary)">USDC (6 decimals)</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:10px;font-family:var(--font-mono)"><span style="color:var(--text-muted)">Provider</span><span style="color:var(--text-primary)">BlackRail Auto-Wallet</span></div>
+          </div>
+        </div>
+      </div>
+
       <div class="metrics-grid">
         <div class="glass-card metric-card">
           <div class="metric-header">
@@ -1143,6 +1227,97 @@ function copyWallet() {
   });
 }
 
+// ── Wallet Card Functions ───────────────────────────────────────────────
+let _walletPrivateKey = null;
+
+async function loadWalletCard() {
+  try {
+    const res = await apiFetch('/api/wallet/balance');
+    if (res.ok) {
+      const data = await res.json();
+      const addrEl = document.getElementById('walletCardAddress');
+      const balEl = document.getElementById('walletCardBalance');
+      const countEl = document.getElementById('walletCardCount');
+      const modalAddr = document.getElementById('modalAddress');
+      if (addrEl) addrEl.textContent = data.publicKey || 'Not found';
+      if (modalAddr) modalAddr.textContent = data.publicKey || '';
+      if (balEl) balEl.textContent = (Number(data.balance || 0) / 1e6).toFixed(2) + ' USDC';
+      localStorage.setItem('blackrail_wallet_address', data.publicKey || '');
+      // Update sidebar
+      const sidebar = document.getElementById('sidebar-wallet');
+      if (sidebar && data.publicKey) {
+        sidebar.style.display = 'block';
+        sidebar.textContent = data.publicKey.slice(0, 8) + '…' + data.publicKey.slice(-6);
+      }
+      // Load payment count
+      try {
+        const pres = await apiFetch('/api/sessions');
+        if (pres.ok) {
+          const sessions = await pres.json();
+          const settled = sessions.filter(s => s.status === 'settled');
+          if (countEl) countEl.textContent = settled.length;
+        }
+      } catch {}
+    }
+  } catch (e) {
+    console.warn('Wallet card load failed:', e);
+  }
+}
+
+function copyWalletAddress() {
+  const addr = document.getElementById('walletCardAddress')?.textContent || localStorage.getItem('blackrail_wallet_address');
+  if (!addr || addr === 'Loading...') return;
+  navigator.clipboard.writeText(addr);
+  const btn = document.getElementById('copyAddrBtn');
+  if (btn) { btn.textContent = 'Copied!'; setTimeout(() => btn.textContent = 'Copy', 1500); }
+}
+
+function showWalletModal() {
+  const modal = document.getElementById('walletModal');
+  if (modal) modal.style.display = 'flex';
+}
+
+function hideWalletModal() {
+  const modal = document.getElementById('walletModal');
+  if (modal) modal.style.display = 'none';
+  _walletPrivateKey = null;
+  const keyDisplay = document.getElementById('modalKeyDisplay');
+  if (keyDisplay) keyDisplay.style.display = 'none';
+  const revealBtn = document.getElementById('revealKeyBtn');
+  if (revealBtn) revealBtn.textContent = 'Show Key';
+}
+
+async function revealModalKey() {
+  const keyDisplay = document.getElementById('modalKeyDisplay');
+  const revealBtn = document.getElementById('revealKeyBtn');
+  if (keyDisplay && keyDisplay.style.display === 'block') {
+    keyDisplay.style.display = 'none';
+    if (revealBtn) revealBtn.textContent = 'Show Key';
+    return;
+  }
+  try {
+    const res = await apiFetch('/api/auth/reveal-key', { method: 'POST' });
+    if (!res.ok) throw new Error('Failed to decrypt');
+    const data = await res.json();
+    _walletPrivateKey = data.privateKey;
+    if (keyDisplay) { keyDisplay.textContent = data.privateKey; keyDisplay.style.display = 'block'; }
+    if (revealBtn) revealBtn.textContent = 'Hide Key';
+  } catch (e) {
+    alert('Failed to reveal key: ' + e.message);
+  }
+}
+
+async function copyModalKey() {
+  if (!_walletPrivateKey) {
+    await revealModalKey();
+  }
+  if (_walletPrivateKey) {
+    navigator.clipboard.writeText(_walletPrivateKey);
+    const btn = document.getElementById('copyKeyBtn');
+    if (btn) { btn.textContent = 'Copied!'; setTimeout(() => btn.textContent = 'Copy Key', 1500); }
+  }
+}
+
 async function doLogout() {
   try { await apiFetch('/api/auth/logout', { method: 'POST' }); } catch {}
   localStorage.removeItem('blackrail_session_token');
@@ -1155,6 +1330,7 @@ async function doLogout() {
 }
 
 loadWallet();
+loadWalletCard();
 
 async function withdrawFunds() {
   const statusEl = document.getElementById('withdraw-status');

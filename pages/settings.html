@@ -90,6 +90,27 @@
     </div>
   </div>
 
+  <!-- Withdraw -->
+  <div class="section">
+    <div class="section-title">Withdraw USDC</div>
+    <div class="field">
+      <div class="field-label">Destination Address</div>
+      <div class="field-value" style="gap:0;padding:0;background:transparent;border:none">
+        <input type="text" id="withdrawDest" placeholder="Paste Solana wallet address" style="flex:1;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--white);background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:10px 14px;outline:none;width:100%" />
+      </div>
+    </div>
+    <div class="field">
+      <div class="field-label">Amount (USDC)</div>
+      <div class="field-value" style="gap:0;padding:0;background:transparent;border:none">
+        <input type="number" id="withdrawAmount" placeholder="0.00" step="0.01" min="0" style="flex:1;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--white);background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:10px 14px;outline:none;width:100%" />
+      </div>
+    </div>
+    <div class="field">
+      <button class="btn-sm" style="background:rgba(168,196,176,0.1);border-color:rgba(168,196,176,0.2);color:var(--accent-green);width:100%;padding:10px;font-size:12px" onclick="doWithdraw()">Withdraw</button>
+      <div id="withdrawStatus" style="font-size:11px;margin-top:8px;font-family:'JetBrains Mono',monospace"></div>
+    </div>
+  </div>
+
   <!-- Danger Zone -->
   <div class="section" style="border-color:rgba(204,123,123,0.15)">
     <div class="section-title" style="color:rgba(204,123,123,0.6)">Session</div>
@@ -152,17 +173,43 @@
   // Load wallet balance
   async function loadBalance() {
     try {
-      const res = await apiFetch('/api/vault/balance');
+      const res = await apiFetch('/api/wallet/balance');
       if (res.ok) {
         const data = await res.json();
         if (data.balance) {
-          const bal = parseFloat(data.balance);
+          const bal = parseFloat(data.balance) / 1e6;
           document.getElementById('walletBalance').innerHTML = bal.toFixed(2) + ' <span>USDC</span>';
           document.getElementById('walletBalanceUsd').textContent = '≈ $' + bal.toFixed(2) + ' USD';
         }
       }
     } catch (e) {
       console.warn('Failed to load balance:', e);
+    }
+  }
+
+  // Withdraw USDC
+  async function doWithdraw() {
+    const dest = document.getElementById('withdrawDest').value.trim();
+    const amount = document.getElementById('withdrawAmount').value.trim();
+    const statusEl = document.getElementById('withdrawStatus');
+    if (!dest || !amount) { statusEl.innerHTML = '<span style="color:var(--accent-red)">Fill in both fields</span>'; return; }
+    statusEl.innerHTML = '<span style="color:rgba(140,143,160,0.6)">Withdrawing...</span>';
+    try {
+      const res = await apiFetch('/api/wallet/withdraw', {
+        method: 'POST',
+        body: JSON.stringify({ destination: dest, amount }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        statusEl.innerHTML = '<span style="color:var(--accent-red)">' + (data.error || 'Failed') + '</span>';
+      } else {
+        statusEl.innerHTML = '<span style="color:var(--accent-green)">Sent ' + amount + ' USDC ✓ tx: ' + data.signature.slice(0, 12) + '...</span>';
+        document.getElementById('withdrawDest').value = '';
+        document.getElementById('withdrawAmount').value = '';
+        loadBalance();
+      }
+    } catch (e) {
+      statusEl.innerHTML = '<span style="color:var(--accent-red)">Network error</span>';
     }
   }
 

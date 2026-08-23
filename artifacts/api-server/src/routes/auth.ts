@@ -36,7 +36,7 @@ function encryptPrivateKey(privateKey: string, password: string): string {
 function decryptPrivateKey(encrypted: string, password: string): string {
   const { createDecipheriv } = require("node:crypto");
   const key = createHash("sha256").update(password).digest();
-  const [, ivRaw, tagRaw, ciphertextRaw] = encrypted.split(":");
+  const [, _ver, ivRaw, tagRaw, ciphertextRaw] = encrypted.split(":");
   const iv = Buffer.from(ivRaw, "base64url");
   const tag = Buffer.from(tagRaw, "base64url");
   const ciphertext = Buffer.from(ciphertextRaw, "base64url");

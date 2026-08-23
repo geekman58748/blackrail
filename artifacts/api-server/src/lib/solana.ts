@@ -145,9 +145,13 @@ export async function getFacadeBalance(facadeAddress: string): Promise<bigint> {
 export async function settleFacade(
   keypairB58: string,
   _facadeAddress: string,
-  _sessionId: string
+  _sessionId: string,
+  destinationAddress?: string
 ): Promise<string> {
-  const { server, usdcMint, merchantAta, base } = cfg();
+  const { server, usdcMint, base } = cfg();
+  const merchantAta = destinationAddress
+    ? getAssociatedTokenAddressSync(usdcMint, new PublicKey(destinationAddress))
+    : getAssociatedTokenAddressSync(usdcMint, server.publicKey);
   const facade = Keypair.fromSecretKey(bs58.decode(keypairB58));
   const facadeAtaPk = getAssociatedTokenAddressSync(usdcMint, facade.publicKey);
 

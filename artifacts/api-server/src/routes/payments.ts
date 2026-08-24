@@ -39,9 +39,41 @@ router.get("/payments/stats", requireMerchant, async (_req, res): Promise<void> 
   const all = await query.where(eq(paymentsTable.merchantId, merchantId));
 
   const totalUSDC = all.reduce((acc, p) => acc + parseFloat(p.amount), 0);
+  const avgOrder = all.length > 0 ? totalUSDC / all.length : 0;
   const recent = all.slice(0, 10).map(serialize);
 
-  res.json({ totalUSDC, totalPayments: all.length, recent });
+  // Daily breakdown for the last 30 days
+  const now = new Date();
+  const dailyMap: Record<string, { count: number; volume: number }> = {};
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    const key = d.toISOString().slice(0, 10);
+    dailyMap[key] = { count: 0, volume: 0 };
+  }
+  for (const p of all) {
+    const key = p.createdAt.toISOString().slice(0, 10);
+    if (dailyMap[key]) {
+      dailyMap[key].count++;
+      dailyMap[key].volume += parseFloat(p.amount);
+    }
+  }
+  const daily = Object.entries(dailyMap).map(([date, data]) => ({
+    date,
+    count: data.count,
+    volume: Math.round(data.volume * 100) / 100,
+  }));
+
+  // Hourly distribution (last 24h) for activity heatmap
+  const hourly = Array(24).fill(0);
+  const last24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  for (const p of all) {
+    if (p.createdAt >= last24h) {
+      hourly[p.createdAt.getHours()]++;
+    }
+  }
+
+  res.json({ totalUSDC, avgOrder, totalPayments: all.length, recent, daily, hourly });
 });
 
 router.get("/payments", requireMerchant, async (_req, res): Promise<void> => {

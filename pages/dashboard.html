@@ -706,6 +706,152 @@
     .brand-name, .nav-btn span, .brand-badge, .nav-label, .sidebar-footer span { display: none; }
     .main-stage { margin-left: 70px; padding: 24px; }
   }
+
+  /* ── ANALYTICS CHART ── */
+  .chart-container {
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+
+  .chart-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+
+  .chart-title {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-secondary);
+  }
+
+  .chart-period {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    padding: 4px 10px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border-subtle);
+    border-radius: 4px;
+  }
+
+  .chart-svg {
+    width: 100%;
+    height: 160px;
+  }
+
+  .chart-bar {
+    transition: opacity 0.2s;
+  }
+
+  .chart-bar:hover {
+    opacity: 0.8;
+  }
+
+  .chart-grid-line {
+    stroke: rgba(255,255,255,0.04);
+    stroke-width: 1;
+  }
+
+  .chart-label {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    fill: var(--text-muted);
+  }
+
+  .chart-tooltip {
+    position: absolute;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-bright);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-primary);
+    pointer-events: none;
+    z-index: 50;
+    opacity: 0;
+    transition: opacity 0.15s;
+    white-space: nowrap;
+  }
+
+  .chart-tooltip.visible {
+    opacity: 1;
+  }
+
+  /* ── ACTIVITY HEATMAP ── */
+  .heatmap-grid {
+    display: grid;
+    grid-template-columns: repeat(24, 1fr);
+    gap: 3px;
+    margin-top: 12px;
+  }
+
+  .heatmap-cell {
+    aspect-ratio: 1;
+    border-radius: 3px;
+    background: rgba(255,255,255,0.03);
+    transition: background 0.2s;
+    cursor: default;
+  }
+
+  .heatmap-cell.l1 { background: rgba(168,173,196,0.12); }
+  .heatmap-cell.l2 { background: rgba(168,173,196,0.25); }
+  .heatmap-cell.l3 { background: rgba(168,173,196,0.40); }
+  .heatmap-cell.l4 { background: rgba(168,173,196,0.60); }
+
+  .heatmap-labels {
+    display: grid;
+    grid-template-columns: repeat(24, 1fr);
+    gap: 3px;
+    margin-top: 4px;
+  }
+
+  .heatmap-label {
+    font-family: var(--font-mono);
+    font-size: 8px;
+    color: var(--text-muted);
+    text-align: center;
+  }
+
+  /* ── MINI STAT ROW ── */
+  .stat-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .stat-row-item {
+    flex: 1;
+    padding: 16px 20px;
+    background: linear-gradient(160deg, #111318 0%, #0d0f15 100%);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 10px;
+  }
+
+  .stat-row-label {
+    font-size: 10px;
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+  }
+
+  .stat-row-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  .stat-row-sub {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
 </style>
 </head>
 <body>
@@ -942,6 +1088,56 @@
           <!-- Submit -->
           <button onclick="doWithdrawFromModal()" id="withdrawSubmitBtn" style="width:100%;padding:14px;background:linear-gradient(135deg,rgba(168,173,196,0.12),rgba(168,173,196,0.06));border:1px solid rgba(168,173,196,0.2);border-radius:12px;color:var(--cyan);font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font-sans);letter-spacing:0.02em" onmouseover="this.style.borderColor='rgba(168,173,196,0.4)';this.style.color='var(--text-primary)'" onmouseout="this.style.borderColor='rgba(168,173,196,0.2)';this.style.color='var(--cyan)'">Withdraw</button>
         </div>
+      </div>
+
+      <!-- REVENUE CHART -->
+      <div class="glass-card chart-container" style="position:relative">
+        <div class="chart-header">
+          <span class="chart-title">Revenue — Last 30 Days</span>
+          <span class="chart-period" id="chart-period">Loading...</span>
+        </div>
+        <div id="chart-area" style="position:relative;width:100%;height:180px;">
+          <svg id="revenue-chart" class="chart-svg" preserveAspectRatio="none"></svg>
+          <div id="chart-tooltip" class="chart-tooltip"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:8px;">
+          <span style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted)">30 days ago</span>
+          <span style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted)">Today</span>
+        </div>
+      </div>
+
+      <!-- MINI STATS ROW -->
+      <div class="stat-row">
+        <div class="glass-card stat-row-item">
+          <div class="stat-row-label">Avg. Order</div>
+          <div class="stat-row-value" id="stat-avg">$0.00</div>
+        </div>
+        <div class="glass-card stat-row-item">
+          <div class="stat-row-label">Today</div>
+          <div class="stat-row-value" id="stat-today">$0.00</div>
+          <div class="stat-row-sub" id="stat-today-count">0 payments</div>
+        </div>
+        <div class="glass-card stat-row-item">
+          <div class="stat-row-label">Peak Hour</div>
+          <div class="stat-row-value" id="stat-peak">—</div>
+          <div class="stat-row-sub" id="stat-peak-count"></div>
+        </div>
+      </div>
+
+      <!-- ACTIVITY HEATMAP -->
+      <div class="glass-card" style="padding:20px 24px;margin-bottom:24px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <span class="chart-title">Activity — Last 24 Hours</span>
+          <div style="display:flex;align-items:center;gap:4px">
+            <span style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted)">Less</span>
+            <div style="width:10px;height:10px;border-radius:2px;background:rgba(255,255,255,0.03)"></div>
+            <div style="width:10px;height:10px;border-radius:2px;background:rgba(168,173,196,0.25)"></div>
+            <div style="width:10px;height:10px;border-radius:2px;background:rgba(168,173,196,0.50)"></div>
+            <span style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted)">More</span>
+          </div>
+        </div>
+        <div class="heatmap-grid" id="heatmap-grid"></div>
+        <div class="heatmap-labels" id="heatmap-labels"></div>
       </div>
 
       <div class="metrics-grid">
@@ -1749,7 +1945,7 @@ async function loadStats() {
       apiFetch('/api/payments'),
     ]);
     if (statsRes.status === 401 || allRes.status === 401) return;
-    const { totalUSDC, totalPayments, recent } = await statsRes.json();
+    const { totalUSDC, avgOrder, totalPayments, recent, daily, hourly } = await statsRes.json();
     const payments = await allRes.json();
 
     // Update metric cards
@@ -1759,6 +1955,34 @@ async function loadStats() {
     }
     const countEl = document.getElementById('stat-count');
     if (countEl) countEl.textContent = (totalPayments || 0).toLocaleString();
+
+    // Update mini stats
+    const avgEl = document.getElementById('stat-avg');
+    if (avgEl) avgEl.textContent = '$' + (avgOrder || 0).toFixed(2);
+
+    // Today's stats
+    const todayKey = new Date().toISOString().slice(0, 10);
+    const todayData = daily ? daily.find(d => d.date === todayKey) : null;
+    const todayEl = document.getElementById('stat-today');
+    const todayCountEl = document.getElementById('stat-today-count');
+    if (todayEl) todayEl.textContent = '$' + (todayData ? todayData.volume.toFixed(2) : '0.00');
+    if (todayCountEl) todayCountEl.textContent = (todayData ? todayData.count : 0) + ' payment' + ((todayData && todayData.count !== 1) ? 's' : '');
+
+    // Peak hour
+    if (hourly && hourly.length === 24) {
+      const maxH = Math.max(...hourly);
+      const peakIdx = hourly.indexOf(maxH);
+      const peakEl = document.getElementById('stat-peak');
+      const peakCountEl = document.getElementById('stat-peak-count');
+      if (peakEl) peakEl.textContent = maxH > 0 ? peakIdx + ':00' : '—';
+      if (peakCountEl) peakCountEl.textContent = maxH > 0 ? maxH + ' payment' + (maxH !== 1 ? 's' : '') : '';
+    }
+
+    // Render revenue chart
+    if (daily) renderRevenueChart(daily);
+
+    // Render heatmap
+    if (hourly) renderHeatmap(hourly);
 
     // Populate live feed
     const feedBody = document.getElementById('live-feed-tbody');
@@ -1823,6 +2047,103 @@ async function loadStats() {
   } catch(e) {
     console.warn('Stats fetch failed:', e);
   }
+}
+
+function renderRevenueChart(daily) {
+  const svg = document.getElementById('revenue-chart');
+  const tooltip = document.getElementById('chart-tooltip');
+  const container = document.getElementById('chart-area');
+  if (!svg || !daily || daily.length === 0) return;
+
+  const W = container.offsetWidth || 800;
+  const H = 180;
+  const padTop = 10, padBot = 20, padLeft = 0;
+  const chartH = H - padTop - padBot;
+  const barGap = 2;
+  const barW = (W - padLeft - daily.length * barGap) / daily.length;
+  const maxVol = Math.max(...daily.map(d => d.volume), 1);
+
+  let html = '';
+
+  // Grid lines
+  for (let i = 0; i <= 4; i++) {
+    const y = padTop + (chartH / 4) * i;
+    html += `<line x1="${padLeft}" y1="${y}" x2="${W}" y2="${y}" class="chart-grid-line" />`;
+  }
+
+  // Bars
+  daily.forEach((d, i) => {
+    const x = padLeft + i * (barW + barGap);
+    const barH = d.volume > 0 ? Math.max((d.volume / maxVol) * chartH, 3) : 0;
+    const y = padTop + chartH - barH;
+    const date = new Date(d.date);
+    const label = (date.getMonth() + 1) + '/' + date.getDate();
+    html += `<rect x="${x}" y="${y}" width="${barW}" height="${barH}" rx="2" class="chart-bar" fill="rgba(168,173,196,0.4)" data-date="${d.date}" data-volume="${d.volume}" data-count="${d.count}" />`;
+  });
+
+  // X-axis labels (every 5th day)
+  daily.forEach((d, i) => {
+    if (i % 5 === 0 || i === daily.length - 1) {
+      const x = padLeft + i * (barW + barGap) + barW / 2;
+      const date = new Date(d.date);
+      const label = (date.getMonth() + 1) + '/' + date.getDate();
+      html += `<text x="${x}" y="${H - 2}" text-anchor="middle" class="chart-label">${label}</text>`;
+    }
+  });
+
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.innerHTML = html;
+
+  // Period label
+  const periodEl = document.getElementById('chart-period');
+  if (periodEl && daily.length > 0) {
+    const first = new Date(daily[0].date);
+    const last = new Date(daily[daily.length - 1].date);
+    periodEl.textContent = first.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' — ' + last.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  // Tooltip
+  const bars = svg.querySelectorAll('.chart-bar');
+  bars.forEach(bar => {
+    bar.addEventListener('mouseenter', (e) => {
+      const date = bar.getAttribute('data-date');
+      const vol = parseFloat(bar.getAttribute('data-volume'));
+      const count = bar.getAttribute('data-count');
+      tooltip.innerHTML = `<div style="font-weight:600;margin-bottom:2px">${new Date(date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</div><div>$${vol.toFixed(2)} USDC</div><div style="color:var(--text-muted)">${count} payment${count !== '1' ? 's' : ''}</div>`;
+      tooltip.classList.add('visible');
+      const rect = bar.getBoundingClientRect();
+      const contRect = container.getBoundingClientRect();
+      tooltip.style.left = (rect.left - contRect.left + rect.width / 2 - tooltip.offsetWidth / 2) + 'px';
+      tooltip.style.top = (rect.top - contRect.top - tooltip.offsetHeight - 8) + 'px';
+    });
+    bar.addEventListener('mouseleave', () => {
+      tooltip.classList.remove('visible');
+    });
+  });
+}
+
+function renderHeatmap(hourly) {
+  const grid = document.getElementById('heatmap-grid');
+  const labels = document.getElementById('heatmap-labels');
+  if (!grid || !hourly) return;
+
+  const max = Math.max(...hourly, 1);
+  grid.innerHTML = hourly.map((count, h) => {
+    let level = '';
+    if (count > 0) {
+      const ratio = count / max;
+      if (ratio <= 0.25) level = 'l1';
+      else if (ratio <= 0.5) level = 'l2';
+      else if (ratio <= 0.75) level = 'l3';
+      else level = 'l4';
+    }
+    return `<div class="heatmap-cell ${level}" title="${h}:00 — ${count} payment${count !== 1 ? 's' : ''}"></div>`;
+  }).join('');
+
+  labels.innerHTML = Array(24).fill(0).map((_, h) => {
+    if (h % 3 === 0) return `<span class="heatmap-label">${h}</span>`;
+    return `<span class="heatmap-label"></span>`;
+  }).join('');
 }
 
 function timeAgo(date) {

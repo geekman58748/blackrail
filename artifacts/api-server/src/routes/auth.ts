@@ -337,6 +337,7 @@ router.get("/auth/settings", async (req, res): Promise<void> => {
   const [user] = await db.select().from(usersTable).where(eq(usersTable.id, session.userId));
   if (!user) { res.status(401).json({ error: "user not found" }); return; }
 
+  console.log(`[settings] GET user=${user.email} webhookUrl=${user.webhookUrl} emailNotif=${user.emailNotifications}`);
   res.json({
     webhookUrl: user.webhookUrl ?? null,
     webhookConfigured: !!(user.webhookUrl && user.webhookSecret),
@@ -379,7 +380,17 @@ router.post("/auth/settings", async (req, res): Promise<void> => {
   }
 
   if (Object.keys(updates).length > 0) {
-    await db.update(usersTable).set(updates).where(eq(usersTable.id, session.userId));
+    console.log(`[settings] Updating user ${session.userId}:`, updates);
+    try {
+      await db.update(usersTable).set(updates).where(eq(usersTable.id, session.userId));
+      console.log(`[settings] Update successful`);
+    } catch (e) {
+      console.log(`[settings] Update failed:`, e);
+      res.status(500).json({ error: "failed to update settings", detail: String(e) });
+      return;
+    }
+  } else {
+    console.log(`[settings] No updates to apply`);
   }
 
   res.json({ ok: true });

@@ -322,6 +322,69 @@ router.post("/auth/regenerate-wallet", async (req, res): Promise<void> => {
   res.json({ ok: true, publicKey });
 });
 
+// ── GET /auth/settings — get merchant notification settings ───────────────────
+
+router.get("/auth/settings", async (req, res): Promise<void> => {
+  const authHeader = req.headers.authorization;
+  const sessionToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
+  if (!sessionToken) { res.status(401).json({ error: "not authenticated" }); return; }
+
+  const [session] = await db.select().from(loginSessionsTable).where(eq(loginSessionsTable.token, sessionToken));
+  if (!session || session.expiresAt <= new Date()) {
+    res.status(401).json({ error: "session expired" }); return;
+  }
+
+  const [user] = await db.select().from(usersTable).where(eq(usersTable.id, session.userId));
+  if (!user) { res.status(401).json({ error: "user not found" }); return; }
+
+  res.json({
+    webhookUrl: user.webhookUrl ?? null,
+    webhookConfigured: !!(user.webhookUrl && user.webhookSecret),
+    emailNotifications: user.emailNotifications,
+  });
+});
+
+// ── POST /auth/settings — update merchant notification settings ───────────────
+
+router.post("/auth/settings", async (req, res): Promise<void> => {
+  const authHeader = req.headers.authorization;
+  const sessionToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
+  if (!sessionToken) { res.status(401).json({ error: "not authenticated" }); return; }
+
+  const [session] = await db.select().from(loginSessionsTable).where(eq(loginSessionsTable.token, sessionToken));
+  if (!session || session.expiresAt <= new Date()) {
+    res.status(401).json({ error: "session expired" }); return;
+  }
+
+  const { webhookUrl, emailNotifications } = req.body as {
+    webhookUrl?: string;
+    emailNotifications?: boolean;
+  };
+
+  const updates: Record<string, unknown> = {};
+  if (webhookUrl !== undefined) {
+    updates.webhookUrl = webhookUrl || null;
+    // Generate a webhook secret if one doesn't exist yet
+    if (webhookUrl) {
+      const [existing] = await db.select().from(usersTable).where(eq(usersTable.id, session.userId));
+      if (!existing?.webhookSecret) {
+        updates.webhookSecret = randomBytes(32).toString("hex");
+      }
+    } else {
+      updates.webhookSecret = null;
+    }
+  }
+  if (emailNotifications !== undefined) {
+    updates.emailNotifications = emailNotifications;
+  }
+
+  if (Object.keys(updates).length > 0) {
+    await db.update(usersTable).set(updates).where(eq(usersTable.id, session.userId));
+  }
+
+  res.json({ ok: true });
+});
+
 // ── POST /auth/logout — invalidate session ────────────────────────────────────
 
 router.post("/auth/logout", async (req, res): Promise<void> => {

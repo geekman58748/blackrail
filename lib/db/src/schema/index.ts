@@ -84,6 +84,9 @@ export type ApiKey = typeof apiKeysTable.$inferSelect;
 export const usersTable = pgTable("users", {
   id: serial("id").primaryKey(),
   email: varchar("email", { length: 255 }).notNull().unique(),
+  webhookUrl: varchar("webhook_url", { length: 500 }),
+  webhookSecret: varchar("webhook_secret", { length: 100 }),
+  emailNotifications: boolean("email_notifications").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

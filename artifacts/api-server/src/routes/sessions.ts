@@ -1,6 +1,6 @@
 import { Router, type Request } from "express";
 import { randomBytes } from "crypto";
-import { and, db, eq, or, sessionsTable, paymentsTable, walletsTable } from "@workspace/db";
+import { and, db, eq, or, sessionsTable, paymentsTable, walletsTable, usersTable } from "@workspace/db";
 import { CreateSessionBody } from "@workspace/api-zod";
 import {
   createFacade,
@@ -9,6 +9,7 @@ import {
 } from "../lib/solana.js";
 import { capabilityMatches, merchantPrincipal, requireMerchant } from "../middlewares/auth.js";
 import { decryptSecret, encryptSecret, hashCapability } from "../lib/secrets.js";
+import { notifyMerchant, type PaymentNotification } from "../lib/notifications.js";
 
 const router = Router();
 
@@ -178,6 +179,36 @@ router.post("/sessions/:id/settle", async (req, res): Promise<void> => {
         merchantId: claimed.merchantId,
       }).onConflictDoNothing();
     });
+    // Fire notifications (non-blocking)
+    const merchantUserId = Number(claimed.merchantId);
+    const [merchantUser] = await db.select().from(usersTable).where(eq(usersTable.id, merchantUserId));
+    if (merchantUser) {
+      const notificationPayload: PaymentNotification = {
+        event: "payment.settled",
+        session: {
+          id: claimed.id,
+          label: claimed.label,
+          amount: claimed.amount ?? "0",
+          currency: claimed.currency,
+          facadeAddress: claimed.facadeAddress,
+          txHash: sig,
+          receivedAmount: decimalUsdc(received),
+          settledAt: new Date().toISOString(),
+        },
+        merchant: {
+          id: claimed.merchantId,
+          email: merchantUser.email,
+        },
+      };
+      notifyMerchant(
+        merchantUser.email,
+        merchantUser.webhookUrl ?? null,
+        merchantUser.webhookSecret ?? null,
+        merchantUser.emailNotifications,
+        notificationPayload
+      ).catch(() => {});
+    }
+
     res.json({ sig, private: true, status: "settled" });
   } catch (e) {
     await db.update(sessionsTable).set({ status: "settlement_failed", settlementError: String(e) })

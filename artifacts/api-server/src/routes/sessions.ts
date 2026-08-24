@@ -180,7 +180,6 @@ router.post("/sessions/:id/settle", async (req, res): Promise<void> => {
       }).onConflictDoNothing();
     });
     // Fire notifications (non-blocking)
-    const merchantUserId = Number(claimed.merchantId);
     const [merchantUser] = await db.select().from(usersTable).where(eq(usersTable.id, merchantUserId));
     if (merchantUser) {
       const notificationPayload: PaymentNotification = {

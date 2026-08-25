@@ -66,6 +66,7 @@ router.post("/sessions", requireMerchant, async (req, res): Promise<void> => {
     facadeAddress = result.facadeAddress;
     facadeKeypairB58 = encryptSecret(result.keypairB58);
   } catch (e) {
+    console.error('[sessions] createFacade FAILED:', String(e));
     res.status(502).json({ error: "Failed to generate facade address", detail: String(e) });
     return;
   }

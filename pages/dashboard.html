@@ -288,7 +288,7 @@
     flex: 1;
     margin-left: 260px;
     padding: 36px 48px;
-    max-width: 1400px;
+    max-width: 960px;
   }
 
   .page-view {
@@ -1335,32 +1335,33 @@
         </div>
       </div>
 
-      <!-- LINK GENERATOR (compact) -->
-      <div class="glass-card" style="padding:24px;margin-bottom:24px">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+      <!-- LINK GENERATOR -->
+      <div class="glass-card" style="padding:24px;margin-bottom:24px;max-width:560px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:18px">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#b18df8" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
           <span style="font-size:13px;font-weight:700;color:var(--text-primary)">New Payment Link</span>
         </div>
-        <form onsubmit="handleGenerateLink(event)" style="display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end">
-          <div>
-            <label class="field-label">Amount (USDC)</label>
-            <input type="number" step="0.01" class="input-styled" id="link-amount" placeholder="Open amount" />
-          </div>
-          <div>
+        <form onsubmit="handleGenerateLink(event)">
+          <div style="margin-bottom:14px">
             <label class="field-label">Label / Reference</label>
             <input type="text" class="input-styled" id="link-label" placeholder="e.g. Invoice #8921" required />
           </div>
-          <button type="submit" class="btn-action-primary" style="height:42px;white-space:nowrap;margin-bottom:1px">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
-            Generate
-          </button>
+          <div style="display:flex;gap:12px;align-items:end">
+            <div style="flex:1">
+              <label class="field-label">Amount (USDC)</label>
+              <input type="number" step="0.01" class="input-styled" id="link-amount" placeholder="Open amount" />
+            </div>
+            <button type="submit" class="btn-action-primary" style="height:42px;white-space:nowrap;padding:0 24px">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+              Generate
+            </button>
+          </div>
         </form>
-        <!-- Preview panel (shows after generation) -->
         <div id="preview-panel" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid var(--border-subtle)"></div>
       </div>
 
       <!-- PAYMENT HISTORY -->
-      <div class="terminal-box">
+      <div class="terminal-box" style="max-width:800px">
         <div class="terminal-bar">
           <span class="terminal-title">RECENT PAYMENTS</span>
         </div>

@@ -47,7 +47,7 @@
     -webkit-font-smoothing: antialiased;
   }
 
-  /* ── ATMOSPHERIC DEPTH ── */
+  /* ── ATMOSPHERIC DEPTH: grid + torch (matches landing) ── */
   .dash-atmosphere {
     position: fixed;
     inset: 0;
@@ -55,35 +55,63 @@
     z-index: 0;
     overflow: hidden;
   }
-  .dash-atmosphere::before {
-    content: '';
-    position: absolute;
-    top: -120px;
-    right: 5%;
-    width: 600px;
-    height: 600px;
-    background: radial-gradient(ellipse at center,
-      rgba(255,255,255,0.028) 0%,
-      rgba(255,255,255,0.008) 40%,
-      transparent 70%);
-    animation: atmo-drift 12s ease-in-out infinite alternate;
+  .dash-atmosphere .grid-overlay {
+    position:absolute;inset:0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.02) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(255,255,255,0.02) 1px,transparent 1px);
+    background-size:60px 60px;
+    mask-image:linear-gradient(to bottom,transparent 0%,rgba(0,0,0,0.5) 30%,rgba(0,0,0,0.5) 70%,transparent 100%);
+    z-index:1;
   }
-  .dash-atmosphere::after {
-    content: '';
-    position: absolute;
-    bottom: 10%;
-    left: 260px;
-    width: 500px;
-    height: 400px;
-    background: radial-gradient(ellipse at center,
-      rgba(180,185,210,0.018) 0%,
-      transparent 65%);
-    animation: atmo-drift 16s ease-in-out infinite alternate-reverse;
+  .dash-atmosphere .torch-container {
+    position:absolute;bottom:0;left:50%;transform:translateX(-50%);
+    width:1200px;height:1000px;pointer-events:none;
+    transition:transform 0.15s ease-out;z-index:2;
   }
-  @keyframes atmo-drift {
-    0%   { opacity: 0.6; transform: scale(0.95) translate(0,0); }
-    100% { opacity: 1;   transform: scale(1.08) translate(20px, -20px); }
+  .dash-atmosphere .light-cone {
+    position:absolute;inset:0;
+    background:conic-gradient(
+      from -20deg at 50% 100%,
+      transparent 0deg,rgba(255,255,255,0.0) 0deg,
+      rgba(200,200,210,0.04) 10deg,rgba(215,215,225,0.10) 16deg,
+      rgba(230,230,238,0.18) 20deg,rgba(245,245,250,0.24) 25deg,
+      rgba(230,230,238,0.18) 30deg,rgba(215,215,225,0.10) 34deg,
+      rgba(200,200,210,0.04) 40deg,transparent 45deg
+    );
+    filter:blur(24px);
+    animation:torch-breath 7s ease-in-out infinite alternate;
   }
+  .dash-atmosphere .light-core {
+    position:absolute;bottom:0;left:50%;transform:translateX(-50%);
+    width:320px;height:600px;
+    background:linear-gradient(to top,rgba(255,255,255,0.15) 0%,rgba(180,180,200,0.05) 50%,transparent 100%);
+    filter:blur(36px);
+    animation:core-pulse 5s ease-in-out infinite alternate;
+  }
+  @keyframes torch-breath{
+    0%{opacity:0.55;transform:scaleX(0.95) scaleY(0.98)}
+    50%{opacity:0.85;transform:scaleX(1.08) scaleY(1.02)}
+    100%{opacity:0.65;transform:scaleX(1.02) scaleY(1.05)}
+  }
+  @keyframes core-pulse{
+    0%{opacity:0.4;transform:translateX(-50%) scale(0.95)}
+    100%{opacity:0.8;transform:translateX(-50%) scale(1.08)}
+  }
+
+  /* ── ENTRANCE ANIMATIONS ── */
+  @keyframes unblur-in{
+    from{opacity:0;filter:blur(8px);transform:translateY(12px)}
+    to{opacity:1;filter:blur(0);transform:translateY(0)}
+  }
+  .anim-sidebar{animation:unblur-in 0.6s 0.05s cubic-bezier(0.16,1,0.3,1) both}
+  .anim-header{animation:unblur-in 0.6s 0.15s cubic-bezier(0.16,1,0.3,1) both}
+  .anim-wallet{animation:unblur-in 0.7s 0.25s cubic-bezier(0.16,1,0.3,1) both}
+  .anim-metrics{animation:unblur-in 0.6s 0.35s cubic-bezier(0.16,1,0.3,1) both}
+  .anim-metrics-2{animation:unblur-in 0.6s 0.42s cubic-bezier(0.16,1,0.3,1) both}
+  .anim-metrics-3{animation:unblur-in 0.6s 0.49s cubic-bezier(0.16,1,0.3,1) both}
+  .anim-chart{animation:unblur-in 0.7s 0.4s cubic-bezier(0.16,1,0.3,1) both}
+  .anim-table{animation:unblur-in 0.7s 0.5s cubic-bezier(0.16,1,0.3,1) both}
 
   /* ── APP LAYOUT ── */
   .app-shell {
@@ -313,12 +341,14 @@
 
   /* ── MATTE CARDS ── */
   .glass-card {
-    background: linear-gradient(160deg, #111318 0%, #0d0f15 100%);
+    background: rgba(255,255,255,0.025);
     border: 1px solid rgba(255,255,255,0.07);
     border-radius: 12px;
     box-shadow: 0 8px 32px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.04);
     position: relative;
     overflow: hidden;
+    backdrop-filter:blur(16px);
+    -webkit-backdrop-filter:blur(16px);
   }
 
   /* ── OVERVIEW / METRICS ── */
@@ -827,9 +857,11 @@
   .stat-row-item {
     flex: 1;
     padding: 16px 20px;
-    background: linear-gradient(160deg, #111318 0%, #0d0f15 100%);
+    background: rgba(255,255,255,0.025);
     border: 1px solid rgba(255,255,255,0.07);
     border-radius: 10px;
+    backdrop-filter:blur(16px);
+    -webkit-backdrop-filter:blur(16px);
   }
 
   .stat-row-label {
@@ -856,11 +888,17 @@
 </head>
 <body>
 
-<div class="dash-atmosphere"></div>
+<div class="dash-atmosphere">
+    <div class="grid-overlay"></div>
+    <div class="torch-container" id="torch">
+      <div class="light-cone"></div>
+      <div class="light-core"></div>
+    </div>
+  </div>
 <div class="app-shell">
 
   <!-- SIDEBAR NAVIGATION -->
-  <aside class="sidebar">
+  <aside class="sidebar anim-sidebar">
     <div class="brand-header" style="cursor:pointer" onclick="window.location.href='../index.html'">
       <div class="brand-logo-mark">
         <svg width="16" height="16" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="5" height="5" rx="1" fill="currentColor" opacity=".9"/><rect x="8" y="1" width="5" height="5" rx="1" fill="currentColor" opacity=".5"/><rect x="1" y="8" width="5" height="5" rx="1" fill="currentColor" opacity=".5"/><rect x="8" y="8" width="5" height="5" rx="1" fill="currentColor" opacity=".9"/></svg>
@@ -936,7 +974,7 @@
 
     <!-- 1. OVERVIEW VIEW -->
     <div id="overview" class="page-view active">
-      <div class="view-header">
+      <div class="view-header anim-header">
         <div class="view-title-group">
           <span class="view-label">[ BLACKRAIL · COMMAND ]</span>
           <h1>Merchant Overview</h1>
@@ -945,7 +983,7 @@
       </div>
 
       <!-- WALLET CARD -->
-      <div class="glass-card" style="padding:24px;margin-bottom:24px;border:1px solid rgba(168,173,196,0.15);background:linear-gradient(135deg,rgba(15,17,23,0.95),rgba(10,12,18,0.98))">
+      <div class="glass-card anim-wallet" style="padding:24px;margin-bottom:24px;border:1px solid rgba(168,173,196,0.15);background:linear-gradient(135deg,rgba(15,17,23,0.95),rgba(10,12,18,0.98))">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
           <div style="display:flex;align-items:center;gap:12px">
             <div style="width:40px;height:40px;border-radius:12px;background:rgba(168,173,196,0.08);border:1px solid rgba(168,173,196,0.15);display:flex;align-items:center;justify-content:center">
@@ -1091,7 +1129,7 @@
       </div>
 
       <!-- REVENUE CHART -->
-      <div class="glass-card chart-container" style="position:relative">
+      <div class="glass-card chart-container anim-chart" style="position:relative">
         <div class="chart-header">
           <span class="chart-title">Revenue — Last 30 Days</span>
           <span class="chart-period" id="chart-period">Loading...</span>
@@ -1107,7 +1145,7 @@
       </div>
 
       <!-- MINI STATS ROW -->
-      <div class="stat-row">
+      <div class="stat-row anim-metrics">
         <div class="glass-card stat-row-item">
           <div class="stat-row-label">Avg. Order</div>
           <div class="stat-row-value" id="stat-avg">$0.00</div>
@@ -1140,7 +1178,7 @@
         <div class="heatmap-labels" id="heatmap-labels"></div>
       </div>
 
-      <div class="metrics-grid">
+      <div class="metrics-grid anim-metrics-2">
         <div class="glass-card metric-card">
           <div class="metric-header">
             <span class="metric-title">Total Received This Month</span>
@@ -2353,6 +2391,16 @@ async function revokeApiKey(id) {
 
 // Load keys when on that view
 document.querySelector('[onclick*="api-keys"]')?.addEventListener('click', loadApiKeys);
+
+// Torch parallax — matches landing page
+const torch = document.getElementById('torch');
+if (torch && window.innerWidth > 768) {
+  document.addEventListener('mousemove', (e) => {
+    const x = (e.clientX / window.innerWidth - 0.5) * 12;
+    const y = (e.clientY / window.innerHeight - 0.5) * 8;
+    torch.style.transform = `translateX(calc(-50% + ${x}px)) translateY(${y}px)`;
+  });
+}
 </script>
 
 </body>

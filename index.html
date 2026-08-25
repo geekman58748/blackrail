@@ -39,13 +39,6 @@
     overflow:hidden;
   }
   
-  #stars-canvas{
-    position:absolute;inset:0;
-    width:100%;height:100%;
-    pointer-events:none;
-    z-index:1;
-  }
-
   .torch-container{
     position:absolute;
     bottom:-10%;left:50%;
@@ -636,7 +629,6 @@
 
 <!-- DYNAMIC ATMOSPHERIC LIGHT SCENE & CANVAS STARS -->
 <div class="bg-scene">
-  <canvas id="stars-canvas"></canvas>
   <div class="grid-overlay"></div>
   <div class="torch-container" id="torch">
     <div class="light-cone"></div>
@@ -939,88 +931,7 @@ if (window.innerWidth > 768) {
   });
 }
 
-// ── SLOWLY GLIDING STARS CANVAS SYSTEM ──
-const canvas = document.getElementById('stars-canvas');
-const ctx = canvas.getContext('2d');
 
-let width, height;
-let stars = [];
-const STAR_COUNT = 90;
-
-function resizeCanvas() {
-  width = canvas.width = window.innerWidth;
-  height = canvas.height = window.innerHeight;
-}
-
-class Star {
-  constructor() {
-    this.reset(true);
-  }
-
-  reset(initial = false) {
-    this.x = initial ? Math.random() * width : (Math.random() < 0.5 ? -10 : Math.random() * width);
-    this.y = initial ? Math.random() * height : -10;
-    this.size = Math.random() * 1.6 + 0.4;
-    this.baseAlpha = Math.random() * 0.6 + 0.25;
-    this.alpha = this.baseAlpha;
-    this.vx = Math.random() * 0.15 + 0.05;
-    this.vy = Math.random() * 0.25 + 0.1;
-    this.twinkleSpeed = Math.random() * 0.015 + 0.005;
-    this.twinkleFactor = Math.random() * Math.PI;
-  }
-
-  update() {
-    this.x += this.vx;
-    this.y += this.vy;
-
-    this.twinkleFactor += this.twinkleSpeed;
-    this.alpha = this.baseAlpha + Math.sin(this.twinkleFactor) * 0.2;
-
-    if (this.x > width + 10 || this.y > height + 10) {
-      if (Math.random() < 0.5) {
-        this.x = Math.random() * width;
-        this.y = -10;
-      } else {
-        this.x = -10;
-        this.y = Math.random() * height;
-      }
-    }
-  }
-
-  draw() {
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(255, 255, 255, ${Math.max(0, this.alpha)})`;
-    if (this.size > 1.2) {
-      ctx.shadowBlur = 6;
-      ctx.shadowColor = 'rgba(200, 225, 255, 0.8)';
-    }
-    ctx.fill();
-    ctx.restore();
-  }
-}
-
-function initStars() {
-  resizeCanvas();
-  stars = [];
-  for (let i = 0; i < STAR_COUNT; i++) {
-    stars.push(new Star());
-  }
-}
-
-function animateStars() {
-  ctx.clearRect(0, 0, width, height);
-  stars.forEach(star => {
-    star.update();
-    star.draw();
-  });
-  requestAnimationFrame(animateStars);
-}
-
-window.addEventListener('resize', resizeCanvas);
-initStars();
-animateStars();
 </script>
 
 <!-- SIGN-IN MODAL -->

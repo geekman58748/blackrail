@@ -20,9 +20,9 @@
     --text-secondary: #8a94a6;
     --text-muted: #4a5264;
     
-    --cyan: #a8adc4;
+    --cyan: #b18df8;
     --indigo: #8890aa;
-    --emerald: #a8adc4;
+    --emerald: #b18df8;
     --amber: #c8cad8;
     --rose: #cc7b7b;
 
@@ -252,7 +252,7 @@
     background: rgba(255,255,255,0.1); border: 1px solid var(--border-subtle);
     position: relative; transition: all 0.2s; flex-shrink: 0;
   }
-  .toggle-pill.on { background: rgba(168,196,176,0.2); border-color: rgba(168,196,176,0.3); }
+  .toggle-pill.on { background: rgba(177,141,248,0.2); border-color: rgba(177,141,248,0.3); }
   .toggle-pill::after {
     content: ''; position: absolute; top: 2px; left: 2px;
     width: 14px; height: 14px; border-radius: 50%;
@@ -828,10 +828,10 @@
     cursor: default;
   }
 
-  .heatmap-cell.l1 { background: rgba(168,173,196,0.12); }
-  .heatmap-cell.l2 { background: rgba(168,173,196,0.25); }
-  .heatmap-cell.l3 { background: rgba(168,173,196,0.40); }
-  .heatmap-cell.l4 { background: rgba(168,173,196,0.60); }
+  .heatmap-cell.l1 { background: rgba(177,141,248,0.12); }
+  .heatmap-cell.l2 { background: rgba(177,141,248,0.25); }
+  .heatmap-cell.l3 { background: rgba(177,141,248,0.40); }
+  .heatmap-cell.l4 { background: rgba(177,141,248,0.60); }
 
   .heatmap-labels {
     display: grid;
@@ -983,10 +983,10 @@
       </div>
 
       <!-- WALLET CARD -->
-      <div class="glass-card anim-wallet" style="padding:24px;margin-bottom:24px;border:1px solid rgba(168,173,196,0.15);background:linear-gradient(135deg,rgba(15,17,23,0.95),rgba(10,12,18,0.98))">
+      <div class="glass-card anim-wallet" style="padding:24px;margin-bottom:24px;border:1px solid rgba(177,141,248,0.15);background:linear-gradient(135deg,rgba(15,17,23,0.95),rgba(10,12,18,0.98))">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
           <div style="display:flex;align-items:center;gap:12px">
-            <div style="width:40px;height:40px;border-radius:12px;background:rgba(168,173,196,0.08);border:1px solid rgba(168,173,196,0.15);display:flex;align-items:center;justify-content:center">
+            <div style="width:40px;height:40px;border-radius:12px;background:rgba(177,141,248,0.08);border:1px solid rgba(177,141,248,0.15);display:flex;align-items:center;justify-content:center">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
             </div>
             <div>
@@ -994,8 +994,8 @@
               <div style="font-size:10px;font-family:var(--font-mono);color:var(--text-muted);letter-spacing:0.06em">Solana Devnet · Auto-generated on signup</div>
             </div>
           </div>
-          <span style="font-size:10px;font-family:var(--font-mono);color:#a8c4b0;background:rgba(168,196,176,0.1);padding:4px 10px;border-radius:20px;display:flex;align-items:center;gap:6px">
-            <span style="width:6px;height:6px;border-radius:50%;background:#a8c4b0;animation:pulse 2s infinite"></span> Active
+          <span style="font-size:10px;font-family:var(--font-mono);color:#b18df8;background:rgba(177,141,248,0.1);padding:4px 10px;border-radius:20px;display:flex;align-items:center;gap:6px">
+            <span style="width:6px;height:6px;border-radius:50%;background:#b18df8;animation:pulse 2s infinite"></span> Active
           </span>
         </div>
         <!-- Address -->
@@ -1019,11 +1019,11 @@
         </div>
         <!-- Quick Actions -->
         <div style="display:flex;gap:10px">
-          <button onclick="showWalletModal()" style="flex:1;padding:10px;background:rgba(255,255,255,0.04);border:1px solid var(--border-subtle);border-radius:10px;color:var(--text-secondary);font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;font-family:var(--font-sans)" onmouseover="this.style.borderColor='rgba(168,173,196,0.3)';this.style.color='var(--text-primary)'" onmouseout="this.style.borderColor='var(--border-subtle)';this.style.color='var(--text-secondary)'">
+          <button onclick="showWalletModal()" style="flex:1;padding:10px;background:rgba(255,255,255,0.04);border:1px solid var(--border-subtle);border-radius:10px;color:var(--text-secondary);font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;font-family:var(--font-sans)" onmouseover="this.style.borderColor='rgba(177,141,248,0.3)';this.style.color='var(--text-primary)'" onmouseout="this.style.borderColor='var(--border-subtle)';this.style.color='var(--text-secondary)'">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
             Wallet Details
           </button>
-          <button onclick="showWithdrawModal()" style="flex:1;padding:10px;background:rgba(168,173,196,0.06);border:1px solid rgba(168,173,196,0.15);border-radius:10px;color:var(--cyan);font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;font-family:var(--font-sans)" onmouseover="this.style.borderColor='rgba(168,173,196,0.3)'" onmouseout="this.style.borderColor='rgba(168,173,196,0.15)'">
+          <button onclick="showWithdrawModal()" style="flex:1;padding:10px;background:rgba(177,141,248,0.06);border:1px solid rgba(177,141,248,0.15);border-radius:10px;color:var(--cyan);font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;font-family:var(--font-sans)" onmouseover="this.style.borderColor='rgba(177,141,248,0.3)'" onmouseout="this.style.borderColor='rgba(177,141,248,0.15)'">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
             Withdraw
           </button>
@@ -1072,7 +1072,7 @@
         <div style="position:relative;width:100%;max-width:440px;background:linear-gradient(180deg,var(--bg-surface) 0%,#0c0e14 100%);border:1px solid var(--border-bright);border-radius:20px;padding:32px;box-shadow:0 32px 100px rgba(0,0,0,0.6)">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px">
             <div style="display:flex;align-items:center;gap:10px">
-              <div style="width:36px;height:36px;border-radius:10px;background:rgba(168,173,196,0.08);border:1px solid rgba(168,173,196,0.15);display:flex;align-items:center;justify-content:center">
+              <div style="width:36px;height:36px;border-radius:10px;background:rgba(177,141,248,0.08);border:1px solid rgba(177,141,248,0.15);display:flex;align-items:center;justify-content:center">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
               </div>
               <div>
@@ -1089,7 +1089,7 @@
               <span style="font-size:10px;font-family:var(--font-mono);color:var(--text-muted)">Balance: <span id="withdrawBalance" style="color:var(--text-primary)">0.00</span> USDC</span>
             </div>
             <div style="display:flex;align-items:center;gap:10px">
-              <div style="width:32px;height:32px;border-radius:8px;background:rgba(168,173,196,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <div style="width:32px;height:32px;border-radius:8px;background:rgba(177,141,248,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
               </div>
               <div style="flex:1;overflow:hidden">
@@ -1107,7 +1107,7 @@
           <!-- To -->
           <div style="background:rgba(0,0,0,0.25);border:1px solid var(--border-subtle);border-radius:14px;padding:16px;margin-bottom:16px">
             <div style="font-size:10px;font-family:var(--font-mono);color:var(--text-muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:10px">To</div>
-            <input type="text" id="withdrawDestInput" placeholder="Paste Solana wallet address" style="width:100%;font-family:var(--font-mono);font-size:12px;color:var(--text-primary);background:rgba(0,0,0,0.3);border:1px solid var(--border-subtle);border-radius:10px;padding:12px 14px;outline:none;box-sizing:border-box" onfocus="this.style.borderColor='rgba(168,173,196,0.3)'" onblur="this.style.borderColor='var(--border-subtle)'" />
+            <input type="text" id="withdrawDestInput" placeholder="Paste Solana wallet address" style="width:100%;font-family:var(--font-mono);font-size:12px;color:var(--text-primary);background:rgba(0,0,0,0.3);border:1px solid var(--border-subtle);border-radius:10px;padding:12px 14px;outline:none;box-sizing:border-box" onfocus="this.style.borderColor='rgba(177,141,248,0.3)'" onblur="this.style.borderColor='var(--border-subtle)'" />
           </div>
           <!-- Amount -->
           <div style="background:rgba(0,0,0,0.25);border:1px solid var(--border-subtle);border-radius:14px;padding:16px;margin-bottom:16px">
@@ -1124,7 +1124,7 @@
           <!-- Status -->
           <div id="withdrawModalStatus" style="font-size:11px;font-family:var(--font-mono);margin-bottom:12px;min-height:16px"></div>
           <!-- Submit -->
-          <button onclick="doWithdrawFromModal()" id="withdrawSubmitBtn" style="width:100%;padding:14px;background:linear-gradient(135deg,rgba(168,173,196,0.12),rgba(168,173,196,0.06));border:1px solid rgba(168,173,196,0.2);border-radius:12px;color:var(--cyan);font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font-sans);letter-spacing:0.02em" onmouseover="this.style.borderColor='rgba(168,173,196,0.4)';this.style.color='var(--text-primary)'" onmouseout="this.style.borderColor='rgba(168,173,196,0.2)';this.style.color='var(--cyan)'">Withdraw</button>
+          <button onclick="doWithdrawFromModal()" id="withdrawSubmitBtn" style="width:100%;padding:14px;background:linear-gradient(135deg,rgba(177,141,248,0.12),rgba(177,141,248,0.06));border:1px solid rgba(177,141,248,0.2);border-radius:12px;color:var(--cyan);font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font-sans);letter-spacing:0.02em" onmouseover="this.style.borderColor='rgba(177,141,248,0.4)';this.style.color='var(--text-primary)'" onmouseout="this.style.borderColor='rgba(177,141,248,0.2)';this.style.color='var(--cyan)'">Withdraw</button>
         </div>
       </div>
 
@@ -1169,8 +1169,8 @@
           <div style="display:flex;align-items:center;gap:4px">
             <span style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted)">Less</span>
             <div style="width:10px;height:10px;border-radius:2px;background:rgba(255,255,255,0.03)"></div>
-            <div style="width:10px;height:10px;border-radius:2px;background:rgba(168,173,196,0.25)"></div>
-            <div style="width:10px;height:10px;border-radius:2px;background:rgba(168,173,196,0.50)"></div>
+            <div style="width:10px;height:10px;border-radius:2px;background:rgba(177,141,248,0.25)"></div>
+            <div style="width:10px;height:10px;border-radius:2px;background:rgba(177,141,248,0.50)"></div>
             <span style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted)">More</span>
           </div>
         </div>
@@ -1912,8 +1912,8 @@ async function loadNotificationSettings() {
     if (statusBadge) {
       if (data.webhookConfigured) {
         statusBadge.textContent = 'ACTIVE';
-        statusBadge.style.color = '#a8c4b0';
-        statusBadge.style.background = 'rgba(168,196,176,0.1)';
+        statusBadge.style.color = '#b18df8';
+        statusBadge.style.background = 'rgba(177,141,248,0.1)';
       } else {
         statusBadge.textContent = 'NOT CONFIGURED';
         statusBadge.style.color = '';
@@ -1950,8 +1950,8 @@ async function saveWebhookUrl() {
       body: JSON.stringify({ webhookUrl: url }),
     });
     if (url) {
-      if (msg) msg.innerHTML = '<span style="color:#a8c4b0">Saved ✓</span>';
-      if (badge) { badge.textContent = 'ACTIVE'; badge.style.color = '#a8c4b0'; badge.style.background = 'rgba(168,196,176,0.1)'; }
+      if (msg) msg.innerHTML = '<span style="color:#b18df8">Saved ✓</span>';
+      if (badge) { badge.textContent = 'ACTIVE'; badge.style.color = '#b18df8'; badge.style.background = 'rgba(177,141,248,0.1)'; }
     } else {
       if (msg) msg.innerHTML = '<span style="color:var(--text-muted)">Webhook removed</span>';
       if (badge) { badge.textContent = 'NOT CONFIGURED'; badge.style.color = ''; badge.style.background = ''; }
@@ -2255,7 +2255,7 @@ function renderRevenueChart(daily) {
     const y = padTop + chartH - barH;
     const date = new Date(d.date);
     const label = (date.getMonth() + 1) + '/' + date.getDate();
-    html += `<rect x="${x}" y="${y}" width="${barW}" height="${barH}" rx="2" class="chart-bar" fill="rgba(168,173,196,0.4)" data-date="${d.date}" data-volume="${d.volume}" data-count="${d.count}" />`;
+    html += `<rect x="${x}" y="${y}" width="${barW}" height="${barH}" rx="2" class="chart-bar" fill="rgba(177,141,248,0.4)" data-date="${d.date}" data-volume="${d.volume}" data-count="${d.count}" />`;
   });
 
   // X-axis labels (every 5th day)

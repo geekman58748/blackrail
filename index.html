@@ -214,15 +214,23 @@
     position:relative;
   }
   .hero-badge{
-    display:inline-flex;align-items:center;gap:0;
-    padding:5px 16px;border-radius:2px;
-    background:rgba(255,255,255,0.03);
-    border:1px solid rgba(255,255,255,0.1);
+    display:inline-flex;align-items:center;gap:20px;
+    padding:6px 0;margin-bottom:28px;
     font-family:'JetBrains Mono',monospace;
-    font-size:10px;color:rgba(160,160,185,0.8);
-    letter-spacing:0.18em;text-transform:uppercase;
-    font-weight:400;margin-bottom:28px;
-    animation:fade-up 0.6s ease both;
+    font-size:10px;color:rgba(160,160,185,0.55);
+    letter-spacing:0.2em;text-transform:uppercase;
+    font-weight:400;
+    animation:unblur-in 0.6s 0s cubic-bezier(0.16,1,0.3,1) both;
+  }
+  .hero-badge span{
+    position:relative;
+  }
+  .hero-badge span:not(:last-child)::after{
+    content:'';
+    position:absolute;right:-12px;top:50%;
+    transform:translateY(-50%);
+    width:3px;height:3px;border-radius:50%;
+    background:rgba(168,196,176,0.4);
   }
   .badge-dot{display:none;}
 
@@ -234,7 +242,7 @@
     letter-spacing:-0.03em;
     color:var(--white);
     margin-bottom:6px;
-    animation:fade-up 0.6s 0.1s ease both;
+    animation:unblur-in 0.7s 0.15s cubic-bezier(0.16,1,0.3,1) both;
   }
   .hero-subtitle-line{
     font-family:'Plus Jakarta Sans',sans-serif;
@@ -247,19 +255,19 @@
     background-clip:text;
     padding-bottom:0.15em;
     margin-bottom:24px;
-    animation:fade-up 0.6s 0.15s ease both;
+    animation:unblur-in 0.7s 0.3s cubic-bezier(0.16,1,0.3,1) both;
     display:block;
   }
   .hero-desc{
     max-width:580px;margin:0 auto 40px;
     font-size:16px;color:var(--muted);
     line-height:1.7;
-    animation:fade-up 0.6s 0.2s ease both;
+    animation:unblur-in 0.7s 0.45s cubic-bezier(0.16,1,0.3,1) both;
   }
   .hero-desc strong{color:rgba(220,220,228,0.9);font-weight:500}
   .hero-actions{
     display:flex;gap:12px;justify-content:center;flex-wrap:wrap;
-    animation:fade-up 0.6s 0.25s ease both;
+    animation:unblur-in 0.7s 0.6s cubic-bezier(0.16,1,0.3,1) both;
     margin-bottom:64px;
   }
   .btn-hero{
@@ -286,7 +294,7 @@
   .hero-visual{
     position:relative;
     max-width:900px;margin:0 auto;
-    animation:fade-up 0.7s 0.35s ease both;
+    animation:unblur-in 0.8s 0.75s cubic-bezier(0.16,1,0.3,1) both;
   }
   .dashboard-frame{
     background:rgba(10,11,18,0.85);
@@ -601,6 +609,11 @@
     from{opacity:0;transform:translateY(20px)}
     to{opacity:1;transform:translateY(0)}
   }
+  @keyframes unblur-in{
+    from{opacity:0;filter:blur(8px);transform:translateY(12px)}
+    to{opacity:1;filter:blur(0);transform:translateY(0)}
+  }
+  .unblur{animation:unblur-in 0.7s cubic-bezier(0.16,1,0.3,1) both}
 
   ::-webkit-scrollbar{width:5px}
   ::-webkit-scrollbar-track{background:transparent}
@@ -660,7 +673,7 @@
 
   <!-- HERO -->
   <div class="hero">
-    <div class="hero-badge">[ PRIVATE RAILS · EPHEMERAL STATE · SOLANA ]</div>
+    <div class="hero-badge"><span>Private</span><span>Ephemeral</span><span>Solana</span></div>
     <h1>Your money,</h1>
     <span class="hero-subtitle-line">nobody's business.</span>
     <p class="hero-desc">

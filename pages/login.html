@@ -523,12 +523,12 @@
     if (e.key === 'Enter') sendMagicLink();
   });
 
-  // Torch parallax
+  // Torch parallax — subtle, centered
   const torch = document.getElementById('torch');
   if (window.innerWidth > 768) {
     document.addEventListener('mousemove', (e) => {
-      const x = (e.clientX / window.innerWidth - 0.5) * 35;
-      const y = (e.clientY / window.innerHeight - 0.5) * 20;
+      const x = (e.clientX / window.innerWidth - 0.5) * 12;
+      const y = (e.clientY / window.innerHeight - 0.5) * 8;
       torch.style.transform = `translateX(calc(-50% + ${x}px)) translateY(${y}px)`;
     });
   }

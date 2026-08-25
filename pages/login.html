@@ -11,13 +11,14 @@
     --white:#ffffff;
     --off-white:#f1f3f9;
     --muted:#8c8f9f;
+    --dim:#3a3a44;
     --bg:#07080e;
-    --surface:#0e1018;
-    --border:rgba(255,255,255,0.08);
-    --border-soft:rgba(255,255,255,0.05);
-    --accent:#a8c4b0;
-    --panel-right:#0c0d14;
-    --input-bg:rgba(0,0,0,0.4);
+    --glass-bg:rgba(255,255,255,0.03);
+    --glass-border:rgba(255,255,255,0.08);
+    --glass-hover:rgba(255,255,255,0.06);
+    --accent-blue:#8890aa;
+    --accent-cyan:#a8adc4;
+    --accent-glow:rgba(100,100,130,0.10);
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{height:100%}
@@ -29,7 +30,7 @@
     overflow:hidden;
   }
 
-  /* ── BG SCENE: grid + torch ── */
+  /* ── BG SCENE: grid + torch (identical to landing) ── */
   .bg-scene{
     position:fixed;top:0;left:0;width:100%;height:100%;
     pointer-events:none;z-index:0;overflow:hidden;
@@ -77,6 +78,8 @@
     0%{opacity:0.5;transform:translateX(-50%) scale(0.95)}
     100%{opacity:0.9;transform:translateX(-50%) scale(1.08)}
   }
+
+  /* ── LAYOUT ── */
   .layout{
     display:grid;
     grid-template-columns:minmax(420px,42%) 1fr;
@@ -109,18 +112,19 @@
     align-items:center;
     gap:8px;
     width:fit-content;
-    background:rgba(255,255,255,0.05);
-    border:1px solid var(--border);
+    background:var(--glass-bg);
+    border:1px solid var(--glass-border);
     color:var(--off-white);
-    font-size:14px;
+    font-size:13px;
     font-weight:500;
-    padding:10px 18px 10px 14px;
-    border-radius:999px;
+    padding:8px 18px 8px 14px;
+    border-radius:100px;
     cursor:pointer;
     font-family:'Inter',sans-serif;
-    transition:background 0.15s;
+    transition:all 0.2s;
+    backdrop-filter:blur(10px);
   }
-  .home-btn:hover{background:rgba(255,255,255,0.1)}
+  .home-btn:hover{background:var(--glass-hover);border-color:rgba(255,255,255,0.18)}
   .home-btn svg{width:14px;height:14px}
 
   .form-wrap{
@@ -141,36 +145,38 @@
     margin-bottom:44px;
   }
   .logo-mark{
-    width:28px;height:28px;
-    background:var(--accent);
-    border-radius:7px;
+    width:26px;height:26px;
+    background:#000;
+    border:1px solid rgba(255,255,255,0.12);
+    border-radius:6px;
     display:flex;
     align-items:center;
     justify-content:center;
   }
-  .logo-mark svg{width:14px;height:14px}
+  .logo-mark svg{width:12px;height:12px}
   .logo-text{
-    font-size:22px;
+    font-size:18px;
     font-weight:700;
-    letter-spacing:-0.3px;
+    letter-spacing:-0.02em;
     font-family:'Plus Jakarta Sans',sans-serif;
     color:var(--white);
   }
 
   h1.title{
     text-align:center;
-    font-size:34px;
-    font-weight:800;
-    margin-bottom:10px;
-    letter-spacing:-0.5px;
     font-family:'Plus Jakarta Sans',sans-serif;
+    font-size:clamp(28px,3.5vw,34px);
+    font-weight:700;
+    margin-bottom:10px;
+    letter-spacing:-0.03em;
+    color:var(--white);
   }
   p.subtitle{
     text-align:center;
     color:var(--muted);
-    font-size:15px;
+    font-size:14px;
     margin-bottom:28px;
-    line-height:1.5;
+    line-height:1.6;
   }
   hr.divider-line{
     border:none;
@@ -180,35 +186,39 @@
 
   label.field-label{
     display:block;
-    font-size:14px;
-    font-weight:600;
+    font-size:12px;
+    font-weight:500;
     margin-bottom:10px;
-    color:var(--white);
+    color:var(--muted);
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    font-family:'JetBrains Mono',monospace;
   }
 
   .input-box{
     display:flex;
     align-items:center;
     gap:10px;
-    background:var(--input-bg);
-    border:1px solid var(--border);
+    background:var(--glass-bg);
+    border:1px solid var(--glass-border);
     border-radius:12px;
     padding:14px 16px;
     margin-bottom:22px;
     transition:border-color 0.2s;
+    backdrop-filter:blur(10px);
   }
   .input-box:focus-within{border-color:rgba(255,255,255,0.2)}
-  .input-box svg{width:18px;height:18px;color:#5a5a5a;flex-shrink:0}
+  .input-box svg{width:16px;height:16px;color:var(--muted);flex-shrink:0}
   .input-box input{
     background:transparent;
     border:none;
     outline:none;
     color:var(--white);
-    font-size:15px;
+    font-size:14px;
     width:100%;
     font-family:'Inter',sans-serif;
   }
-  .input-box input::placeholder{color:rgba(140,143,159,0.4)}
+  .input-box input::placeholder{color:rgba(140,143,159,0.35)}
 
   button.continue-btn{
     width:100%;
@@ -216,21 +226,21 @@
     color:#08080f;
     border:none;
     border-radius:100px;
-    padding:16px;
-    font-size:15px;
-    font-weight:700;
+    padding:14px;
+    font-size:14px;
+    font-weight:600;
     cursor:pointer;
     margin-top:6px;
     margin-bottom:24px;
     font-family:'Inter',sans-serif;
     transition:all 0.22s ease;
   }
-  button.continue-btn:hover{transform:translateY(-1px);background:rgba(255,255,255,0.92)}
-  button.continue-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+  button.continue-btn:hover{transform:translateY(-1px);box-shadow:0 12px 30px rgba(255,255,255,0.12)}
+  button.continue-btn:disabled{opacity:0.4;cursor:not-allowed;transform:none}
 
   .error{
-    background:rgba(204,123,123,0.1);
-    border:1px solid rgba(204,123,123,0.2);
+    background:rgba(204,123,123,0.08);
+    border:1px solid rgba(204,123,123,0.18);
     border-radius:10px;
     padding:10px 14px;
     font-size:13px;
@@ -270,18 +280,12 @@
   /* ── RIGHT PANEL ── */
   .right{
     position:relative;
-    background:var(--panel-right);
+    background:transparent;
     overflow:hidden;
     display:flex;
     flex-direction:column;
     justify-content:space-between;
     padding:32px 56px 80px;
-  }
-  .right::before{
-    content:"";
-    position:absolute;
-    inset:0;
-    background:radial-gradient(circle at 30% 20%,rgba(168,196,176,0.025),transparent 40%);
   }
 
   .right-top{
@@ -296,31 +300,24 @@
     display:inline-flex;
     align-items:center;
     gap:6px;
-    background:rgba(168,196,176,0.08);
-    border:1px solid rgba(168,196,176,0.15);
-    color:var(--accent);
-    font-size:12px;
+    background:var(--glass-bg);
+    border:1px solid var(--glass-border);
+    backdrop-filter:blur(20px);
+    -webkit-backdrop-filter:blur(20px);
+    color:var(--accent-blue);
+    font-size:11px;
     font-weight:600;
     padding:8px 16px;
-    border-radius:999px;
+    border-radius:100px;
     letter-spacing:0.5px;
   }
   .status-badge .dot{
     width:6px;height:6px;
-    background:var(--accent);
+    background:var(--accent-blue);
     border-radius:50%;
     animation:pulse 2s ease-in-out infinite;
   }
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
-
-  /* Geometric art layer */
-  .art-layer{
-    position:absolute;
-    top:0;left:0;right:0;
-    height:75%;
-    z-index:1;
-    opacity:0.7;
-  }
 
   .right-bottom{
     position:relative;
@@ -329,44 +326,44 @@
   }
   .badge{
     display:inline-block;
-    background:rgba(255,255,255,0.06);
-    border:1px solid rgba(255,255,255,0.12);
-    backdrop-filter:blur(16px);
-    -webkit-backdrop-filter:blur(16px);
-    color:rgba(255,255,255,0.8);
+    background:rgba(255,255,255,0.05);
+    border:1px solid rgba(255,255,255,0.10);
+    backdrop-filter:blur(20px);
+    -webkit-backdrop-filter:blur(20px);
+    color:rgba(255,255,255,0.75);
     font-size:11px;
-    font-weight:700;
+    font-weight:600;
     letter-spacing:1.5px;
-    padding:8px 16px;
-    border-radius:999px;
+    padding:8px 18px;
+    border-radius:100px;
     margin-bottom:28px;
-    box-shadow:0 4px 24px rgba(0,0,0,0.15),inset 0 1px 0 rgba(255,255,255,0.08);
+    box-shadow:0 4px 24px rgba(0,0,0,0.2),inset 0 1px 0 rgba(255,255,255,0.08);
   }
   h2.headline{
-    font-size:48px;
+    font-size:clamp(32px,4vw,48px);
     line-height:1.15;
     font-weight:400;
-    color:rgba(140,143,159,0.6);
+    color:var(--muted);
     margin-bottom:24px;
-    letter-spacing:-1px;
+    letter-spacing:-0.02em;
     font-family:'Plus Jakarta Sans',sans-serif;
   }
   h2.headline b{color:var(--white);font-weight:700}
   p.tagline{
-    color:rgba(140,143,159,0.7);
-    font-size:16px;
-    line-height:1.6;
+    color:var(--muted);
+    font-size:15px;
+    line-height:1.65;
     max-width:580px;
   }
 
   /* ── Dev link display ── */
   .dev-link{
-    background:rgba(168,196,176,0.08);
-    border:1px solid rgba(168,196,176,0.2);
+    background:rgba(100,100,130,0.08);
+    border:1px solid rgba(100,100,130,0.2);
     border-radius:10px;
     padding:10px 14px;
     font-size:12px;
-    color:var(--accent);
+    color:var(--accent-blue);
     margin-top:12px;
     word-break:break-all;
     display:none;
@@ -401,7 +398,7 @@
     <div class="form-wrap">
       <div class="logo-row">
         <span class="logo-mark">
-          <svg viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="5" height="5" rx="1" fill="#07080e" opacity=".9"/><rect x="8" y="1" width="5" height="5" rx="1" fill="#07080e" opacity=".5"/><rect x="1" y="8" width="5" height="5" rx="1" fill="#07080e" opacity=".5"/><rect x="8" y="8" width="5" height="5" rx="1" fill="#07080e" opacity=".9"/></svg>
+          <svg viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="5" height="5" rx="1" fill="currentColor" opacity=".9"/><rect x="8" y="1" width="5" height="5" rx="1" fill="currentColor" opacity=".5"/><rect x="1" y="8" width="5" height="5" rx="1" fill="currentColor" opacity=".5"/><rect x="8" y="8" width="5" height="5" rx="1" fill="currentColor" opacity=".9"/></svg>
         </span>
         <span class="logo-text">BlackRail</span>
       </div>
@@ -415,7 +412,7 @@
         <label class="field-label">Email Address</label>
         <div class="input-box">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 6l-10 7L2 6"></path><path d="M2 6h20v12H2z"></path></svg>
-          <input type="email" id="emailInput" placeholder="Enter personal email here" autocomplete="email">
+          <input type="email" id="emailInput" placeholder="you@example.com" autocomplete="email">
         </div>
 
         <button class="continue-btn" id="btnSend" onclick="sendMagicLink()">Continue</button>
@@ -442,14 +439,14 @@
 
   <!-- RIGHT: PROMO PANEL -->
   <div class="right">
-    <img src="rail-hand.png" alt="BlackRail" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1">
-    <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(7,8,14,0.85) 0%,rgba(7,8,14,0.3) 50%,transparent 100%);z-index:2"></div>
+    <img src="rail-hand.png" alt="BlackRail" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0">
+    <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(7,8,14,0.88) 0%,rgba(7,8,14,0.4) 45%,transparent 100%);z-index:1"></div>
 
-    <div class="right-top" style="position:relative;z-index:3">
+    <div class="right-top">
       <span class="status-badge"><span class="dot"></span> DEVNET</span>
     </div>
 
-    <div class="right-bottom" style="position:relative;z-index:3">
+    <div class="right-bottom">
       <span class="badge">PRIVACY-FIRST PAYMENTS</span>
       <h2 class="headline">No <b>signatures.</b> Just send <b>USDC</b> to an address.</h2>
       <p class="tagline">One-time facade addresses protect buyer identity. Payments settle to your wallet instantly via MagicBlock ephemeral rollups. No wallet popups, no approvals — pay like you're sending to a friend.</p>
@@ -459,7 +456,7 @@
 </div>
 
 <script>
-  const API_BASE = (window.BLACKRAIL_CONFIG?.apiBase || localStorage.getItem('blackrail_api_base') || '').replace(/\/+$/, '');
+  const API_BASE = (window.BLACKRAIL_CONFIG?.apiBase || localStorage.getItem('blackrail_api_base') || '').replace(/\\/+$/, '');
 
   // Already logged in → dashboard
   (function() {

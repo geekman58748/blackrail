@@ -884,6 +884,82 @@
     color: var(--text-muted);
     margin-top: 2px;
   }
+
+  /* ── ONBOARDING CHECKLIST ── */
+  .onboard-banner{
+    background:rgba(177,141,248,0.04);
+    border:1px solid rgba(177,141,248,0.12);
+    border-radius:14px;
+    padding:28px 32px;
+    margin-bottom:28px;
+    position:relative;
+    overflow:hidden;
+  }
+  .onboard-banner::before{
+    content:'';
+    position:absolute;top:0;left:0;right:0;height:1px;
+    background:linear-gradient(90deg,transparent,rgba(177,141,248,0.3),transparent);
+  }
+  .onboard-title{
+    font-family:var(--font-sans);
+    font-size:16px;font-weight:700;color:var(--text-primary);
+    margin-bottom:4px;
+  }
+  .onboard-sub{
+    font-size:13px;color:var(--text-secondary);margin-bottom:20px;
+  }
+  .onboard-steps{
+    display:flex;gap:12px;
+  }
+  .onboard-step{
+    flex:1;
+    background:rgba(0,0,0,0.25);
+    border:1px solid var(--border-subtle);
+    border-radius:10px;
+    padding:16px;
+    position:relative;
+    cursor:pointer;
+    transition:all 0.2s;
+  }
+  .onboard-step:hover{
+    border-color:rgba(177,141,248,0.25);
+    background:rgba(177,141,248,0.04);
+  }
+  .onboard-step.done{
+    border-color:rgba(177,141,248,0.2);
+    background:rgba(177,141,248,0.06);
+  }
+  .onboard-step-num{
+    width:24px;height:24px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-size:11px;font-weight:700;
+    background:rgba(177,141,248,0.1);
+    border:1px solid rgba(177,141,248,0.2);
+    color:#b18df8;
+    margin-bottom:10px;
+    font-family:var(--font-mono);
+  }
+  .onboard-step.done .onboard-step-num{
+    background:#b18df8;color:#07080e;border-color:#b18df8;
+  }
+  .onboard-step-title{
+    font-size:13px;font-weight:600;color:var(--text-primary);
+    margin-bottom:4px;
+  }
+  .onboard-step-desc{
+    font-size:11px;color:var(--text-muted);line-height:1.5;
+  }
+  .onboard-dismiss{
+    position:absolute;top:14px;right:14px;
+    background:none;border:none;color:var(--text-muted);
+    font-size:16px;cursor:pointer;padding:4px;
+    transition:color 0.15s;
+  }
+  .onboard-dismiss:hover{color:var(--text-primary)}
+
+  @media(max-width:768px){
+    .onboard-steps{flex-direction:column}
+  }
 </style>
 </head>
 <body>
@@ -924,28 +1000,14 @@
         <span>Payments</span>
       </button>
 
-      <button class="nav-btn" onclick="switchNav('payment-links', this)">
-        <div class="icon-box">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-        </div>
-        <span>Payment Links</span>
-      </button>
-
       <button class="nav-btn" onclick="switchNav('vault', this)">
         <div class="icon-box">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
         </div>
-        <span>Vault</span>
+        <span>My Wallet</span>
       </button>
 
       <div class="nav-label">Developer</div>
-
-      <button class="nav-btn" onclick="switchNav('api-keys', this)">
-        <div class="icon-box">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15.5 7.5 2.3 2.3a1 1 0 0 0 1.4 0l2.1-2.1a1 1 0 0 0 0-1.4L19 4.1a1 1 0 0 0-1.4 0l-2.1 2.1a1 1 0 0 0 0 1.3Zm0 0L7 16"/><circle cx="5.5" cy="18.5" r="2.5"/></svg>
-        </div>
-        <span>API Keys</span>
-      </button>
 
       <button class="nav-btn" onclick="switchNav('settings', this)">
         <div class="icon-box">
@@ -964,7 +1026,7 @@
         </div>
       </div>
       <div id="sidebar-wallet" style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);padding:6px 8px;background:#08090d;border:1px solid var(--border-subtle);border-radius:6px;margin-bottom:8px;display:none;word-break:break-all;cursor:pointer;" title="Click to copy" onclick="copyWallet()"></div>
-      <button onclick="switchNav('settings', document.querySelectorAll('.nav-btn')[5])" style="width:100%;padding:8px;background:transparent;border:1px solid rgba(255,255,255,0.07);border-radius:4px;color:rgba(120,123,140,0.8);font-size:10px;font-weight:500;font-family:var(--font-mono);letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;transition:all .15s;text-align:center;margin-bottom:8px" onmouseover="this.style.borderColor='rgba(255,255,255,0.14)';this.style.color='rgba(200,200,210,0.9)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.07)';this.style.color='rgba(120,123,140,0.8)'">Settings</button>
+      <button onclick="switchNav('settings', document.querySelectorAll('.nav-btn')[3])" style="width:100%;padding:8px;background:transparent;border:1px solid rgba(255,255,255,0.07);border-radius:4px;color:rgba(120,123,140,0.8);font-size:10px;font-weight:500;font-family:var(--font-mono);letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;transition:all .15s;text-align:center;margin-bottom:8px" onmouseover="this.style.borderColor='rgba(255,255,255,0.14)';this.style.color='rgba(200,200,210,0.9)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.07)';this.style.color='rgba(120,123,140,0.8)'">Settings</button>
       <button onclick="doLogout()" style="width:100%;padding:8px;background:transparent;border:1px solid rgba(255,255,255,0.07);border-radius:4px;color:rgba(120,123,140,0.8);font-size:10px;font-weight:500;font-family:var(--font-mono);letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='rgba(255,255,255,0.14)';this.style.color='rgba(200,200,210,0.9)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.07)';this.style.color='rgba(120,123,140,0.8)'">Sign Out</button>
     </div>
   </aside>
@@ -982,50 +1044,63 @@
         </div>
       </div>
 
-      <!-- WALLET CARD -->
-      <div class="glass-card anim-wallet" style="padding:24px;margin-bottom:24px;border:1px solid rgba(177,141,248,0.15);background:linear-gradient(135deg,rgba(15,17,23,0.95),rgba(10,12,18,0.98))">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-          <div style="display:flex;align-items:center;gap:12px">
-            <div style="width:40px;height:40px;border-radius:12px;background:rgba(177,141,248,0.08);border:1px solid rgba(177,141,248,0.15);display:flex;align-items:center;justify-content:center">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
-            </div>
-            <div>
-              <div style="font-size:14px;font-weight:700;color:var(--text-primary)">Your Wallet</div>
-              <div style="font-size:10px;font-family:var(--font-mono);color:var(--text-muted);letter-spacing:0.06em">Solana Devnet · Auto-generated on signup</div>
-            </div>
+      <!-- ONBOARDING CHECKLIST (first-time only) -->
+      <div id="onboard-banner" class="onboard-banner" style="display:none">
+        <button class="onboard-dismiss" onclick="dismissOnboard()">×</button>
+        <div class="onboard-title">Welcome to BlackRail</div>
+        <div class="onboard-sub">3 steps to start accepting private crypto payments</div>
+        <div class="onboard-steps">
+          <div class="onboard-step" id="ob-step-1" onclick="goToPaymentLinks()">
+            <div class="onboard-step-num">1</div>
+            <div class="onboard-step-title">Create a payment link</div>
+            <div class="onboard-step-desc">Set an amount and label to generate a unique checkout address</div>
           </div>
-          <span style="font-size:10px;font-family:var(--font-mono);color:#b18df8;background:rgba(177,141,248,0.1);padding:4px 10px;border-radius:20px;display:flex;align-items:center;gap:6px">
-            <span style="width:6px;height:6px;border-radius:50%;background:#b18df8;animation:pulse 2s infinite"></span> Active
-          </span>
+          <div class="onboard-step" id="ob-step-2">
+            <div class="onboard-step-num">2</div>
+            <div class="onboard-step-title">Share with your buyer</div>
+            <div class="onboard-step-desc">Send the link or QR code — they pay like sending to a friend</div>
+          </div>
+          <div class="onboard-step" id="ob-step-3">
+            <div class="onboard-step-num">3</div>
+            <div class="onboard-step-title">Get paid privately</div>
+            <div class="onboard-step-desc">Funds settle to your wallet instantly with zero public trail</div>
+          </div>
         </div>
-        <!-- Address -->
-        <div style="background:rgba(0,0,0,0.25);border:1px solid var(--border-subtle);border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between">
+      </div>
+
+      <!-- WALLET CARD (action-focused) -->
+      <div class="glass-card anim-wallet" style="padding:28px;margin-bottom:24px;border:1px solid rgba(177,141,248,0.12)">
+        <div style="display:flex;align-items:start;justify-content:space-between;margin-bottom:20px">
           <div>
-            <div style="font-size:10px;font-family:var(--font-mono);color:var(--text-muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">Wallet Address</div>
-            <div style="font-family:var(--font-mono);font-size:12px;color:var(--text-primary);word-break:break-all" id="walletCardAddress">Loading...</div>
+            <div style="font-size:11px;font-family:var(--font-mono);color:var(--text-muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px">Total Received</div>
+            <div style="display:flex;align-items:baseline;gap:8px">
+              <span style="font-size:36px;font-weight:800;color:var(--text-primary);letter-spacing:-0.03em" id="walletCardBalance">—</span>
+              <span style="font-size:14px;font-weight:500;color:var(--text-muted);font-family:var(--font-mono)">USDC</span>
+            </div>
           </div>
-          <button onclick="copyWalletAddress()" style="background:rgba(255,255,255,0.06);border:1px solid var(--border-subtle);color:var(--text-secondary);font-size:10px;font-weight:600;padding:6px 12px;border-radius:8px;cursor:pointer;font-family:var(--font-mono);flex-shrink:0;margin-left:12px" onmouseover="this.style.borderColor='rgba(255,255,255,0.14)';this.style.color='var(--text-primary)'" onmouseout="this.style.borderColor='var(--border-subtle)';this.style.color='var(--text-secondary)'" id="copyAddrBtn">Copy</button>
+          <div style="text-align:right">
+            <div style="font-size:10px;font-family:var(--font-mono);color:var(--text-muted);margin-bottom:4px"><span id="walletCardCount">0</span> payments</div>
+            <span style="font-size:10px;font-family:var(--font-mono);color:#b18df8;background:rgba(177,141,248,0.1);padding:3px 10px;border-radius:20px;display:inline-flex;align-items:center;gap:5px">
+              <span style="width:5px;height:5px;border-radius:50%;background:#b18df8;animation:pulse 2s infinite"></span> Active
+            </span>
+          </div>
         </div>
-        <!-- Balance -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
-          <div style="background:rgba(0,0,0,0.25);border:1px solid var(--border-subtle);border-radius:10px;padding:14px 16px">
-            <div style="font-size:10px;font-family:var(--font-mono);color:var(--text-muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px">USDC Balance</div>
-            <div style="font-size:24px;font-weight:800;color:var(--text-primary)" id="walletCardBalance">—</div>
-          </div>
-          <div style="background:rgba(0,0,0,0.25);border:1px solid var(--border-subtle);border-radius:10px;padding:14px 16px">
-            <div style="font-size:10px;font-family:var(--font-mono);color:var(--text-muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px">Payments Received</div>
-            <div style="font-size:24px;font-weight:800;color:var(--text-primary)" id="walletCardCount">0</div>
-          </div>
+        <!-- Address (compact) -->
+        <div style="background:rgba(0,0,0,0.2);border:1px solid var(--border-subtle);border-radius:8px;padding:10px 14px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between">
+          <div style="font-family:var(--font-mono);font-size:11px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:calc(100% - 70px)" id="walletCardAddress">Loading...</div>
+          <button onclick="copyWalletAddress()" style="background:none;border:1px solid var(--border-subtle);color:var(--text-secondary);font-size:10px;font-weight:600;padding:4px 10px;border-radius:6px;cursor:pointer;font-family:var(--font-mono);flex-shrink:0" id="copyAddrBtn">Copy</button>
         </div>
         <!-- Quick Actions -->
         <div style="display:flex;gap:10px">
-          <button onclick="showWalletModal()" style="flex:1;padding:10px;background:rgba(255,255,255,0.04);border:1px solid var(--border-subtle);border-radius:10px;color:var(--text-secondary);font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;font-family:var(--font-sans)" onmouseover="this.style.borderColor='rgba(177,141,248,0.3)';this.style.color='var(--text-primary)'" onmouseout="this.style.borderColor='var(--border-subtle)';this.style.color='var(--text-secondary)'">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-            Wallet Details
+          <button onclick="goToPaymentLinks()" style="flex:1;padding:12px;background:#b18df8;border:none;border-radius:10px;color:#07080e;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;font-family:var(--font-sans)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+            Create Payment Link
           </button>
-          <button onclick="showWithdrawModal()" style="flex:1;padding:10px;background:rgba(177,141,248,0.06);border:1px solid rgba(177,141,248,0.15);border-radius:10px;color:var(--cyan);font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;font-family:var(--font-sans)" onmouseover="this.style.borderColor='rgba(177,141,248,0.3)'" onmouseout="this.style.borderColor='rgba(177,141,248,0.15)'">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+          <button onclick="showWithdrawModal()" style="padding:12px 20px;background:rgba(255,255,255,0.04);border:1px solid var(--border-subtle);border-radius:10px;color:var(--text-secondary);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font-sans)">
             Withdraw
+          </button>
+          <button onclick="showWalletModal()" style="padding:12px;background:rgba(255,255,255,0.04);border:1px solid var(--border-subtle);border-radius:10px;color:var(--text-muted);cursor:pointer" title="Wallet Details">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
           </button>
         </div>
       </div>
@@ -1255,107 +1330,62 @@
     <div id="payments" class="page-view">
       <div class="view-header">
         <div class="view-title-group">
-          <h1>Full Payments Ledger</h1>
-          <p>Historical audit log of ephemeral addresses and settlement lifecycles</p>
+          <h1>Payments</h1>
+          <p>Create payment links and track incoming settlements</p>
         </div>
       </div>
 
+      <!-- LINK GENERATOR (compact) -->
+      <div class="glass-card" style="padding:24px;margin-bottom:24px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#b18df8" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          <span style="font-size:13px;font-weight:700;color:var(--text-primary)">New Payment Link</span>
+        </div>
+        <form onsubmit="handleGenerateLink(event)" style="display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end">
+          <div>
+            <label class="field-label">Amount (USDC)</label>
+            <input type="number" step="0.01" class="input-styled" id="link-amount" placeholder="Open amount" />
+          </div>
+          <div>
+            <label class="field-label">Label / Reference</label>
+            <input type="text" class="input-styled" id="link-label" placeholder="e.g. Invoice #8921" required />
+          </div>
+          <button type="submit" class="btn-action-primary" style="height:42px;white-space:nowrap;margin-bottom:1px">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+            Generate
+          </button>
+        </form>
+        <!-- Preview panel (shows after generation) -->
+        <div id="preview-panel" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid var(--border-subtle)"></div>
+      </div>
+
+      <!-- PAYMENT HISTORY -->
       <div class="terminal-box">
         <div class="terminal-bar">
-          <span class="terminal-title">PAYMENT_HISTORY_LOG // NO SENDER RECORDED</span>
+          <span class="terminal-title">RECENT PAYMENTS</span>
         </div>
         <div class="table-responsive">
           <table class="data-table mono-styled">
             <thead>
               <tr>
-                <th>Facade Address Used</th>
-                <th>Amount Received</th>
-                <th>Timestamp</th>
-                <th>Status Lifecycle</th>
-                <th>Action</th>
+                <th>Reference</th>
+                <th>Amount</th>
+                <th>Date</th>
+                <th>Status</th>
               </tr>
             </thead>
             <tbody id="history-tbody">
               <tr id="history-empty-row">
-                <td colspan="5" style="color:var(--text-muted);text-align:center;padding:24px 0;font-size:13px;">No payments recorded yet.</td>
+                <td colspan="4" style="color:var(--text-muted);text-align:center;padding:32px 0;font-size:13px;">No payments yet. Create your first link above.</td>
               </tr>
-              
-
-
-
             </tbody>
           </table>
         </div>
       </div>
     </div>
 
-    <!-- 3. PAYMENT LINKS WORKFLOW -->
-    <div id="payment-links" class="page-view">
-      <div class="view-header">
-        <div class="view-title-group">
-          <h1>Payment Link Generator</h1>
-          <p>Create single-use facade addresses for checkout or direct invoicing</p>
-        </div>
-      </div>
-
-      <div class="workflow-grid">
-        <div class="glass-card form-card">
-          <form onsubmit="handleGenerateLink(event)">
-            <div class="field-group">
-              <label class="field-label">Amount (USDC)</label>
-              <input type="number" step="0.01" class="input-styled" id="link-amount" placeholder="Leave blank for open amount" />
-            </div>
-
-            <div class="field-group">
-              <label class="field-label">Label / Order Reference</label>
-              <input type="text" class="input-styled" id="link-label" placeholder="e.g. Invoice #8921 or Retainer Fee" required />
-            </div>
-
-            <div class="field-group">
-              <label class="field-label">Facade Address Expiry</label>
-              <div class="expiry-selector">
-                <div class="radio-pill">
-                  <input type="radio" id="exp5" name="expiry" value="5 min">
-                  <label for="exp5" class="radio-label">5 min</label>
-                </div>
-                <div class="radio-pill">
-                  <input type="radio" id="exp15" name="expiry" value="15 min" checked>
-                  <label for="exp15" class="radio-label">15 min</label>
-                </div>
-                <div class="radio-pill">
-                  <input type="radio" id="exp60" name="expiry" value="1 hour">
-                  <label for="exp60" class="radio-label">1 hour</label>
-                </div>
-              </div>
-            </div>
-
-            <div class="field-group">
-              <label class="field-label">Settlement Mode</label>
-              <div class="expiry-selector" style="grid-template-columns:1fr 1fr;">
-                <div class="radio-pill">
-                  <input type="radio" id="modeStandard" name="settlement-mode" value="standard" checked>
-                  <label for="modeStandard" class="radio-label">Direct</label>
-                </div>
-                <div class="radio-pill">
-                  <input type="radio" id="modeConditional" name="settlement-mode" value="conditional" disabled>
-                  <label for="modeConditional" class="radio-label" style="opacity:.45;cursor:not-allowed;">Conditional (soon)</label>
-                </div>
-              </div>
-            </div>
-            <button type="submit" class="btn-action-primary" style="margin-top: 8px;">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
-              Generate Ephemeral Checkout
-            </button>
-          </form>
-        </div>
-
-        <div class="glass-card preview-display-card" id="preview-panel">
-          <div style="color:var(--text-muted);font-size:13px;">
-            Fill in the parameters on the left to spin up an ephemeral facade address + QR code.
-          </div>
-        </div>
-      </div>
-    </div>
+    <!-- PAYMENT LINKS (legacy redirect — maps to payments) -->
+    <div id="payment-links" class="page-view" style="display:none"></div>
 
     <!-- 4. VAULT VIEW -->
     <div id="vault" class="page-view">
@@ -2336,6 +2366,31 @@ loadStats();
 loadVaultBalance();
 setInterval(loadStats, 30000);
 setInterval(loadVaultBalance, 30000);
+
+// ── ONBOARDING CHECKLIST ──────────────────────────────────────────────────────
+function initOnboarding() {
+  const dismissed = localStorage.getItem('blackrail_onboard_dismissed');
+  const hasPayments = localStorage.getItem('blackrail_has_payments');
+  if (dismissed) return;
+  const banner = document.getElementById('onboard-banner');
+  if (!banner) return;
+  banner.style.display = 'block';
+  // Check if user has created any payments
+  if (hasPayments) {
+    const step1 = document.getElementById('ob-step-1');
+    if (step1) step1.classList.add('done');
+  }
+}
+function dismissOnboard() {
+  localStorage.setItem('blackrail_onboard_dismissed', '1');
+  const banner = document.getElementById('onboard-banner');
+  if (banner) banner.style.display = 'none';
+}
+function goToPaymentLinks() {
+  const btn = document.querySelectorAll('.nav-btn')[1];
+  switchNav('payments', btn);
+}
+initOnboarding();
 
 // ── API Keys ─────────────────────────────────────────────────────────────────
 async function loadApiKeys() {

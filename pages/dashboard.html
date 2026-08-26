@@ -64,40 +64,7 @@
     mask-image:linear-gradient(to bottom,transparent 0%,rgba(0,0,0,0.5) 30%,rgba(0,0,0,0.5) 70%,transparent 100%);
     z-index:1;
   }
-  .dash-atmosphere .torch-container {
-    position:absolute;bottom:0;left:50%;transform:translateX(-50%);
-    width:1200px;height:1000px;pointer-events:none;
-    transition:transform 0.15s ease-out;z-index:2;
-  }
-  .dash-atmosphere .light-cone {
-    position:absolute;inset:0;
-    background:conic-gradient(
-      from -20deg at 50% 100%,
-      transparent 0deg,rgba(255,255,255,0.0) 0deg,
-      rgba(200,200,210,0.04) 10deg,rgba(215,215,225,0.10) 16deg,
-      rgba(230,230,238,0.18) 20deg,rgba(245,245,250,0.24) 25deg,
-      rgba(230,230,238,0.18) 30deg,rgba(215,215,225,0.10) 34deg,
-      rgba(200,200,210,0.04) 40deg,transparent 45deg
-    );
-    filter:blur(24px);
-    animation:torch-breath 7s ease-in-out infinite alternate;
-  }
-  .dash-atmosphere .light-core {
-    position:absolute;bottom:0;left:50%;transform:translateX(-50%);
-    width:320px;height:600px;
-    background:linear-gradient(to top,rgba(255,255,255,0.15) 0%,rgba(180,180,200,0.05) 50%,transparent 100%);
-    filter:blur(36px);
-    animation:core-pulse 5s ease-in-out infinite alternate;
-  }
-  @keyframes torch-breath{
-    0%{opacity:0.55;transform:scaleX(0.95) scaleY(0.98)}
-    50%{opacity:0.85;transform:scaleX(1.08) scaleY(1.02)}
-    100%{opacity:0.65;transform:scaleX(1.02) scaleY(1.05)}
-  }
-  @keyframes core-pulse{
-    0%{opacity:0.4;transform:translateX(-50%) scale(0.95)}
-    100%{opacity:0.8;transform:translateX(-50%) scale(1.08)}
-  }
+
 
   /* ── ENTRANCE ANIMATIONS ── */
   @keyframes unblur-in{
@@ -1074,10 +1041,6 @@
 
 <div class="dash-atmosphere">
     <div class="grid-overlay"></div>
-    <div class="torch-container" id="torch">
-      <div class="light-cone"></div>
-      <div class="light-core"></div>
-    </div>
   </div>
 <div class="app-shell">
 
@@ -2669,16 +2632,6 @@ async function revokeApiKey(id) {
 
 // Load keys when on that view
 document.querySelector('[onclick*="api-keys"]')?.addEventListener('click', loadApiKeys);
-
-// Torch parallax — matches landing page
-const torch = document.getElementById('torch');
-if (torch && window.innerWidth > 768) {
-  document.addEventListener('mousemove', (e) => {
-    const x = (e.clientX / window.innerWidth - 0.5) * 12;
-    const y = (e.clientY / window.innerHeight - 0.5) * 8;
-    torch.style.transform = `translateX(calc(-50% + ${x}px)) translateY(${y}px)`;
-  });
-}
 </script>
 
 </body>

@@ -1089,15 +1089,7 @@
     </div>
 
     <div class="sidebar-footer">
-      <div class="privacy-status-widget" style="margin-bottom:10px;">
-        <div class="pulse-node"></div>
-        <div style="display:flex;flex-direction:column;">
-          <span style="font-size:11px;font-weight:600;color:var(--text-primary);">Zero-Exposure</span>
-          <span style="font-size:10px;color:var(--text-muted);">Shield Active</span>
-        </div>
-      </div>
-      <div id="sidebar-wallet" style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);padding:6px 8px;background:#08090d;border:1px solid var(--border-subtle);border-radius:6px;margin-bottom:8px;display:none;word-break:break-all;cursor:pointer;" title="Click to copy" onclick="copyWallet()"></div>
-      <button onclick="switchNav('settings', document.querySelectorAll('.nav-btn')[3])" style="width:100%;padding:8px;background:transparent;border:1px solid rgba(255,255,255,0.07);border-radius:4px;color:rgba(120,123,140,0.8);font-size:10px;font-weight:500;font-family:var(--font-mono);letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;transition:all .15s;text-align:center;margin-bottom:8px" onmouseover="this.style.borderColor='rgba(255,255,255,0.14)';this.style.color='rgba(200,200,210,0.9)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.07)';this.style.color='rgba(120,123,140,0.8)'">Settings</button>
+      <div id="sidebar-wallet" style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);padding:8px 10px;background:#08090d;border:1px solid var(--border-subtle);border-radius:6px;margin-bottom:10px;display:none;word-break:break-all;cursor:pointer;transition:border-color .15s" title="Click to copy" onclick="copyWallet()" onmouseover="this.style.borderColor='rgba(255,255,255,0.14)'" onmouseout="this.style.borderColor='var(--border-subtle)'"></div>
       <button onclick="doLogout()" style="width:100%;padding:8px;background:transparent;border:1px solid rgba(255,255,255,0.07);border-radius:4px;color:rgba(120,123,140,0.8);font-size:10px;font-weight:500;font-family:var(--font-mono);letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='rgba(255,255,255,0.14)';this.style.color='rgba(200,200,210,0.9)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.07)';this.style.color='rgba(120,123,140,0.8)'">Sign Out</button>
     </div>
   </aside>

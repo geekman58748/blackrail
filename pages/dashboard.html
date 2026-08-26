@@ -106,6 +106,7 @@
   }
   .anim-sidebar{animation:unblur-in 0.6s 0.05s cubic-bezier(0.16,1,0.3,1) both}
   .anim-header{animation:unblur-in 0.6s 0.15s cubic-bezier(0.16,1,0.3,1) both}
+  .anim-rail{animation:unblur-in 0.6s 0.25s cubic-bezier(0.16,1,0.3,1) both}
   .anim-wallet{animation:unblur-in 0.7s 0.25s cubic-bezier(0.16,1,0.3,1) both}
   .anim-metrics{animation:unblur-in 0.6s 0.35s cubic-bezier(0.16,1,0.3,1) both}
   .anim-metrics-2{animation:unblur-in 0.6s 0.42s cubic-bezier(0.16,1,0.3,1) both}
@@ -724,7 +725,149 @@
     background: rgba(244, 63, 94, 0.12);
   }
 
+  /* ── RIGHT RAIL ── */
+  .right-rail {
+    width: 280px;
+    flex-shrink: 0;
+    padding: 36px 24px 36px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow-y: auto;
+  }
+  .rail-card {
+    background: rgba(255,255,255,0.025);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 14px;
+    padding: 20px;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    transition: border-color 0.2s;
+  }
+  .rail-card:hover { border-color: rgba(255,255,255,0.10); }
+  .rail-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .rail-card-title {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+  }
+  .rail-card-badge {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 100px;
+    background: rgba(177,141,248,0.10);
+    color: #b18df8;
+    border: 1px solid rgba(177,141,248,0.15);
+  }
+  .rail-status-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 6px;
+  }
+  .rail-status-dot.green { background: #4ade80; box-shadow: 0 0 6px rgba(74,222,128,0.4); }
+  .rail-status-dot.amber { background: #fbbf24; box-shadow: 0 0 6px rgba(251,191,36,0.4); }
+  .rail-status-dot.red { background: #f87171; box-shadow: 0 0 6px rgba(248,113,113,0.4); }
+
+  /* Activity feed items */
+  .rail-activity-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  .rail-activity-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .rail-activity-item:first-child { padding-top: 0; }
+  .rail-activity-icon {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    font-size: 12px;
+  }
+  .rail-activity-icon.settle { background: rgba(74,222,128,0.08); color: #4ade80; }
+  .rail-activity-icon.link { background: rgba(177,141,248,0.08); color: #b18df8; }
+  .rail-activity-icon.withdraw { background: rgba(251,191,36,0.08); color: #fbbf24; }
+  .rail-activity-text {
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.4;
+  }
+  .rail-activity-text strong { color: var(--text-primary); font-weight: 600; }
+  .rail-activity-time {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+
+  /* Quick action pills */
+  .rail-quick-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .rail-action-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 14px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 10px;
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: var(--font-sans);
+  }
+  .rail-action-btn:hover {
+    background: rgba(177,141,248,0.06);
+    border-color: rgba(177,141,248,0.15);
+    color: var(--text-primary);
+  }
+  .rail-action-btn svg {
+    width: 14px; height: 14px;
+    opacity: 0.6;
+  }
+
+  /* Security status */
+  .rail-security-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+  }
+  .rail-security-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .rail-security-value {
+    font-size: 11px;
+    font-weight: 600;
+    font-family: var(--font-mono);
+  }
+  .rail-security-value.active { color: #4ade80; }
+  .rail-security-value.pending { color: #fbbf24; }
+
   /* ── RESPONSIVE ── */
+  @media (max-width: 1280px) {
+    .right-rail { display: none; }
+  }
   @media (max-width: 1024px) {
     .metrics-grid { grid-template-columns: 1fr; }
     .workflow-grid { grid-template-columns: 1fr; }
@@ -1603,6 +1746,81 @@
     </div>
 
   </main>
+
+  <!-- RIGHT RAIL — info cards -->
+  <aside class="right-rail anim-rail">
+    <!-- Network Status -->
+    <div class="rail-card">
+      <div class="rail-card-header">
+        <span class="rail-card-title">Network</span>
+        <span class="rail-card-badge">Devnet</span>
+      </div>
+      <div class="rail-security-row">
+        <span class="rail-security-label"><span class="rail-status-dot green" id="rail-net-dot"></span> Solana</span>
+        <span class="rail-security-value active" id="rail-net-status">Connected</span>
+      </div>
+      <div class="rail-security-row">
+        <span class="rail-security-label"><span class="rail-status-dot green"></span> API Server</span>
+        <span class="rail-security-value active">Live</span>
+      </div>
+      <div class="rail-security-row">
+        <span class="rail-security-label"><span class="rail-status-dot green"></span> MagicBlock ER</span>
+        <span class="rail-security-value active">Active</span>
+      </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="rail-card">
+      <div class="rail-card-header">
+        <span class="rail-card-title">Activity</span>
+        <span class="rail-card-badge" id="rail-activity-count">0 events</span>
+      </div>
+      <div id="rail-activity-feed">
+        <div style="font-size:12px;color:var(--text-muted);text-align:center;padding:16px 0">No recent activity</div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="rail-card">
+      <div class="rail-card-header">
+        <span class="rail-card-title">Quick Actions</span>
+      </div>
+      <div class="rail-quick-actions">
+        <button class="rail-action-btn" onclick="switchNav('payments', document.querySelectorAll('.nav-btn')[1])">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Create Payment Link
+        </button>
+        <button class="rail-action-btn" onclick="switchNav('vault', document.querySelectorAll('.nav-btn')[2])">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
+          Withdraw Funds
+        </button>
+        <a class="rail-action-btn" href="https://docs.blackrail.xyz" target="_blank">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>
+          API Docs
+        </a>
+      </div>
+    </div>
+
+    <!-- Security Pulse -->
+    <div class="rail-card">
+      <div class="rail-card-header">
+        <span class="rail-card-title">Security</span>
+      </div>
+      <div class="rail-security-row">
+        <span class="rail-security-label"><span class="rail-status-dot green"></span> Encryption</span>
+        <span class="rail-security-value active">AES-256</span>
+      </div>
+      <div class="rail-security-row">
+        <span class="rail-security-label"><span class="rail-status-dot green"></span> Key Rotation</span>
+        <span class="rail-security-value active">Enabled</span>
+      </div>
+      <div class="rail-security-row">
+        <span class="rail-security-label"><span class="rail-status-dot green"></span> Facade Privacy</span>
+        <span class="rail-security-value active">Active</span>
+      </div>
+    </div>
+  </aside>
+
 </div>
 
 <script>
@@ -2192,6 +2410,9 @@ async function loadStats() {
     // Render heatmap
     if (hourly) renderHeatmap(hourly);
 
+    // Populate right-rail activity feed
+    if (payments) populateRailActivity(payments);
+
     // Populate live feed
     const feedBody = document.getElementById('live-feed-tbody');
     if (feedBody) {
@@ -2367,6 +2588,33 @@ loadStats();
 loadVaultBalance();
 setInterval(loadStats, 30000);
 setInterval(loadVaultBalance, 30000);
+
+// ── RIGHT RAIL: populate activity feed ────────────────────────────────────────
+function populateRailActivity(payments) {
+  const feed = document.getElementById('rail-activity-feed');
+  const countBadge = document.getElementById('rail-activity-count');
+  if (!feed) return;
+  if (!payments || !payments.length) {
+    feed.innerHTML = '<div style="font-size:12px;color:var(--text-muted);text-align:center;padding:16px 0">No recent activity</div>';
+    if (countBadge) countBadge.textContent = '0 events';
+    return;
+  }
+  const recent = payments.slice(0, 5);
+  if (countBadge) countBadge.textContent = payments.length + ' events';
+  feed.innerHTML = recent.map(p => {
+    const isSettled = p.status === 'settled';
+    const type = isSettled ? 'settle' : (p.status === 'created' ? 'link' : 'withdraw');
+    const icon = isSettled ? '&#9650;' : (p.status === 'created' ? '&#128279;' : '&#8594;');
+    const label = isSettled ? 'Payment settled' : (p.status === 'created' ? 'Link created' : 'Withdrawal');
+    const amount = p.amount ? '$' + Number(p.amount).toFixed(2) + ' USDC' : '';
+    const time = p.settledAt ? timeAgo(new Date(p.settledAt)) : (p.createdAt ? timeAgo(new Date(p.createdAt)) : '');
+    return '<div class="rail-activity-item">'
+      + '<div class="rail-activity-icon ' + type + '">' + icon + '</div>'
+      + '<div><div class="rail-activity-text"><strong>' + label + '</strong>' + (amount ? ' · ' + amount : '') + '</div>'
+      + '<div class="rail-activity-time">' + time + '</div></div>'
+      + '</div>';
+  }).join('');
+}
 
 // ── ONBOARDING CHECKLIST ──────────────────────────────────────────────────────
 function initOnboarding() {

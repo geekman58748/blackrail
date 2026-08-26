@@ -375,7 +375,7 @@ async function processPayment() {
       },
       body: JSON.stringify({
         label: cart[0].name,
-        amount: cart[0].price.toFixed(2),
+        amount: cart[0].price,
         currency: 'USDC',
         expiryMinutes: 15,
       }),

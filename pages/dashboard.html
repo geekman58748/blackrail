@@ -1378,20 +1378,20 @@
           <span style="font-size:13px;font-weight:700;color:var(--text-primary)">New Payment Link</span>
         </div>
         <form onsubmit="handleGenerateLink(event)">
-          <div style="margin-bottom:14px">
-            <label class="field-label">Label / Reference</label>
-            <input type="text" class="input-styled" id="link-label" placeholder="e.g. Invoice #8921" required />
-          </div>
-          <div style="display:flex;gap:12px;align-items:end">
-            <div style="flex:1">
-              <label class="field-label">Amount (USDC)</label>
-              <input type="number" step="0.01" class="input-styled" id="link-amount" placeholder="Open amount" />
+          <div style="display:grid;grid-template-columns:1fr auto;gap:14px;margin-bottom:14px;align-items:end">
+            <div>
+              <label class="field-label">Label / Reference</label>
+              <input type="text" class="input-styled" id="link-label" placeholder="e.g. Invoice #8921" required />
             </div>
-            <button type="submit" class="btn-action-primary" style="height:42px;white-space:nowrap;padding:0 24px">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
-              Generate
-            </button>
+            <div>
+              <label class="field-label">Amount (USDC)</label>
+              <input type="number" step="0.01" class="input-styled" id="link-amount" placeholder="Open amount" style="width:220px" />
+            </div>
           </div>
+          <button type="submit" class="btn-action-primary" style="height:42px;white-space:nowrap;padding:0 24px">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+            Generate
+          </button>
         </form>
         <div id="preview-panel" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid var(--border-subtle)"></div>
       </div>
@@ -1708,7 +1708,7 @@
   <!-- RIGHT RAIL — activity + quick actions -->
   <aside class="right-rail anim-rail">
     <!-- Recent Activity (synced with payments) -->
-    <div class="rail-card">
+    <div class="rail-card" id="rail-activity-card">
       <div class="rail-card-header">
         <span class="rail-card-title">Activity</span>
       </div>
@@ -1718,7 +1718,7 @@
     </div>
 
     <!-- Quick Actions -->
-    <div class="rail-card">
+    <div class="rail-card" id="rail-actions-card">
       <div class="rail-card-header">
         <span class="rail-card-title">Quick Actions</span>
       </div>
@@ -1750,6 +1750,9 @@
     btnElement.classList.add('active');
     if (pageId === 'settings') loadSettingsTab();
     if (pageId === 'vault') loadBankStatus();
+    // Toggle rail cards: hide Activity on payments page
+    const activityCard = document.getElementById('rail-activity-card');
+    if (activityCard) activityCard.style.display = pageId === 'payments' ? 'none' : '';
   }
 
   async function handleGenerateLink(e) {

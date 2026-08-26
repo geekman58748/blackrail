@@ -466,7 +466,9 @@
   let PAYMENT_AMOUNT     = parseFloat(params.get('amount') || '0');
   const PAYMENT_CURRENCY = params.get('currency') || 'USDC';
   const SESSION_ID       = params.get('session') || '';
-  const CHECKOUT_TOKEN   = new URLSearchParams(window.location.hash.slice(1)).get('token') || '';
+  const hashToken = new URLSearchParams(window.location.hash.slice(1)).get('token') || '';
+  const CHECKOUT_TOKEN = hashToken || sessionStorage.getItem('blackrail_checkout_token') || '';
+  if (hashToken) sessionStorage.setItem('blackrail_checkout_token', hashToken);
   const configuredApiBase = window.BLACKRAIL_CONFIG?.apiBase || localStorage.getItem('blackrail_api_base') || '';
   const API_BASE = configuredApiBase.replace(/\/+$/, '');
   const checkoutHeaders = CHECKOUT_TOKEN ? { 'x-checkout-token': CHECKOUT_TOKEN } : {};
@@ -654,6 +656,7 @@
               return;
             }
             clearInterval(_pollInterval);
+            sessionStorage.removeItem('blackrail_checkout_token');
             transitionToState(2);
           } catch(settleErr) {
             console.error('[settle] network error:', settleErr);

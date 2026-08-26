@@ -476,7 +476,7 @@
 </div>
 
 <script>
-  const API_BASE = (window.BLACKRAIL_CONFIG?.apiBase || localStorage.getItem('blackrail_api_base') || '').replace(/\\/+$/, '');
+  const API_BASE = (window.BLACKRAIL_CONFIG?.apiBase || localStorage.getItem('blackrail_api_base') || '').replace(/\/+$/, '');
 
   // Already logged in → dashboard
   (function() {

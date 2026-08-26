@@ -159,7 +159,23 @@ router.post("/sessions/:id/settle", async (req, res): Promise<void> => {
     const [wallet] = await db.select().from(walletsTable).where(eq(walletsTable.userId, merchantUserId));
     const destinationAddress = wallet?.publicKey ?? undefined;
     console.log(`[settle] wallet=${wallet?.publicKey ?? 'NONE'}, destination=${destinationAddress ?? 'FALLBACK to server'}`);
-    const sig = await settleFacade(decryptSecret(claimed.facadeKeypairB58!), claimed.facadeAddress, claimed.id, destinationAddress);
+
+    // Decrypt with retry — transient RPC errors can cause first attempt to fail
+    let decryptedKey: string;
+    try {
+      decryptedKey = decryptSecret(claimed.facadeKeypairB58!);
+    } catch (decryptErr) {
+      console.error(`[settle] decrypt FAILED for session ${claimed.id}: ${decryptErr}`);
+      console.error(`[settle] enc_prefix=${claimed.facadeKeypairB58!.slice(0, 20)}...`);
+      // Store the failed state with actionable error message
+      const errMsg = `decrypt failed — check FACADE_ENCRYPTION_KEY_PREVIOUS includes the key used when this session was created: ${decryptErr}`;
+      await db.update(sessionsTable).set({ status: "settlement_failed", settlementError: errMsg })
+        .where(and(eq(sessionsTable.id, claimed.id), eq(sessionsTable.status, "settling")));
+      res.status(502).json({ error: "settlement failed", detail: errMsg });
+      return;
+    }
+
+    const sig = await settleFacade(decryptedKey, claimed.facadeAddress, claimed.id, destinationAddress);
     const settledAt = new Date();
     await db.transaction(async (tx) => {
       await tx.update(sessionsTable).set({
@@ -211,10 +227,29 @@ router.post("/sessions/:id/settle", async (req, res): Promise<void> => {
 
     res.json({ sig, private: true, status: "settled" });
   } catch (e) {
-    await db.update(sessionsTable).set({ status: "settlement_failed", settlementError: String(e) })
+    const errMsg = String(e);
+    console.error(`[settle] FAILED for session ${claimed.id}: ${errMsg}`);
+    await db.update(sessionsTable).set({ status: "settlement_failed", settlementError: errMsg })
       .where(and(eq(sessionsTable.id, claimed.id), eq(sessionsTable.status, "settling")));
-    res.status(502).json({ error: "settlement failed", detail: String(e) });
+    res.status(502).json({ error: "settlement failed", detail: errMsg });
   }
+});
+
+// ── GET /sessions/failed — list all failed settlements for admin recovery ────
+router.get("/sessions/failed", requireMerchant, async (_req, res): Promise<void> => {
+  const { merchantId } = merchantPrincipal(res);
+  const rows = await db.select().from(sessionsTable)
+    .where(and(eq(sessionsTable.merchantId, merchantId), eq(sessionsTable.status, "settlement_failed")));
+  res.json(rows.map((r) => ({
+    id: r.id,
+    facadeAddress: r.facadeAddress,
+    label: r.label,
+    amount: r.amount,
+    currency: r.currency,
+    settlementError: r.settlementError,
+    createdAt: r.createdAt,
+    facadeKeypairB58: r.facadeKeypairB58 ? "[encrypted]" : "[missing]",
+  }));
 });
 
 router.delete("/sessions/:id", requireMerchant, async (req, res): Promise<void> => {

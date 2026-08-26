@@ -658,40 +658,6 @@
     margin-top: 10px;
   }
 
-  /* ── VAULT STYLES ── */
-  .vault-hero {
-    max-width: 640px;
-    margin: 40px auto;
-    padding: 40px;
-    text-align: center;
-  }
-
-  .vault-lock-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid var(--border-subtle);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 20px;
-    color: var(--text-primary);
-  }
-
-  .vault-address-container {
-    background: #08090d;
-    border: 1px solid var(--border-subtle);
-    padding: 12px 16px;
-    border-radius: 8px;
-    font-family: var(--font-mono);
-    font-size: 12px;
-    color: var(--text-secondary);
-    margin: 20px 0 28px;
-    display: inline-flex;
-    align-items: center;
-    gap: 12px;
-  }
 
   /* ── API KEYS ── */
   .key-card {
@@ -1146,7 +1112,7 @@
         <div class="icon-box">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
         </div>
-        <span>My Wallet</span>
+        <span>Bank Account</span>
       </button>
 
       <div class="nav-label">Developer</div>
@@ -1437,35 +1403,7 @@
         </div>
       </div>
 
-      <!-- LIVE FEED TERMINAL -->
-      <div class="terminal-box">
-        <div class="terminal-bar">
-          <span class="terminal-title">LIVE_PAYMENT_STREAM</span>
-          <span style="font-size:10px;font-family:var(--font-mono);color:rgba(160,163,185,0.5);letter-spacing:0.06em;">● LIVE</span>
-        </div>
-        <div class="table-responsive">
-          <table class="data-table mono-styled">
-            <thead>
-              <tr>
-                <th>Amount</th>
-                <th>Time</th>
-                <th>Status</th>
-                <th>Sender</th>
-              </tr>
-            </thead>
-            <tbody id="live-feed-tbody">
-              <tr id="live-empty-row">
-                <td colspan="4" style="text-align:center;padding:40px 0;">
-                  <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:rgba(90,93,109,0.6);margin-bottom:8px;">[ STREAM IDLE ]</div>
-                  <div style="font-size:13px;color:rgba(74,82,100,0.7);font-weight:500;">No trail. No record. Nothing to show.</div>
-                  <div style="font-size:11px;color:rgba(60,65,80,0.5);margin-top:4px;font-family:var(--font-mono);">Entries appear here only after a payment settles.</div>
-                </td>
-              </tr>
 
-            </tbody>
-          </table>
-        </div>
-      </div>
     </div>
 
     <!-- 2. PAYMENTS VIEW -->
@@ -1530,42 +1468,106 @@
     <!-- PAYMENT LINKS (legacy redirect — maps to payments) -->
     <div id="payment-links" class="page-view" style="display:none"></div>
 
-    <!-- 4. VAULT VIEW -->
+    <!-- 4. WALLET / PAYOUT VIEW -->
     <div id="vault" class="page-view">
       <div class="view-header">
         <div class="view-title-group">
-          <h1>Hidden Master Vault</h1>
-          <p>Private treasury hub — unlinked from public block explorer queries</p>
+          <span class="view-label">[ BLACKRAIL · PAYOUT ]</span>
+          <h1>Bank Account</h1>
+          <p>Link a bank account to receive payouts from your USDC payments</p>
         </div>
       </div>
 
-      <div class="glass-card vault-hero">
-        <div class="vault-lock-icon">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-        </div>
-        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-muted)">Private Master Balance</div>
-        <div style="font-size:40px;font-weight:700;color:#ffffff;margin:8px 0;">
-          <span id="vault-balance">—</span> <span style="font-size:16px;color:var(--text-secondary);font-family:var(--font-mono)">USDC</span>
-        </div>
-
-        <div style="margin-top:12px;">
-          <span style="font-size:11px;color:var(--text-secondary);display:block;margin-bottom:6px;">Vault USDC Address (click to copy):</span>
-          <div class="vault-address-container" id="vault-addr-box" style="cursor:pointer;" title="Click to copy vault address" onclick="copyVaultAta()">
-            <span id="vault-addr-text">Loading…</span>
-            <span id="vault-copy-icon" style="margin-left:8px;font-size:11px;color:var(--text-muted)">⎘</span>
+      <!-- Bank Account Status -->
+      <div class="glass-card" style="padding:24px;margin-bottom:24px">
+        <div id="bank-connected" style="display:none">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+            <div style="width:40px;height:40px;border-radius:10px;background:rgba(74,222,128,0.08);display:flex;align-items:center;justify-content:center">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+            <div>
+              <div style="font-size:14px;font-weight:700;color:var(--text-primary)">Bank Account Linked</div>
+              <div style="font-size:12px;color:var(--text-muted)" id="bank-name-display"></div>
+            </div>
           </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px;padding-top:16px;border-top:1px solid var(--border-subtle)">
+            <div>
+              <div style="font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px">Account Holder</div>
+              <div style="font-size:13px;color:var(--text-primary)" id="bank-holder-display">—</div>
+            </div>
+            <div>
+              <div style="font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px">Account Number</div>
+              <div style="font-size:13px;color:var(--text-primary);font-family:var(--font-mono)" id="bank-number-display">—</div>
+            </div>
+            <div>
+              <div style="font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px">Routing Number</div>
+              <div style="font-size:13px;color:var(--text-primary);font-family:var(--font-mono)" id="bank-routing-display">—</div>
+            </div>
+            <div>
+              <div style="font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px">Payout Method</div>
+              <div style="font-size:13px;color:var(--text-primary)">USDC → USD Conversion</div>
+            </div>
+          </div>
+          <button class="btn-pill" style="margin-top:20px;background:rgba(204,123,123,0.06);border-color:rgba(204,123,123,0.12);color:var(--rose)" onclick="unlinkBankAccount()">Unlink Account</button>
         </div>
 
-        <div style="margin-top:16px;width:100%;max-width:420px;margin-left:auto;margin-right:auto;">
-          <span style="font-size:11px;color:var(--text-secondary);display:block;margin-bottom:6px;">Withdraw to wallet address:</span>
-          <input id="withdraw-dest-input" type="text" placeholder="Paste any Solana wallet address…"
-            style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:10px 12px;color:#fff;font-size:13px;font-family:var(--font-mono);outline:none;" />
-        </div>
+        <div id="bank-not-connected">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px">
+            <div style="width:40px;height:40px;border-radius:10px;background:rgba(177,141,248,0.08);display:flex;align-items:center;justify-content:center">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#b18df8" stroke-width="2"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+            </div>
+            <div>
+              <div style="font-size:14px;font-weight:700;color:var(--text-primary)">No Bank Account Linked</div>
+              <div style="font-size:12px;color:var(--text-muted)">Connect a bank account to receive payouts</div>
+            </div>
+          </div>
 
-        <button class="btn-action-primary" style="max-width:200px;margin:16px auto 0;" onclick="withdrawFunds()">
-          Withdraw Funds
-        </button>
-        <div id="withdraw-status" style="font-size:12px;margin-top:10px;min-height:18px;text-align:center;"></div>
+          <form id="bank-link-form" onsubmit="linkBankAccount(event)">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+              <div>
+                <label class="field-label">Full Name</label>
+                <input type="text" class="input-styled" id="bank-holder-name" placeholder="John Smith" required />
+              </div>
+              <div>
+                <label class="field-label">Email</label>
+                <input type="email" class="input-styled" id="bank-email" placeholder="john@example.com" required />
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+              <div>
+                <label class="field-label">Account Number</label>
+                <input type="text" class="input-styled" id="bank-account-num" placeholder="000123456789" required />
+              </div>
+              <div>
+                <label class="field-label">Routing Number</label>
+                <input type="text" class="input-styled" id="bank-routing-num" placeholder="021000021" required />
+              </div>
+            </div>
+            <div style="margin-bottom:16px">
+              <label class="field-label">Bank Name</label>
+              <input type="text" class="input-styled" id="bank-name-input" placeholder="e.g. Chase, Bank of America" required />
+            </div>
+            <button type="submit" class="btn-action-primary" style="max-width:220px" id="bank-link-btn">
+              Link Bank Account
+            </button>
+          </form>
+          <div id="bank-link-status" style="font-size:12px;margin-top:12px;min-height:18px"></div>
+        </div>
+      </div>
+
+      <!-- Withdraw Section -->
+      <div class="glass-card" style="padding:24px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
+          <span style="font-size:13px;font-weight:700;color:var(--text-primary)">Withdraw to Wallet</span>
+        </div>
+        <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px;line-height:1.6">Send USDC directly to any Solana wallet address. This bypasses bank conversion.</p>
+        <div style="margin-bottom:14px">
+          <label class="field-label">Destination Address</label>
+          <input id="withdraw-dest-input" type="text" placeholder="Paste any Solana wallet address…" class="input-styled" style="font-family:var(--font-mono);font-size:12px" />
+        </div>
+        <button class="btn-action-primary" style="max-width:200px" onclick="withdrawFunds()">Withdraw Funds</button>
+        <div id="withdraw-status" style="font-size:12px;margin-top:10px;min-height:18px"></div>
       </div>
     </div>
 
@@ -1747,29 +1749,9 @@
 
   </main>
 
-  <!-- RIGHT RAIL — info cards -->
+  <!-- RIGHT RAIL — activity + quick actions -->
   <aside class="right-rail anim-rail">
-    <!-- Network Status -->
-    <div class="rail-card">
-      <div class="rail-card-header">
-        <span class="rail-card-title">Network</span>
-        <span class="rail-card-badge">Devnet</span>
-      </div>
-      <div class="rail-security-row">
-        <span class="rail-security-label"><span class="rail-status-dot green" id="rail-net-dot"></span> Solana</span>
-        <span class="rail-security-value active" id="rail-net-status">Connected</span>
-      </div>
-      <div class="rail-security-row">
-        <span class="rail-security-label"><span class="rail-status-dot green"></span> API Server</span>
-        <span class="rail-security-value active">Live</span>
-      </div>
-      <div class="rail-security-row">
-        <span class="rail-security-label"><span class="rail-status-dot green"></span> MagicBlock ER</span>
-        <span class="rail-security-value active">Active</span>
-      </div>
-    </div>
-
-    <!-- Recent Activity -->
+    <!-- Recent Activity (synced with payments) -->
     <div class="rail-card">
       <div class="rail-card-header">
         <span class="rail-card-title">Activity</span>
@@ -1786,37 +1768,18 @@
         <span class="rail-card-title">Quick Actions</span>
       </div>
       <div class="rail-quick-actions">
+        <button class="rail-action-btn" onclick="switchNav('vault', document.querySelectorAll('.nav-btn')[2])">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+          Set Up Bank Account
+        </button>
         <button class="rail-action-btn" onclick="switchNav('payments', document.querySelectorAll('.nav-btn')[1])">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           Create Payment Link
         </button>
-        <button class="rail-action-btn" onclick="switchNav('vault', document.querySelectorAll('.nav-btn')[2])">
+        <button class="rail-action-btn" onclick="switchNav('settings', document.querySelectorAll('.nav-btn')[3])">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
           Withdraw Funds
         </button>
-        <a class="rail-action-btn" href="https://docs.blackrail.xyz" target="_blank">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>
-          API Docs
-        </a>
-      </div>
-    </div>
-
-    <!-- Security Pulse -->
-    <div class="rail-card">
-      <div class="rail-card-header">
-        <span class="rail-card-title">Security</span>
-      </div>
-      <div class="rail-security-row">
-        <span class="rail-security-label"><span class="rail-status-dot green"></span> Encryption</span>
-        <span class="rail-security-value active">AES-256</span>
-      </div>
-      <div class="rail-security-row">
-        <span class="rail-security-label"><span class="rail-status-dot green"></span> Key Rotation</span>
-        <span class="rail-security-value active">Enabled</span>
-      </div>
-      <div class="rail-security-row">
-        <span class="rail-security-label"><span class="rail-status-dot green"></span> Facade Privacy</span>
-        <span class="rail-security-value active">Active</span>
       </div>
     </div>
   </aside>
@@ -1831,6 +1794,7 @@
     document.getElementById(pageId).classList.add('active');
     btnElement.classList.add('active');
     if (pageId === 'settings') loadSettingsTab();
+    if (pageId === 'vault') loadBankStatus();
   }
 
   async function handleGenerateLink(e) {
@@ -1916,14 +1880,6 @@ async function loadWallet() {
   }
 }
 
-function copyVaultAta() {
-  const ata = window._vaultAta;
-  if (!ata) return;
-  navigator.clipboard.writeText(ata).then(() => {
-    const el = document.getElementById('vault-addr-text');
-    if (el) { el.textContent = 'Copied!'; setTimeout(() => el.textContent = ata, 1500); }
-  });
-}
 
 function copyWallet() {
   const addr = localStorage.getItem('blackrail_wallet_address');
@@ -2338,15 +2294,56 @@ async function loadVaultBalance() {
     const res = await apiFetch('/api/vault/balance');
     if (res.status === 401) return;
     const { balance, configured, ata } = await res.json();
-    const el = document.getElementById('vault-balance');
-    if (el) el.textContent = configured && balance != null ? parseFloat(balance).toFixed(2) : '—';
-    if (ata) {
-      const addrEl = document.getElementById('vault-addr-text');
-      if (addrEl) addrEl.textContent = ata;
-      // store for copy
-      window._vaultAta = ata;
-    }
   } catch(e) { console.warn('Vault balance fetch failed:', e); }
+}
+
+// ── BANK ACCOUNT LINKING ──────────────────────────────────────────────────────
+function loadBankStatus() {
+  const stored = localStorage.getItem('blackrail_bank_account');
+  if (stored) {
+    try {
+      const bank = JSON.parse(stored);
+      document.getElementById('bank-connected').style.display = 'block';
+      document.getElementById('bank-not-connected').style.display = 'none';
+      document.getElementById('bank-name-display').textContent = bank.bankName + ' ••••' + (bank.accountNumber || '').slice(-4);
+      document.getElementById('bank-holder-display').textContent = bank.holderName;
+      document.getElementById('bank-number-display').textContent = '••••' + (bank.accountNumber || '').slice(-4);
+      document.getElementById('bank-routing-display').textContent = bank.routingNumber;
+    } catch(e) {}
+  } else {
+    document.getElementById('bank-connected').style.display = 'none';
+    document.getElementById('bank-not-connected').style.display = 'block';
+  }
+}
+
+function linkBankAccount(e) {
+  e.preventDefault();
+  const statusEl = document.getElementById('bank-link-status');
+  const holderName = document.getElementById('bank-holder-name').value.trim();
+  const email = document.getElementById('bank-email').value.trim();
+  const accountNumber = document.getElementById('bank-account-num').value.trim();
+  const routingNumber = document.getElementById('bank-routing-num').value.trim();
+  const bankName = document.getElementById('bank-name-input').value.trim();
+
+  if (!holderName || !accountNumber || !routingNumber || !bankName) {
+    if (statusEl) { statusEl.innerHTML = '<span style="color:#f87171">All fields are required</span>'; }
+    return;
+  }
+
+  // Store locally (in production this would POST to API)
+  const bankData = { holderName, email, accountNumber, routingNumber, bankName, linkedAt: new Date().toISOString() };
+  localStorage.setItem('blackrail_bank_account', JSON.stringify(bankData));
+
+  if (statusEl) { statusEl.innerHTML = '<span style="color:#4ade80">Bank account linked successfully ✓</span>'; }
+  document.getElementById('bank-link-form').reset();
+  loadBankStatus();
+}
+
+function unlinkBankAccount() {
+  localStorage.removeItem('blackrail_bank_account');
+  loadBankStatus();
+  const statusEl = document.getElementById('bank-link-status');
+  if (statusEl) { statusEl.innerHTML = '<span style="color:#fbbf24">Account unlinked</span>'; }
 }
 
 let _prevPaymentCount = 0;
@@ -2412,29 +2409,6 @@ async function loadStats() {
 
     // Populate right-rail activity feed
     if (payments) populateRailActivity(payments);
-
-    // Populate live feed
-    const feedBody = document.getElementById('live-feed-tbody');
-    if (feedBody) {
-      if (recent.length === 0) return;
-      const emptyRow = document.getElementById('live-empty-row');
-      if (emptyRow) emptyRow.remove();
-      feedBody.innerHTML = recent.map(p => {
-        const ago = timeAgo(new Date(p.createdAt));
-        const addr = p.facadeAddress || '';
-        const shortAddr = addr.length > 10 ? addr.slice(0, 6) + '...' + addr.slice(-4) : addr;
-        const solscanAddr = addr ? `https://solscan.io/account/${addr}?cluster=devnet` : null;
-        const addrCell = solscanAddr
-          ? `<a href="${solscanAddr}" target="_blank" rel="noopener" style="color:rgba(190,193,210,0.7);font-family:var(--font-mono);font-size:11px;text-decoration:none;border-bottom:1px solid rgba(255,255,255,0.1);">${shortAddr} ↗</a>`
-          : `<span class="truncated-facade">${shortAddr}</span>`;
-        return `<tr>
-          <td style="color:#ffffff;font-weight:600;">$${parseFloat(p.amount).toFixed(2)} ${p.currency}</td>
-          <td style="color:var(--text-muted)">${ago}</td>
-          <td><span style="color:rgba(160,196,176,0.8);font-family:var(--font-mono);font-size:11px;">Confirmed</span></td>
-          <td>${addrCell}</td>
-        </tr>`;
-      }).join('');
-    }
 
     // Populate full history
     const histBody = document.getElementById('history-tbody');

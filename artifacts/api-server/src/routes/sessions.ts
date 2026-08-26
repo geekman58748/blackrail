@@ -9,7 +9,7 @@ import {
 } from "../lib/solana.js";
 import { capabilityMatches, merchantPrincipal, requireMerchant } from "../middlewares/auth.js";
 import { decryptSecret, encryptSecret, hashCapability } from "../lib/secrets.js";
-import { notifyMerchant, type PaymentNotification } from "../lib/notifications.js";
+import { notifyMerchant, sendBuyerReceipt, type PaymentNotification } from "../lib/notifications.js";
 
 const router = Router();
 
@@ -119,6 +119,8 @@ router.post("/sessions/:id/settle", async (req, res): Promise<void> => {
   if (!capabilityMatches(checkoutCapability(req), row.checkoutTokenHash)) {
     res.status(401).json({ error: "invalid checkout capability" }); return;
   }
+  // Accept buyer email from checkout page
+  const buyerEmail = (req.body as any)?.buyerEmail || (req.headers["x-buyer-email"] as string) || null;
   if (row.status === "settled" && row.settlementTxHash) {
     res.json({ sig: row.settlementTxHash, private: row.settlementPrivate, status: "settled" });
     return;
@@ -171,8 +173,7 @@ router.post("/sessions/:id/settle", async (req, res): Promise<void> => {
       const errMsg = `decrypt failed — check FACADE_ENCRYPTION_KEY_PREVIOUS includes the key used when this session was created: ${decryptErr}`;
       await db.update(sessionsTable).set({ status: "settlement_failed", settlementError: errMsg })
         .where(and(eq(sessionsTable.id, claimed.id), eq(sessionsTable.status, "settling")));
-      res.status(502).json({ error: "settlement failed", detail: errMsg });
-      return;
+      res.status(502).json({ error: "settlement failed", detail: errMsg });        return;
     }
 
     const sig = await settleFacade(decryptedKey, claimed.facadeAddress, claimed.id, destinationAddress);
@@ -186,6 +187,7 @@ router.post("/sessions/:id/settle", async (req, res): Promise<void> => {
         settledAt,
         settlementError: null,
         facadeKeypairB58: null,
+        ...(buyerEmail ? { buyerEmail } : {}),
       }).where(and(eq(sessionsTable.id, claimed.id), eq(sessionsTable.status, "settling")));
       await tx.insert(paymentsTable).values({
         amount: decimalUsdc(received),
@@ -226,6 +228,19 @@ router.post("/sessions/:id/settle", async (req, res): Promise<void> => {
     }
 
     res.json({ sig, private: true, status: "settled" });
+
+    // Send buyer receipt email (non-blocking)
+    if (buyerEmail) {
+      sendBuyerReceipt(buyerEmail, {
+        sessionId: claimed.id,
+        label: claimed.label,
+        amount: decimalUsdc(received),
+        currency: claimed.currency,
+        facadeAddress: claimed.facadeAddress,
+        txHash: sig,
+        settledAt: settledAt.toISOString(),
+      }).catch(() => {});
+    }
   } catch (e) {
     const errMsg = String(e);
     console.error(`[settle] FAILED for session ${claimed.id}: ${errMsg}`);

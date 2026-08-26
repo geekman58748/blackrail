@@ -414,6 +414,14 @@
       Open Phantom, Backpack, or Solflare. Send <strong id="instrAmount">the exact amount</strong> to this address. No wallet connect required.
     </div>
 
+    <!-- Buyer Email for Receipt -->
+    <div style="width:100%;max-width:380px;margin-top:16px;">
+      <label style="display:block;font-size:10px;color:rgba(160,164,185,0.5);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px;">Get your receipt</label>
+      <input id="buyerEmailInput" type="email" placeholder="your@email.com"
+        style="width:100%;padding:10px 14px;font-size:13px;font-family:'Inter',sans-serif;color:#f1f3f9;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:8px;outline:none;transition:border-color 0.2s;"
+        onfocus="this.style.borderColor='rgba(177,141,248,0.3)'" onblur="this.style.borderColor='rgba(255,255,255,0.08)'" />
+    </div>
+
     <div id="pollStatus" style="margin-top:12px;font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(120,124,145,0.5);letter-spacing:0.06em;text-align:center;"></div>
   </div>
 
@@ -426,19 +434,55 @@
       </svg>
     </div>
 
-    <div class="state-title">Settlement Complete</div>
+    <div class="state-title">Payment Confirmed</div>
 
-    <!-- Dissolving Facade Address Area -->
-    <div class="address-box" id="dissolvingAddrBox" style="width:100%; margin-top:12px;">
-      <div class="facade-address" id="confirmedFacadeAddr">0x71C...4e89f2A</div>
-      <span style="font-size:9px;color:rgba(160,196,176,0.8);font-family:'JetBrains Mono',monospace;letter-spacing:0.1em;">SWEPT</span>
+    <!-- Receipt Card -->
+    <div id="receiptCard" style="width:100%;max-width:380px;margin-top:16px;background:rgba(177,141,248,0.06);border:1px solid rgba(177,141,248,0.12);border-radius:12px;padding:20px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <div>
+          <div id="receiptAmount" style="font-size:28px;font-weight:800;color:#fff;letter-spacing:-0.02em;">$0.00</div>
+          <div style="font-size:11px;color:rgba(160,164,185,0.6);font-family:'Courier New',monospace;">USDC</div>
+        </div>
+        <div style="display:inline-flex;align-items:center;gap:5px;background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.15);border-radius:6px;padding:4px 10px;">
+          <span style="color:#4ade80;font-size:11px;">✓</span>
+          <span style="color:#4ade80;font-size:10px;font-weight:600;letter-spacing:0.04em;">SETTLED</span>
+        </div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;">
+        <tr>
+          <td style="font-size:11px;color:rgba(160,164,185,0.5);padding:5px 0;">Order</td>
+          <td id="receiptOrder" style="font-size:11px;color:#fff;text-align:right;padding:5px 0;">—</td>
+        </tr>
+        <tr>
+          <td style="font-size:11px;color:rgba(160,164,185,0.5);padding:5px 0;border-top:1px solid rgba(255,255,255,0.04);">Session</td>
+          <td id="receiptSession" style="font-size:10px;color:rgba(200,202,216,0.7);font-family:'Courier New',monospace;text-align:right;padding:5px 0;border-top:1px solid rgba(255,255,255,0.04);">—</td>
+        </tr>
+        <tr>
+          <td style="font-size:11px;color:rgba(160,164,185,0.5);padding:5px 0;border-top:1px solid rgba(255,255,255,0.04);">Confirmed</td>
+          <td id="receiptTime" style="font-size:11px;color:#fff;text-align:right;padding:5px 0;border-top:1px solid rgba(255,255,255,0.04);">—</td>
+        </tr>
+      </table>
     </div>
 
+    <!-- On-Chain Proof -->
+    <div style="width:100%;max-width:380px;margin-top:12px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);border-radius:10px;padding:14px 16px;">
+      <div style="font-size:10px;color:rgba(160,164,185,0.5);margin-bottom:6px;">On-Chain Proof</div>
+      <a id="receiptTxLink" href="#" target="_blank" style="font-size:11px;color:#b18df8;font-family:'Courier New',monospace;text-decoration:none;word-break:break-all;line-height:1.5;"></a>
+    </div>
+
+    <!-- Dissolving Address -->
+    <div class="address-box" id="dissolvingAddrBox" style="width:100%;max-width:380px;margin-top:12px;">
+      <div class="facade-address" id="confirmedFacadeAddr" style="font-size:11px;">—</div>
+      <span style="font-size:9px;color:rgba(160,196,176,0.8);font-family:'JetBrains Mono',monospace;letter-spacing:0.1em;">SWEPT</span>
+    </div>
     <div class="dissolve-note" id="dissolveLine" style="display:none;">
       [ ADDRESS DISSOLVED · NO ON-CHAIN TRACE ]
     </div>
 
-    <div class="timestamp-tag" id="confirmationTimestamp">Confirmed at --:--:--</div>
+    <!-- Receipt Email Notice -->
+    <div id="receiptEmailNotice" style="margin-top:12px;font-size:11px;color:rgba(160,164,185,0.5);text-align:center;display:none;">
+      Receipt sent to <span id="receiptEmailAddr" style="color:#b18df8;"></span>
+    </div>
   </div>
 
   <!-- STATE 3: EXPIRED -->
@@ -586,10 +630,37 @@
       document.getElementById('greenFlash').classList.add('active');
       setTimeout(() => document.getElementById('greenFlash').classList.remove('active'), 800);
 
-      // Record Confirmation Time
+      // Populate receipt card
+      const sd = window._lastSettleData || {};
+      const receiptAmt = PAYMENT_AMOUNT > 0 ? PAYMENT_AMOUNT.toFixed(2) : (sd.amount || '0.00');
+      const amtEl = document.getElementById('receiptAmount');
+      if (amtEl) amtEl.textContent = '$' + receiptAmt;
+      const orderEl = document.getElementById('receiptOrder');
+      if (orderEl) orderEl.textContent = document.getElementById('merchantName')?.textContent || '—';
+      const sessEl = document.getElementById('receiptSession');
+      if (sessEl) sessEl.textContent = '#' + SESSION_ID.slice(0, 12) + '…';
+      const timeEl = document.getElementById('receiptTime');
       const now = new Date();
-      document.getElementById('confirmationTimestamp').innerText = 
-        `Confirmed at ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
+      if (timeEl) timeEl.textContent = now.toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
+      // On-chain proof link
+      const txLink = document.getElementById('receiptTxLink');
+      if (txLink && sd.sig) {
+        txLink.href = 'https://solscan.io/tx/' + sd.sig + '?cluster=devnet';
+        txLink.textContent = sd.sig;
+      }
+      // Facade address display
+      const confAddr = document.getElementById('confirmedFacadeAddr');
+      if (confAddr) confAddr.innerText = FACADE_ADDRESS;
+
+      // Show receipt email notice
+      if (sd.buyerEmail) {
+        const notice = document.getElementById('receiptEmailNotice');
+        const addr = document.getElementById('receiptEmailAddr');
+        if (notice && addr) {
+          addr.textContent = sd.buyerEmail;
+          notice.style.display = 'block';
+        }
+      }
 
       // Visually dissolve address
       setTimeout(() => {
@@ -643,9 +714,14 @@
           updateStatus('Payment detected! Settling...', '#a8c4b0');
           console.log('[settle] payment detected, settling...');
           try {
+            const buyerEmailEl = document.getElementById('buyerEmailInput');
+            const buyerEmail = buyerEmailEl ? buyerEmailEl.value.trim() : '';
+            const settleHeaders = { ...checkoutHeaders, 'Content-Type': 'application/json' };
+            const settleBody = buyerEmail ? JSON.stringify({ buyerEmail }) : undefined;
             const settlement = await fetch(API_BASE + '/api/sessions/' + SESSION_ID + '/settle', {
               method: 'POST',
-              headers: checkoutHeaders,
+              headers: settleHeaders,
+              body: settleBody,
             });
             const settlementData = await settlement.json();
             console.log('[settle] response:', settlement.status, settlementData);
@@ -657,6 +733,8 @@
             }
             clearInterval(_pollInterval);
             sessionStorage.removeItem('blackrail_checkout_token');
+            // Store receipt data for confirmation screen
+            window._lastSettleData = { ...settlementData, buyerEmail };
             transitionToState(2);
           } catch(settleErr) {
             console.error('[settle] network error:', settleErr);

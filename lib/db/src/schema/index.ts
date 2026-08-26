@@ -51,6 +51,7 @@ export const sessionsTable = pgTable("sessions", {
   settlementStartedAt: timestamp("settlement_started_at"),
   settledAt: timestamp("settled_at"),
   receivedAmount: numeric("received_amount", { precision: 20, scale: 6 }),
+  buyerEmail: varchar("buyer_email", { length: 255 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   expiresAt: timestamp("expires_at").notNull(),
 });

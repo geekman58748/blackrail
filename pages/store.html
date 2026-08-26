@@ -360,12 +360,11 @@ async function processPayment() {
     const API_BASE = configuredApiBase.replace(/\/+$/, '');
     const sessionToken = localStorage.getItem('blackrail_session_token') || '';
 
-    // Get merchant ID from session
-    const userRes = await fetch(API_BASE + '/api/auth/whoami', {
+    // Verify merchant session
+    const userRes = await fetch(API_BASE + '/api/auth/me', {
       headers: { 'Authorization': 'Bearer ' + sessionToken }
     });
-    const userData = await userRes.json();
-    if (!userRes.ok) throw new Error('Not logged in to BlackRail');
+    if (!userRes.ok) throw new Error('Not logged in to BlackRail — open dashboard first to sign in');
 
     // Create checkout session
     const res = await fetch(API_BASE + '/api/sessions', {
@@ -392,9 +391,8 @@ async function processPayment() {
     }
   } catch (err) {
     console.error('[store] BlackRail error:', err);
-    // Fallback: use a demo checkout URL
-    const subtotal = cart.reduce((s, item) => s + item.price * item.qty, 0);
-    alert('BlackRail API: ' + err.message + '\n\nIn production, this redirects to the private checkout page.');
+    const msg = err.message.includes('Unexpected token') ? 'Not logged in to BlackRail — sign in at the dashboard first' : err.message;
+    alert('BlackRail: ' + msg);
     btn.textContent = 'Pay with BlackRail';
     btn.disabled = false;
   }

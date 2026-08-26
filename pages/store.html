@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Night Market — Demo Store</title>
+<script src="../runtime-config.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0a0a0f;--surface:#12121a;--surface2:#1a1a24;--border:rgba(255,255,255,0.06);--border-hover:rgba(255,255,255,0.12);--text:#f1f3f9;--muted:#8c8f9f;--dim:#5a5d6e;--accent:#b18df8;--accent-dim:rgba(177,141,248,0.12);--green:#4ade80;--green-dim:rgba(74,222,128,0.1);--red:#cc7b7b;--radius:12px;--radius-sm:8px}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+
+/* ── NAV ── */
+.nav{position:sticky;top:0;z-index:100;background:rgba(10,10,15,0.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 32px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.nav-brand{font-weight:700;font-size:16px;letter-spacing:-0.02em;display:flex;align-items:center;gap:8px}
+.nav-brand span{color:var(--accent)}
+.nav-links{display:flex;gap:24px;align-items:center}
+.nav-links a{font-size:13px;color:var(--muted);transition:color 0.2s}
+.nav-links a:hover{color:var(--text)}
+.cart-btn{position:relative;background:none;border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 14px;color:var(--text);font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all 0.2s}
+.cart-btn:hover{border-color:var(--border-hover);background:rgba(255,255,255,0.03)}
+.cart-count{background:var(--accent);color:#000;font-size:10px;font-weight:700;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center}
+
+/* ── PAGES ── */
+.page{display:none;padding:32px;max-width:1100px;margin:0 auto}
+.page.active{display:block}
+
+/* ── STORE GRID ── */
+.store-header{margin-bottom:32px}
+.store-header h1{font-size:28px;font-weight:700;letter-spacing:-0.03em;margin-bottom:4px}
+.store-header p{font-size:13px;color:var(--muted)}
+.product-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px}
+.product-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;cursor:pointer;transition:all 0.25s}
+.product-card:hover{border-color:var(--border-hover);transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,0,0,0.3)}
+.product-img{width:100%;aspect-ratio:4/3;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:48px;overflow:hidden;position:relative}
+.product-img img{width:100%;height:100%;object-fit:cover}
+.product-info{padding:16px}
+.product-tag{font-size:10px;color:var(--accent);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px}
+.product-name{font-size:15px;font-weight:600;margin-bottom:4px}
+.product-desc{font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:12px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.product-price{font-size:16px;font-weight:700;color:var(--text)}
+.product-price span{font-size:12px;color:var(--muted);font-weight:400;margin-left:4px}
+
+/* ── PRODUCT DETAIL ── */
+.detail-back{font-size:13px;color:var(--muted);cursor:pointer;display:inline-flex;align-items:center;gap:6px;margin-bottom:20px;transition:color 0.2s}
+.detail-back:hover{color:var(--text)}
+.detail-layout{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:start}
+.detail-img{width:100%;aspect-ratio:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;font-size:72px;overflow:hidden}
+.detail-img img{width:100%;height:100%;object-fit:cover}
+.detail-tag{font-size:11px;color:var(--accent);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px}
+.detail-name{font-size:28px;font-weight:700;letter-spacing:-0.02em;margin-bottom:12px}
+.detail-desc{font-size:14px;color:var(--muted);line-height:1.7;margin-bottom:24px}
+.detail-price{font-size:32px;font-weight:800;margin-bottom:24px}
+.detail-price span{font-size:14px;color:var(--muted);font-weight:400}
+.buy-btn{width:100%;padding:14px;background:var(--accent);color:#000;border:none;border-radius:var(--radius-sm);font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s}
+.buy-btn:hover{opacity:0.9;transform:translateY(-1px)}
+
+/* ── CHECKOUT ── */
+.checkout-layout{display:grid;grid-template-columns:1fr 400px;gap:40px;align-items:start}
+.order-summary{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;position:sticky;top:72px}
+.order-summary h3{font-size:14px;font-weight:600;margin-bottom:16px}
+.order-item{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+.order-item:last-child{border-bottom:none}
+.order-item-img{width:48px;height:48px;border-radius:var(--radius-sm);background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;overflow:hidden}
+.order-item-img img{width:100%;height:100%;object-fit:cover}
+.order-item-name{font-size:13px;font-weight:500}
+.order-item-qty{font-size:11px;color:var(--muted)}
+.order-item-price{font-size:13px;font-weight:600;margin-left:auto}
+.order-total{display:flex;justify-content:space-between;padding:16px 0 0;margin-top:8px;border-top:1px solid var(--border);font-weight:600}
+.payment-options{margin-top:24px}
+.payment-options h3{font-size:14px;font-weight:600;margin-bottom:12px}
+.pay-option{display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:8px;cursor:pointer;transition:all 0.2s}
+.pay-option:hover{border-color:var(--border-hover);background:var(--surface2)}
+.pay-option.selected{border-color:var(--accent);background:var(--accent-dim)}
+.pay-option-radio{width:18px;height:18px;border-radius:50%;border:2px solid var(--dim);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all 0.2s}
+.pay-option.selected .pay-option-radio{border-color:var(--accent);background:var(--accent)}
+.pay-option.selected .pay-option-radio::after{content:'';width:6px;height:6px;border-radius:50%;background:#000}
+.pay-option-label{font-size:13px;font-weight:500}
+.pay-option-desc{font-size:11px;color:var(--muted)}
+.pay-option-icon{margin-left:auto;font-size:18px}
+.pay-option-tag{font-size:9px;background:var(--accent-dim);color:var(--accent);padding:2px 6px;border-radius:4px;font-weight:600;letter-spacing:0.05em;margin-left:8px}
+.pay-btn{width:100%;padding:14px;margin-top:16px;border:none;border-radius:var(--radius-sm);font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s}
+.pay-btn.blackrail{background:var(--accent);color:#000}
+.pay-btn.card{background:var(--surface2);color:var(--muted);border:1px solid var(--border)}
+.pay-btn:hover{opacity:0.9}
+
+/* ── ORDER CONFIRMATION ── */
+.confirm-card{max-width:480px;margin:60px auto;text-align:center;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:40px 32px}
+.confirm-icon{width:56px;height:56px;border-radius:50%;background:var(--green-dim);border:1px solid rgba(74,222,128,0.2);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:24px}
+.confirm-title{font-size:20px;font-weight:700;margin-bottom:8px}
+.confirm-sub{font-size:13px;color:var(--muted);margin-bottom:24px}
+.confirm-detail{text-align:left;background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:var(--radius-sm);padding:16px;margin-bottom:16px}
+.confirm-row{display:flex;justify-content:space-between;padding:6px 0;font-size:13px}
+.confirm-row .label{color:var(--muted)}
+.confirm-row .value{font-weight:500}
+.confirm-row .value.link{color:var(--accent);font-family:'Courier New',monospace;font-size:11px;word-break:break-all}
+.confirm-row .value.status{color:var(--green)}
+.back-store{margin-top:16px;padding:12px 24px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:13px;cursor:pointer;transition:all 0.2s}
+.back-store:hover{border-color:var(--border-hover)}
+
+/* ── RESPONSIVE ── */
+@media(max-width:768px){
+  .detail-layout{grid-template-columns:1fr;gap:24px}
+  .checkout-layout{grid-template-columns:1fr}
+  .product-grid{grid-template-columns:1fr}
+  .nav{padding:0 16px}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-brand"><span>Night</span>Market</div>
+  <div class="nav-links">
+    <a href="#" onclick="showPage('store')">Shop</a>
+    <a href="#">About</a>
+    <button class="cart-btn" onclick="showPage('checkout')">
+      Cart <span class="cart-count" id="cartCount">0</span>
+    </button>
+  </div>
+</nav>
+
+<!-- PAGE: STORE -->
+<div class="page active" id="pageStore">
+  <div class="store-header">
+    <h1>Night Market</h1>
+    <p>Premium goods. Private payments. Zero compromise.</p>
+  </div>
+  <div class="product-grid" id="productGrid"></div>
+</div>
+
+<!-- PAGE: DETAIL -->
+<div class="page" id="pageDetail">
+  <div class="detail-back" onclick="showPage('store')">← Back to shop</div>
+  <div class="detail-layout">
+    <div class="detail-img" id="detailImg"></div>
+    <div>
+      <div class="detail-tag" id="detailTag"></div>
+      <div class="detail-name" id="detailName"></div>
+      <div class="detail-desc" id="detailDesc"></div>
+      <div class="detail-price" id="detailPrice"></div>
+      <button class="buy-btn" onclick="addToCartAndCheckout()">Buy Now</button>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE: CHECKOUT -->
+<div class="page" id="pageCheckout">
+  <div class="detail-back" onclick="showPage('store')">← Continue shopping</div>
+  <div class="checkout-layout">
+    <div>
+      <h2 style="font-size:22px;font-weight:700;letter-spacing:-0.02em;margin-bottom:24px">Checkout</h2>
+      <div class="payment-options">
+        <h3>Payment Method</h3>
+        <div class="pay-option" onclick="selectPay(this,'blackrail')">
+          <div class="pay-option-radio"></div>
+          <div>
+            <div class="pay-option-label">BlackRail<span class="pay-option-tag">PRIVATE</span></div>
+            <div class="pay-option-desc">One-time address. No wallet connect. USDC on Solana.</div>
+          </div>
+          <div class="pay-option-icon">🔒</div>
+        </div>
+        <div class="pay-option" onclick="selectPay(this,'card')">
+          <div class="pay-option-radio"></div>
+          <div>
+            <div class="pay-option-label">Credit Card</div>
+            <div class="pay-option-desc">Visa, Mastercard, AMEX (demo only)</div>
+          </div>
+          <div class="pay-option-icon">💳</div>
+        </div>
+        <div class="pay-option" onclick="selectPay(this,'apple')">
+          <div class="pay-option-radio"></div>
+          <div>
+            <div class="pay-option-label">Apple Pay</div>
+            <div class="pay-option-desc">Quick checkout (demo only)</div>
+          </div>
+          <div class="pay-option-icon">🍎</div>
+        </div>
+      </div>
+      <button class="pay-btn" id="payBtn" onclick="processPayment()" disabled>Select a payment method</button>
+    </div>
+    <div class="order-summary" id="orderSummary"></div>
+  </div>
+</div>
+
+<!-- PAGE: CONFIRMATION -->
+<div class="page" id="pageConfirm">
+  <div class="confirm-card">
+    <div class="confirm-icon">✓</div>
+    <div class="confirm-title" id="confirmTitle">Order Confirmed</div>
+    <div class="confirm-sub" id="confirmSub"></div>
+    <div class="confirm-detail" id="confirmDetail"></div>
+    <button class="back-store" onclick="resetStore()">← Back to Night Market</button>
+  </div>
+</div>
+
+<script>
+// ── Products ──
+const products = [
+  {
+    id: 1,
+    name: 'Obsidian Wireless Earbuds',
+    tag: 'Audio',
+    desc: 'Immersive noise-cancelling earbuds with 40-hour battery life. IPX7 waterproof. Titanium drivers deliver studio-grade sound in a minimalist black design that disappears into your ear canal.',
+    price: 129.00,
+    img: 'https://images.unsplash.com/photo-1590658268037-6bf12f032f55?w=600&h=450&fit=crop',
+    emoji: '🎧'
+  },
+  {
+    id: 2,
+    name: 'Stealth Mechanical Keyboard',
+    tag: 'Peripherals',
+    desc: 'Cherry MX Black switches. PBT keycaps. CNC aluminum chassis. Hot-swappable PCB with per-key RGB that\'s off by default. Built for people who type, not perform.',
+    price: 189.00,
+    img: 'https://images.unsplash.com/photo-1618384887929-16ec33fab9ef?w=600&h=450&fit=crop',
+    emoji: '⌨️'
+  },
+  {
+    id: 3,
+    name: 'Phantom Camera Strap',
+    tag: 'Photography',
+    desc: 'Ballistic nylon weave with quick-release magnetic anchors. Rated for 30kg. The slim profile sits flat against your chest — no bouncing, no bulk. Available in matte black.',
+    price: 59.00,
+    img: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=600&h=450&fit=crop',
+    emoji: '📷'
+  },
+  {
+    id: 4,
+    name: 'Void Travel Backpack',
+    tag: 'Carry',
+    desc: '28L capacity. X-Pac VX21 shell. YKK Aquaguard zips. Hidden passport pocket. Laptop sleeve fits 16". Designed for 72-hour trips where you pack light and move fast.',
+    price: 245.00,
+    img: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=600&h=450&fit=crop',
+    emoji: '🎒'
+  },
+  {
+    id: 5,
+    name: 'Carbon Fiber Cardholder',
+    tag: 'Everyday Carry',
+    desc: 'Real 3K twill carbon fiber. RFID-blocking. Holds 6 cards + cash. Weighs 18 grams. The kind of thing you buy once and carry for a decade.',
+    price: 75.00,
+    img: 'https://images.unsplash.com/photo-1627123424574-724758594e93?w=600&h=450&fit=crop',
+    emoji: '💳'
+  }
+];
+
+// ── State ──
+let cart = [];
+let selectedProduct = null;
+let selectedPayMethod = null;
+
+// ── Render Store ──
+function renderStore() {
+  const grid = document.getElementById('productGrid');
+  grid.innerHTML = products.map(p => `
+    <div class="product-card" onclick="viewProduct(${p.id})">
+      <div class="product-img"><img src="${p.img}" alt="${p.name}" loading="lazy"/></div>
+      <div class="product-info">
+        <div class="product-tag">${p.tag}</div>
+        <div class="product-name">${p.name}</div>
+        <div class="product-desc">${p.desc}</div>
+        <div class="product-price">$${p.price.toFixed(2)}<span>USD</span></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── View Product ──
+function viewProduct(id) {
+  selectedProduct = products.find(p => p.id === id);
+  document.getElementById('detailImg').innerHTML = `<img src="${selectedProduct.img}" alt="${selectedProduct.name}"/>`;
+  document.getElementById('detailTag').textContent = selectedProduct.tag;
+  document.getElementById('detailName').textContent = selectedProduct.name;
+  document.getElementById('detailDesc').textContent = selectedProduct.desc;
+  document.getElementById('detailPrice').innerHTML = `$${selectedProduct.price.toFixed(2)} <span>USD</span>`;
+  showPage('detail');
+}
+
+// ── Cart ──
+function addToCartAndCheckout() {
+  if (!selectedProduct) return;
+  cart = [{ ...selectedProduct, qty: 1 }];
+  document.getElementById('cartCount').textContent = cart.length;
+  renderOrderSummary();
+  showPage('checkout');
+}
+
+function renderOrderSummary() {
+  const el = document.getElementById('orderSummary');
+  const subtotal = cart.reduce((s, item) => s + item.price * item.qty, 0);
+  el.innerHTML = `
+    <h3>Order Summary</h3>
+    ${cart.map(item => `
+      <div class="order-item">
+        <div class="order-item-img"><img src="${item.img}" alt="${item.name}"/></div>
+        <div>
+          <div class="order-item-name">${item.name}</div>
+          <div class="order-item-qty">Qty: ${item.qty}</div>
+        </div>
+        <div class="order-item-price">$${(item.price * item.qty).toFixed(2)}</div>
+      </div>
+    `).join('')}
+    <div class="order-item" style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px">
+      <div class="order-item-name" style="color:var(--muted)">Subtotal</div>
+      <div class="order-item-price">$${subtotal.toFixed(2)}</div>
+    </div>
+    <div class="order-item">
+      <div class="order-item-name" style="color:var(--muted)">Network Fee</div>
+      <div class="order-item-price" style="color:var(--green)">$0.00</div>
+    </div>
+    <div class="order-total">
+      <span>Total</span>
+      <span>$${subtotal.toFixed(2)}</span>
+    </div>
+  `;
+}
+
+// ── Payment ──
+function selectPay(el, method) {
+  document.querySelectorAll('.pay-option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedPayMethod = method;
+  const btn = document.getElementById('payBtn');
+  if (method === 'blackrail') {
+    btn.className = 'pay-btn blackrail';
+    btn.textContent = 'Pay with BlackRail';
+    btn.disabled = false;
+  } else {
+    btn.className = 'pay-btn card';
+    btn.textContent = `Pay with ${method === 'card' ? 'Card' : 'Apple Pay'} (demo)`;
+    btn.disabled = false;
+  }
+}
+
+async function processPayment() {
+  const btn = document.getElementById('payBtn');
+  if (!selectedPayMethod || cart.length === 0) return;
+
+  if (selectedPayMethod !== 'blackrail') {
+    // Simulate card/Apple Pay — just show confirmation
+    showConfirmation({
+      orderId: 'NM-' + Math.random().toString(36).slice(2,10).toUpperCase(),
+      amount: cart[0].price.toFixed(2),
+      method: selectedPayMethod === 'card' ? 'Credit Card' : 'Apple Pay',
+      status: 'Processing (demo)',
+      txHash: null,
+    });
+    return;
+  }
+
+  // BlackRail: auto-generate session via API
+  btn.textContent = 'Generating private address...';
+  btn.disabled = true;
+
+  try {
+    const configuredApiBase = window.BLACKRAIL_CONFIG?.apiBase || localStorage.getItem('blackrail_api_base') || 'https://mirage-production-6dfc.up.railway.app';
+    const API_BASE = configuredApiBase.replace(/\/+$/, '');
+    const sessionToken = localStorage.getItem('blackrail_session_token') || '';
+
+    // Get merchant ID from session
+    const userRes = await fetch(API_BASE + '/api/auth/whoami', {
+      headers: { 'Authorization': 'Bearer ' + sessionToken }
+    });
+    const userData = await userRes.json();
+    if (!userRes.ok) throw new Error('Not logged in to BlackRail');
+
+    // Create checkout session
+    const res = await fetch(API_BASE + '/api/sessions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + sessionToken,
+      },
+      body: JSON.stringify({
+        label: cart[0].name,
+        amount: cart[0].price.toFixed(2),
+        currency: 'USDC',
+        expiryMinutes: 15,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Session creation failed');
+
+    // Redirect to BlackRail checkout
+    if (data.checkoutUrl) {
+      window.location.href = data.checkoutUrl;
+    } else {
+      throw new Error('No checkout URL returned');
+    }
+  } catch (err) {
+    console.error('[store] BlackRail error:', err);
+    // Fallback: use a demo checkout URL
+    const subtotal = cart.reduce((s, item) => s + item.price * item.qty, 0);
+    alert('BlackRail API: ' + err.message + '\n\nIn production, this redirects to the private checkout page.');
+    btn.textContent = 'Pay with BlackRail';
+    btn.disabled = false;
+  }
+}
+
+function showConfirmation(data) {
+  document.getElementById('confirmTitle').textContent = data.status === 'Processing (demo)' ? 'Order Placed (Demo)' : 'Payment Confirmed';
+  document.getElementById('confirmSub').textContent = data.status === 'Processing (demo)'
+    ? 'This is a demo — no real payment was processed.'
+    : 'Your private payment has been settled via BlackRail.';
+  document.getElementById('confirmDetail').innerHTML = `
+    <div class="confirm-row"><span class="label">Order ID</span><span class="value">${data.orderId}</span></div>
+    <div class="confirm-row"><span class="label">Amount</span><span class="value">$${data.amount} USDC</span></div>
+    <div class="confirm-row"><span class="label">Method</span><span class="value">${data.method}</span></div>
+    ${data.txHash ? `<div class="confirm-row"><span class="label">Tx Hash</span><span class="value link">${data.txHash}</span></div>` : ''}
+    ${data.status ? `<div class="confirm-row"><span class="label">Status</span><span class="value status">${data.status}</span></div>` : ''}
+  `;
+  showPage('confirm');
+}
+
+function resetStore() {
+  cart = [];
+  selectedProduct = null;
+  selectedPayMethod = null;
+  document.getElementById('cartCount').textContent = '0';
+  document.querySelectorAll('.pay-option').forEach(o => o.classList.remove('selected'));
+  document.getElementById('payBtn').className = 'pay-btn';
+  document.getElementById('payBtn').textContent = 'Select a payment method';
+  document.getElementById('payBtn').disabled = true;
+  showPage('store');
+}
+
+// ── Page Router ──
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const map = { store: 'pageStore', detail: 'pageDetail', checkout: 'pageCheckout', confirm: 'pageConfirm' };
+  document.getElementById(map[page])?.classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+// ── Init ──
+renderStore();
+</script>
+</body>
+</html>

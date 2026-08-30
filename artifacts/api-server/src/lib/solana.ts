@@ -253,6 +253,30 @@ export async function settleFacade(
                     console.log(`[settle] MB withdraw tx submitted: ${wdSig}`);
                     await withTimeout(base.confirmTransaction(wdSig, "confirmed"), 30_000, "MB withdraw confirm");
                     console.log(`[settle] MB auto-withdraw CONFIRMED: ${wdSig}`);
+
+                    // Force the MB crank to commit the withdrawal from PER to base
+                    try {
+                      const crankRes = await fetch(`${getMagicBlockApi()}/v1/spl/transfer-queue/ensure-crank`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          mint: usdcMint.toBase58(),
+                          cluster: getCluster(),
+                        }),
+                      });
+                      const crankBody = await crankRes.text();
+                      console.log(`[settle] ensure-crank response: HTTP ${crankRes.status} body=${crankBody.slice(0, 300)}`);
+                      if (crankRes.ok) {
+                        const crankData = JSON.parse(crankBody) as { crankSignature?: string };
+                        if (crankData.crankSignature) {
+                          console.log(`[settle] crank tx: ${crankData.crankSignature}`);
+                          await withTimeout(base.confirmTransaction(crankData.crankSignature, "confirmed"), 30_000, "MB crank confirm");
+                          console.log(`[settle] MB crank CONFIRMED — funds should be in wallet now`);
+                        }
+                      }
+                    } catch (crankErr) {
+                      console.warn(`[settle] ensure-crank failed:`, crankErr);
+                    }
                   }
                 } else {
                   console.error(`[settle] MB withdraw FAILED: HTTP ${withdrawRes.status}`);

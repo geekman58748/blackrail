@@ -356,7 +356,7 @@ async function processPayment() {
   btn.disabled = true;
 
   try {
-    const configuredApiBase = window.BLACKRAIL_CONFIG?.apiBase || localStorage.getItem('blackrail_api_base') || 'https://mirage-production-6dfc.up.railway.app';
+    const configuredApiBase = window.BLACKRAIL_CONFIG?.apiBase || localStorage.getItem('blackrail_api_base') || 'https://blackrail.onrender.com';
     const API_BASE = configuredApiBase.replace(/\/+$/, '');
     const sessionToken = localStorage.getItem('blackrail_session_token') || '';
 

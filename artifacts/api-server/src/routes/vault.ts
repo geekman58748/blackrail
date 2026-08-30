@@ -6,6 +6,7 @@ import {
   withdrawFromVault,
 } from "../lib/solana.js";
 import { merchantPrincipal, requireMerchant } from "../middlewares/auth.js";
+import { getCachedBalance, setCachedBalance } from "../lib/rpc-cache.js";
 
 const router = Router();
 
@@ -21,7 +22,16 @@ router.get("/vault/balance", requireMerchant, async (_req: Request, res: Respons
   }
 
   try {
-    const balance = await getVaultBalance();
+    // Use cached balance if available (10s TTL) to avoid hammering rate-limited RPC
+    const cacheKey = "vault:balance";
+    const cached = getCachedBalance(cacheKey);
+    let balance: bigint;
+    if (cached !== null) {
+      balance = BigInt(cached);
+    } else {
+      balance = await getVaultBalance();
+      setCachedBalance(cacheKey, balance.toString());
+    }
     const { ata } = getVaultAddress();
     res.json({
       configured: true,
@@ -30,7 +40,8 @@ router.get("/vault/balance", requireMerchant, async (_req: Request, res: Respons
     });
   } catch (err) {
     console.error("[vault/balance]", err);
-    res.status(500).json({ error: "Failed to fetch vault balance" });
+    // Return zero balance instead of 500 so the dashboard doesn't get stuck
+    res.json({ configured: true, balance: "0", ata: getVaultAddress().ata });
   }
 });
 

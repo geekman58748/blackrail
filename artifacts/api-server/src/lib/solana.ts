@@ -15,6 +15,7 @@ import {
 } from "@solana/spl-token";
 import bs58 from "bs58";
 import nacl from "tweetnacl";
+import { getDefaultConnection } from "./rpc-cache.js";
 
 const DEFAULT_MB_API = "https://payments.magicblock.app";
 const DEFAULT_CLUSTER = "devnet";
@@ -58,7 +59,7 @@ function cfg() {
   const server = Keypair.fromSecretKey(bs58.decode(process.env.SERVER_KEYPAIR));
   const usdcMint = new PublicKey(process.env.USDC_MINT ?? DEFAULT_USDC_MINT);
   const merchantAta = new PublicKey(process.env.MERCHANT_USDC_ATA ?? DEFAULT_VAULT_ATA);
-  const base = new Connection(getRpcUrl(), "confirmed");
+  const base = getDefaultConnection();
   return { server, usdcMint, merchantAta, base };
 }
 

@@ -1794,7 +1794,11 @@ function apiFetch(path, options = {}) {
   const headers = new Headers(options.headers || {});
   if (sessionToken) headers.set('Authorization', 'Bearer ' + sessionToken);
   if (options.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
-  return fetch(API_BASE + path, { ...options, headers });
+  // Add timeout so the UI doesn't hang forever when RPC is rate-limited
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), options.timeout || 12000);
+  return fetch(API_BASE + path, { ...options, headers, signal: controller.signal })
+    .finally(() => clearTimeout(timeout));
 }
 
 // ── Auth gate ─────────────────────────────────────────────────────────────────
@@ -1869,6 +1873,11 @@ async function loadWalletCard() {
     }
   } catch (e) {
     console.warn('Wallet card load failed:', e);
+    // Show fallback so UI doesn't stay stuck on 'Loading...'
+    const addrEl = document.getElementById('walletCardAddress');
+    const balEl = document.getElementById('walletCardBalance');
+    if (addrEl && addrEl.textContent === 'Loading...') addrEl.textContent = 'Unavailable';
+    if (balEl && balEl.textContent === '—') balEl.textContent = '$0.00';
   }
 }
 

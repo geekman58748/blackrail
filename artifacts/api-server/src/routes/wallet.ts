@@ -15,6 +15,7 @@ import {
 } from "@solana/spl-token";
 import bs58 from "bs58";
 import { db, usersTable, walletsTable } from "@workspace/db";
+import { getCachedBalance, setCachedBalance, getDefaultConnection } from "../lib/rpc-cache.js";
 
 const router = Router();
 
@@ -40,18 +41,12 @@ async function getUserFromToken(req: any) {
 
 import { DEFAULT_USDC_MINT } from "../lib/config.js";
 
-function getRpcUrl(): string {
-  const cluster = process.env.SOLANA_CLUSTER?.trim() || "devnet";
-  return process.env.SOLANA_RPC?.trim() || process.env.SOLANA_RPC_URL?.trim() ||
-    (cluster === "devnet" ? "https://api.devnet.solana.com" : "https://api.mainnet-beta.solana.com");
-}
-
 function getUsdcMint(): PublicKey {
   return new PublicKey(process.env.USDC_MINT ?? DEFAULT_USDC_MINT);
 }
 
 function getConnection() {
-  return new Connection(getRpcUrl(), "confirmed");
+  return getDefaultConnection();
 }
 
 // ── GET /wallet/balance — user's own wallet USDC balance ─────────────────────
@@ -66,10 +61,18 @@ router.get("/wallet/balance", async (req, res): Promise<void> => {
   try {
     const conn = getConnection();
     const mint = getUsdcMint();
-    const ata = getAssociatedTokenAddressSync(mint, new PublicKey(wallet.publicKey));
-    const acct = await getAccount(conn, ata);
-    const balance = acct.amount.toString();
-    res.json({ balance, publicKey: wallet.publicKey });
+    const cacheKey = `wallet:${wallet.publicKey}`;
+    const cached = getCachedBalance(cacheKey);
+    let balanceStr: string;
+    if (cached !== null) {
+      balanceStr = cached;
+    } else {
+      const ata = getAssociatedTokenAddressSync(mint, new PublicKey(wallet.publicKey));
+      const acct = await getAccount(conn, ata);
+      balanceStr = acct.amount.toString();
+      setCachedBalance(cacheKey, balanceStr);
+    }
+    res.json({ balance: balanceStr, publicKey: wallet.publicKey });
   } catch {
     // ATA doesn't exist yet or zero balance
     res.json({ balance: "0", publicKey: wallet.publicKey });

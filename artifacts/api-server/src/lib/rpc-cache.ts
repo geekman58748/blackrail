@@ -33,7 +33,7 @@ export function setCachedBalance(key: string, value: string): void {
 
 // ── Timeout wrapper ────────────────────────────────────────────────────────────
 
-const RPC_TIMEOUT_MS = 8_000; // 8 seconds
+const RPC_TIMEOUT_MS = 15_000; // 15 seconds — devnet RPC can take 8-10s
 
 /**
  * Races a promise against a timeout. Rejects with a clear error if the

@@ -155,7 +155,7 @@ export async function settleFacade(
   const facade = Keypair.fromSecretKey(bs58.decode(keypairB58));
   const facadeAtaPk = getAssociatedTokenAddressSync(usdcMint, facade.publicKey);
 
-  const acct = await withTimeout(getAccount(base, facadeAtaPk), 10_000, "facade balance check");
+  const acct = await withTimeout(getAccount(base, facadeAtaPk), 20_000, "facade balance check for settle");
   const amount = acct.amount;
   if (amount === 0n) throw new Error("facade ATA has zero balance");
 

@@ -162,6 +162,17 @@ router.post("/sessions/:id/settle", async (req, res): Promise<void> => {
     const destinationAddress = wallet?.publicKey ?? undefined;
     console.log(`[settle] wallet=${wallet?.publicKey ?? 'NONE'}, destination=${destinationAddress ?? 'FALLBACK to server'}`);
 
+    // Decrypt recipient wallet key for MB auto-withdraw
+    let recipientPrivateKey: string | undefined;
+    if (wallet?.encryptedPrivateKey) {
+      try {
+        recipientPrivateKey = decryptSecret(wallet.encryptedPrivateKey);
+        console.log(`[settle] decrypted recipient wallet key for auto-withdraw`);
+      } catch (e) {
+        console.warn(`[settle] could not decrypt recipient wallet key:`, e);
+      }
+    }
+
     // Decrypt with retry — transient RPC errors can cause first attempt to fail
     let decryptedKey: string;
     try {
@@ -176,7 +187,7 @@ router.post("/sessions/:id/settle", async (req, res): Promise<void> => {
       res.status(502).json({ error: "settlement failed", detail: errMsg });        return;
     }
 
-    const sig = await settleFacade(decryptedKey, claimed.facadeAddress, claimed.id, destinationAddress);
+    const sig = await settleFacade(decryptedKey, claimed.facadeAddress, claimed.id, destinationAddress, recipientPrivateKey);
     const settledAt = new Date();
     await db.transaction(async (tx) => {
       await tx.update(sessionsTable).set({

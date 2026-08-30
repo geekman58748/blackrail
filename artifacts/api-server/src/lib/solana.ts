@@ -147,7 +147,8 @@ export async function settleFacade(
   keypairB58: string,
   _facadeAddress: string,
   _sessionId: string,
-  destinationAddress?: string
+  destinationAddress?: string,
+  recipientPrivateKey?: string
 ): Promise<string> {
   const { server, usdcMint, base } = cfg();
   const merchantAta = destinationAddress
@@ -214,6 +215,51 @@ export async function settleFacade(
             );
             await withTimeout(sendAndConfirmTransaction(base, closeTx, [server, facade]), 20_000, "close facade ATA");
           } catch {}
+
+          // ── Auto-withdraw: pull funds from PER to recipient's base wallet ──
+          // MB transfer lands funds in the recipient's ephemeral balance (PER).
+          // The recipient must call /v1/spl/withdraw to commit them to base.
+          // We do this automatically here using the recipient's decrypted key.
+          if (recipientPrivateKey && destinationAddress) {
+            try {
+              console.log(`[settle] MB auto-withdraw: pulling from PER to ${destinationAddress}`);
+              const withdrawAmount = Number(amount) - Number(response.data.fees?.tokens ?? 0n);
+              if (withdrawAmount > 0) {
+                const withdrawRes = await fetch(`${getMagicBlockApi()}/v1/spl/withdraw`, {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                  },
+                  body: JSON.stringify({
+                    owner: destinationAddress,
+                    mint: usdcMint.toBase58(),
+                    amount: withdrawAmount,
+                    idempotent: true,
+                    cluster: getCluster(),
+                  }),
+                });
+                if (withdrawRes.ok) {
+                  const wdData = await withdrawRes.json() as { transactionBase64?: string; sendTo?: string };
+                  if (wdData.transactionBase64) {
+                    const wdTx = VersionedTransaction.deserialize(Buffer.from(wdData.transactionBase64, "base64"));
+                    const recipientKp = Keypair.fromSecretKey(bs58.decode(recipientPrivateKey));
+                    const recipientSig = nacl.sign.detached(wdTx.message.serialize(), recipientKp.secretKey);
+                    wdTx.addSignature(recipientKp.publicKey, Buffer.from(recipientSig));
+                    // Submit to ephemeral if MB says so, otherwise base
+                    const wdRpc = wdData.sendTo === "ephemeral" ? base : base;
+                    const wdSig = await wdRpc.sendRawTransaction(wdTx.serialize(), { skipPreflight: true });
+                    await withTimeout(base.confirmTransaction(wdSig, "confirmed"), 30_000, "MB withdraw confirm");
+                    console.log(`[settle] MB auto-withdraw succeeded: ${wdSig}`);
+                  }
+                } else {
+                  console.warn(`[settle] MB withdraw HTTP ${withdrawRes.status}: ${await withdrawRes.text()}`);
+                }
+              }
+            } catch (wdErr) {
+              console.warn("[settle] MB auto-withdraw failed (funds still in PER):", wdErr);
+            }
+          }
 
           return sig;
         }

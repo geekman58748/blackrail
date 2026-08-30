@@ -264,7 +264,7 @@ router.get("/sessions/failed", requireMerchant, async (_req, res): Promise<void>
     settlementError: r.settlementError,
     createdAt: r.createdAt,
     facadeKeypairB58: r.facadeKeypairB58 ? "[encrypted]" : "[missing]",
-  }));
+  })));
 });
 
 router.delete("/sessions/:id", requireMerchant, async (req, res): Promise<void> => {

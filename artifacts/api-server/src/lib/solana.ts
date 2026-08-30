@@ -43,6 +43,7 @@ function getMagicBlockApi(): string {
 
 function getRpcUrl(): string {
   return process.env.SOLANA_RPC?.trim() || process.env.SOLANA_RPC_URL?.trim() ||
+    process.env.SOLAMA_RPC?.trim() ||
     (getCluster() === "devnet" ? "https://api.devnet.solana.com" : "https://api.mainnet-beta.solana.com");
 }
 

@@ -66,9 +66,13 @@ export function getDefaultConnection(): Connection {
   const rpcUrl =
     process.env.SOLANA_RPC?.trim() ||
     process.env.SOLANA_RPC_URL?.trim() ||
+    process.env.SOLAMA_RPC?.trim() ||
     (cluster === "devnet"
       ? "https://api.devnet.solana.com"
       : "https://api.mainnet-beta.solana.com");
+
+  const masked = rpcUrl.length > 30 ? rpcUrl.slice(0, 20) + '.../' + rpcUrl.split('/').pop() : rpcUrl;
+  console.log(`[rpc] Connecting to ${masked} (cluster: ${cluster})`);
 
   _defaultConnection = new Connection(rpcUrl, {
     commitment: "confirmed" as Commitment,

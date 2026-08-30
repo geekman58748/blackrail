@@ -206,8 +206,12 @@ router.post("/sessions/:id/settle", async (req, res): Promise<void> => {
       res.status(502).json({ error: "settlement failed", detail: errMsg });        return;
     }
 
-    const sig = await settleFacade(decryptedKey, claimed.facadeAddress, claimed.id, destinationAddress, recipientPrivateKey);
+    // Fire settlement in background — return 200 immediately so the
+    // checkout UI transitions without waiting for MB transfer+withdraw+crank.
     const settledAt = new Date();
+    res.status(200).json({ sig: "pending", private: true, status: "settled" });
+    // Clear polling on the client side
+    settleFacade(decryptedKey, claimed.facadeAddress, claimed.id, destinationAddress, recipientPrivateKey).then(async (sig) => {
     await db.transaction(async (tx) => {
       await tx.update(sessionsTable).set({
         status: "settled",
@@ -257,7 +261,7 @@ router.post("/sessions/:id/settle", async (req, res): Promise<void> => {
       ).catch(() => {});
     }
 
-    res.json({ sig, private: true, status: "settled" });
+    }).catch((bgErr) => console.error("[settle] background settlement failed:", bgErr));
 
     // Send buyer receipt email (non-blocking)
     if (buyerEmail) {

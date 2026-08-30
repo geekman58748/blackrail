@@ -15,7 +15,7 @@ import {
 } from "@solana/spl-token";
 import bs58 from "bs58";
 import nacl from "tweetnacl";
-import { getDefaultConnection } from "./rpc-cache.js";
+import { getDefaultConnection, withTimeout } from "./rpc-cache.js";
 
 const DEFAULT_MB_API = "https://payments.magicblock.app";
 const DEFAULT_CLUSTER = "devnet";
@@ -115,14 +115,13 @@ export async function createFacade(): Promise<{
   facadeAddress: string;
   keypairB58: string;
 }> {
-  const { server, usdcMint, base } = cfg();
+  // Generate a fresh ephemeral keypair for the facade.
+  // We intentionally skip the on-chain ATA creation here — the
+  // idempotent ATA instruction will be included when the buyer
+  // pays and the settlement sweeps funds to the vault. This avoids
+  // a blocking Solana RPC call (sendAndConfirmTransaction) that
+  // hangs when devnet is rate-limited and causes 502s.
   const facade = Keypair.generate();
-  const facadeAta = getAssociatedTokenAddressSync(usdcMint, facade.publicKey);
-
-  const tx = new Transaction().add(
-    createAssociatedTokenAccountIdempotentInstruction(server.publicKey, facadeAta, facade.publicKey, usdcMint)
-  );
-  await sendAndConfirmTransaction(base, tx, [server]);
 
   return {
     facadeAddress: facade.publicKey.toBase58(),
@@ -134,7 +133,7 @@ export async function getFacadeBalance(facadeAddress: string): Promise<bigint> {
   const { usdcMint, base } = cfg();
   try {
     const facadeAta = getAssociatedTokenAddressSync(usdcMint, new PublicKey(facadeAddress));
-    const acct = await getAccount(base, facadeAta);
+    const acct = await withTimeout(getAccount(base, facadeAta));
     return acct.amount;
   } catch {
     return 0n;
@@ -156,7 +155,7 @@ export async function settleFacade(
   const facade = Keypair.fromSecretKey(bs58.decode(keypairB58));
   const facadeAtaPk = getAssociatedTokenAddressSync(usdcMint, facade.publicKey);
 
-  const acct = await getAccount(base, facadeAtaPk);
+  const acct = await withTimeout(getAccount(base, facadeAtaPk), 10_000, "facade balance check");
   const amount = acct.amount;
   if (amount === 0n) throw new Error("facade ATA has zero balance");
 
@@ -202,7 +201,7 @@ export async function settleFacade(
           const facadeSig = nacl.sign.detached(vtx.message.serialize(), facade.secretKey);
           vtx.addSignature(facade.publicKey, Buffer.from(facadeSig));
           const sig = await base.sendRawTransaction(vtx.serialize(), { skipPreflight: true });
-          await base.confirmTransaction(sig, "confirmed");
+          await withTimeout(base.confirmTransaction(sig, "confirmed"), 30_000, "MB tx confirm");
 
           const txCheck = await base.getTransaction(sig, { maxSupportedTransactionVersion: 0 });
           if (txCheck?.meta?.err) throw new Error("MB tx execution failed");
@@ -212,7 +211,7 @@ export async function settleFacade(
             const closeTx = new Transaction().add(
               createCloseAccountInstruction(facadeAtaPk, server.publicKey, facade.publicKey)
             );
-            await sendAndConfirmTransaction(base, closeTx, [server, facade]);
+            await withTimeout(sendAndConfirmTransaction(base, closeTx, [server, facade]), 20_000, "close facade ATA");
           } catch {}
 
           return sig;
@@ -229,7 +228,7 @@ export async function settleFacade(
     createTransferInstruction(facadeAtaPk, merchantAta, facade.publicKey, amount),
     createCloseAccountInstruction(facadeAtaPk, server.publicKey, facade.publicKey)
   );
-  return sendAndConfirmTransaction(base, tx, [server, facade]);
+  return withTimeout(sendAndConfirmTransaction(base, tx, [server, facade]), 30_000, "SPL fallback transfer");
 }
 
 // ── Vault ─────────────────────────────────────────────────────────────────────
@@ -247,7 +246,7 @@ export function getVaultAddress(): { wallet: string; ata: string } {
 export async function getVaultBalance(): Promise<bigint> {
   const { merchantAta, base } = cfg();
   try {
-    const acct = await getAccount(base, merchantAta);
+    const acct = await withTimeout(getAccount(base, merchantAta));
     return acct.amount;
   } catch {
     return 0n;
@@ -256,7 +255,7 @@ export async function getVaultBalance(): Promise<bigint> {
 
 export async function withdrawFromVault(destination: string, amount: bigint): Promise<string> {
   const { server, usdcMint, merchantAta, base } = cfg();
-  const acct = await getAccount(base, merchantAta);
+  const acct = await withTimeout(getAccount(base, merchantAta), 8_000, "vault balance check");
   const available = acct.amount;
   if (available === 0n) throw new Error("vault is empty");
   const sendAmount = amount === 0n ? available : amount;

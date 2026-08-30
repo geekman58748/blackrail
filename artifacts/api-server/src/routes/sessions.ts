@@ -165,12 +165,31 @@ router.post("/sessions/:id/settle", async (req, res): Promise<void> => {
     // Decrypt recipient wallet key for MB auto-withdraw
     let recipientPrivateKey: string | undefined;
     if (wallet?.encryptedPrivateKey) {
+      // Try primary decrypt (FACADE_ENCRYPTION_KEY)
       try {
         recipientPrivateKey = decryptSecret(wallet.encryptedPrivateKey);
-        console.log(`[settle] decrypted recipient wallet key for auto-withdraw`);
-      } catch (e) {
-        console.warn(`[settle] could not decrypt recipient wallet key:`, e);
+        console.log(`[settle] decrypted recipient wallet key via FACADE_ENCRYPTION_KEY`);
+      } catch (e1) {
+        console.warn(`[settle] FACADE_ENCRYPTION_KEY decrypt failed, trying email fallback:`, String(e1).slice(0, 80));
+        // Fallback: wallets created before FACADE_ENCRYPTION_KEY used email-derived key
+        try {
+          const [merchantUser] = await db.select().from(usersTable).where(eq(usersTable.id, merchantUserId));
+          if (merchantUser) {
+            const { createDecipheriv, createHash } = await import("node:crypto");
+            const key = createHash("sha256").update(merchantUser.email).digest();
+            const parts = wallet.encryptedPrivateKey.split(":");
+            const [, _ver, ivRaw, tagRaw, ciphertextRaw] = parts;
+            const decipher = createDecipheriv("aes-256-gcm", key, Buffer.from(ivRaw, "base64url"));
+            decipher.setAuthTag(Buffer.from(tagRaw, "base64url"));
+            recipientPrivateKey = Buffer.concat([decipher.update(Buffer.from(ciphertextRaw, "base64url")), decipher.final()]).toString("utf8");
+            console.log(`[settle] decrypted recipient wallet key via email fallback`);
+          }
+        } catch (e2) {
+          console.warn(`[settle] email fallback decrypt also failed:`, String(e2).slice(0, 80));
+        }
       }
+    } else {
+      console.warn(`[settle] wallet has no encryptedPrivateKey — cannot auto-withdraw`);
     }
 
     // Decrypt with retry — transient RPC errors can cause first attempt to fail

@@ -6,7 +6,7 @@ import {
   withdrawFromVault,
 } from "../lib/solana.js";
 import { merchantPrincipal, requireMerchant } from "../middlewares/auth.js";
-import { getCachedBalance, setCachedBalance } from "../lib/rpc-cache.js";
+import { getCachedBalance, setCachedBalance, withTimeout } from "../lib/rpc-cache.js";
 
 const router = Router();
 
@@ -29,7 +29,7 @@ router.get("/vault/balance", requireMerchant, async (_req: Request, res: Respons
     if (cached !== null) {
       balance = BigInt(cached);
     } else {
-      balance = await getVaultBalance();
+      balance = await withTimeout(getVaultBalance(), 8000, "vault/balance");
       setCachedBalance(cacheKey, balance.toString());
     }
     const { ata } = getVaultAddress();

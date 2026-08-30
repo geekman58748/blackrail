@@ -15,7 +15,7 @@ import {
 } from "@solana/spl-token";
 import bs58 from "bs58";
 import { db, usersTable, walletsTable } from "@workspace/db";
-import { getCachedBalance, setCachedBalance, getDefaultConnection } from "../lib/rpc-cache.js";
+import { getCachedBalance, setCachedBalance, getDefaultConnection, withTimeout } from "../lib/rpc-cache.js";
 
 const router = Router();
 
@@ -68,7 +68,7 @@ router.get("/wallet/balance", async (req, res): Promise<void> => {
       balanceStr = cached;
     } else {
       const ata = getAssociatedTokenAddressSync(mint, new PublicKey(wallet.publicKey));
-      const acct = await getAccount(conn, ata);
+      const acct = await withTimeout(getAccount(conn, ata), 8000, "wallet/balance");
       balanceStr = acct.amount.toString();
       setCachedBalance(cacheKey, balanceStr);
     }

@@ -157,7 +157,7 @@ export async function settleFacade(
   const facade = Keypair.fromSecretKey(bs58.decode(keypairB58));
   const facadeAtaPk = getAssociatedTokenAddressSync(usdcMint, facade.publicKey);
 
-  const acct = await withTimeout(getAccount(base, facadeAtaPk), 20_000, "facade balance check for settle");
+  const acct = await withTimeout(getAccount(base, facadeAtaPk), 10_000, "facade balance check for settle");
   const amount = acct.amount;
   if (amount === 0n) throw new Error("facade ATA has zero balance");
 
@@ -203,7 +203,7 @@ export async function settleFacade(
           const facadeSig = nacl.sign.detached(vtx.message.serialize(), facade.secretKey);
           vtx.addSignature(facade.publicKey, Buffer.from(facadeSig));
           const sig = await base.sendRawTransaction(vtx.serialize(), { skipPreflight: true });
-          await withTimeout(base.confirmTransaction(sig, "confirmed"), 30_000, "MB tx confirm");
+          await withTimeout(base.confirmTransaction(sig, "confirmed"), 15_000, "MB tx confirm");
 
           const txCheck = await base.getTransaction(sig, { maxSupportedTransactionVersion: 0 });
           if (txCheck?.meta?.err) throw new Error("MB tx execution failed");
@@ -251,7 +251,7 @@ export async function settleFacade(
                     wdTx.addSignature(recipientKp.publicKey, Buffer.from(recipientSig));
                     const wdSig = await base.sendRawTransaction(wdTx.serialize(), { skipPreflight: true });
                     console.log(`[settle] MB withdraw tx submitted: ${wdSig}`);
-                    await withTimeout(base.confirmTransaction(wdSig, "confirmed"), 30_000, "MB withdraw confirm");
+                    await withTimeout(base.confirmTransaction(wdSig, "confirmed"), 15_000, "MB withdraw confirm");
                     console.log(`[settle] MB auto-withdraw CONFIRMED: ${wdSig}`);
 
                     // Force the MB crank to commit the withdrawal from PER to base
@@ -270,7 +270,7 @@ export async function settleFacade(
                         const crankData = JSON.parse(crankBody) as { crankSignature?: string };
                         if (crankData.crankSignature) {
                           console.log(`[settle] crank tx: ${crankData.crankSignature}`);
-                          await withTimeout(base.confirmTransaction(crankData.crankSignature, "confirmed"), 30_000, "MB crank confirm");
+                          await withTimeout(base.confirmTransaction(crankData.crankSignature, "confirmed"), 15_000, "MB crank confirm");
                           console.log(`[settle] MB crank CONFIRMED — funds should be in wallet now`);
                         }
                       }

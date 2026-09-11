@@ -158,7 +158,7 @@ export const merchantBankAccountsTable = pgTable("merchant_bank_accounts", {
   bankCode: varchar("bank_code", { length: 10 }).notNull(),
   accountNumber: varchar("account_number", { length: 20 }).notNull(),
   accountName: varchar("account_name", { length: 200 }).notNull(),
-  paystackRecipientCode: varchar("paystack_recipient_code", { length: 50 }),
+  flutterwaveRecipientId: varchar("flutterwave_recipient_id", { length: 50 }),
   isDefault: boolean("is_default").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 }, (table) => [
@@ -204,7 +204,7 @@ export const nairaSettlementsTable = pgTable("naira_settlements", {
   bankName: varchar("bank_name", { length: 100 }),
   accountNumber: varchar("account_number", { length: 20 }),
   accountName: varchar("account_name", { length: 200 }),
-  paystackTransferRef: varchar("paystack_transfer_ref", { length: 100 }),
+  flutterwaveTransferId: varchar("flutterwave_transfer_id", { length: 100 }),
   status: varchar("status", { length: 20 }).notNull().default("pending"),
   statusMessage: text("status_message"),
   createdAt: timestamp("created_at").defaultNow().notNull(),

@@ -90,12 +90,18 @@ export async function linkBankAccount(params: {
   // Resolve account name via Flutterwave
   const resolved = await resolveBankAccount(params.accountNumber, bankCode);
 
-  // Create Flutterwave beneficiary
-  const beneficiary = await createBeneficiary({
-    account_number: params.accountNumber,
-    bank_code: bankCode,
-    account_name: resolved.account_name,
-  });
+  // Create Flutterwave beneficiary (optional — transfers work without it)
+  let beneficiaryId: string | null = null;
+  try {
+    const beneficiary = await createBeneficiary({
+      account_number: params.accountNumber,
+      bank_code: bankCode,
+      account_name: resolved.account_name,
+    });
+    beneficiaryId = String(beneficiary.id);
+  } catch (err: any) {
+    console.warn(`[liquidity] beneficiary creation skipped: ${err.message}`);
+  }
 
   // Upsert bank account
   const [existing] = await db
@@ -111,7 +117,7 @@ export async function linkBankAccount(params: {
         bankCode,
         accountNumber: params.accountNumber,
         accountName: resolved.account_name,
-        flutterwaveRecipientId: String(beneficiary.id),
+        flutterwaveRecipientId: beneficiaryId,
         isDefault: true,
       })
       .where(eq(merchantBankAccountsTable.id, existing.id))
@@ -127,7 +133,7 @@ export async function linkBankAccount(params: {
       bankCode,
       accountNumber: params.accountNumber,
       accountName: resolved.account_name,
-      flutterwaveRecipientId: String(beneficiary.id),
+      flutterwaveRecipientId: beneficiaryId,
     })
     .returning();
 
@@ -192,17 +198,14 @@ export async function settleToNaira(params: {
     })
     .returning();
 
-  // 5. Initiate Flutterwave transfer
+  // 5. Initiate Flutterwave transfer (works with or without saved beneficiary)
   try {
-    if (!bank.flutterwaveRecipientId) {
-      throw new Error("No Flutterwave beneficiary ID — re-link bank account");
-    }
-
-    const beneficiaryId = parseInt(bank.flutterwaveRecipientId, 10);
     const reference = `br_${sessionId.slice(0, 12)}_${Date.now()}`;
 
     const transfer = await initiateTransfer({
-      beneficiary_id: beneficiaryId,
+      beneficiary_id: bank.flutterwaveRecipientId
+        ? parseInt(bank.flutterwaveRecipientId, 10)
+        : undefined,
       account_number: bank.accountNumber,
       bank_code: bank.bankCode,
       amount: nairaAmount, // Flutterwave v3 uses full amounts, not kobo

@@ -190,6 +190,16 @@ router.post("/sessions/:id/settle", async (req, res): Promise<void> => {
             decipher.setAuthTag(Buffer.from(tagRaw, "base64url"));
             recipientPrivateKey = Buffer.concat([decipher.update(Buffer.from(ciphertextRaw, "base64url")), decipher.final()]).toString("utf8");
             console.log(`[settle] decrypted recipient wallet key via email fallback`);
+            // Re-encrypt with current FACADE_ENCRYPTION_KEY so future settlements
+            // don't need the email fallback again
+            try {
+              const reEncrypted = encryptSecret(recipientPrivateKey);
+              await db.update(walletsTable).set({ encryptedPrivateKey: reEncrypted })
+                .where(eq(walletsTable.id, wallet.id));
+              console.log(`[settle] re-encrypted wallet key with current FACADE_ENCRYPTION_KEY`);
+            } catch (reEncErr) {
+              console.warn(`[settle] re-encryption failed (non-fatal):`, String(reEncErr).slice(0, 80));
+            }
           }
         } catch (e2) {
           console.warn(`[settle] email fallback decrypt also failed:`, String(e2).slice(0, 80));

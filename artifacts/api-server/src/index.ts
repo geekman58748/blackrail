@@ -25,4 +25,10 @@ app.listen(port, (err) => {
   }
 
   logger.info({ port, runtimeConfig }, "Server listening");
+
+  // Log public IP for Flutterwave IP whitelisting (temporary — remove after adding IP)
+  fetch("https://api.ipify.org?format=json")
+    .then((r) => r.json())
+    .then((d: any) => console.log(`[startup] Public IP: ${d.ip} — add this to Flutterwave IP Whitelist`))
+    .catch(() => {});
 });

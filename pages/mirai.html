@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Mirai — On-device layer for AI</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#0a0a0a;
+    --bg-card:#111111;
+    --bg-card-hover:#161616;
+    --border:rgba(255,255,255,0.07);
+    --border-hover:rgba(255,255,255,0.14);
+    --text-primary:#ffffff;
+    --text-secondary:#a0a0a0;
+    --text-muted:#666666;
+    --accent:#00c896;
+    --accent-dim:rgba(0,200,150,0.12);
+  }
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--bg);
+    color:var(--text-primary);
+    font-family:'Inter',sans-serif;
+    font-size:16px;
+    line-height:1.6;
+    overflow-x:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* ── NAVBAR ── */
+  .navbar{
+    position:fixed;top:0;left:0;right:0;z-index:100;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:0 32px;height:56px;
+    background:rgba(10,10,10,0.82);
+    backdrop-filter:blur(20px);
+    -webkit-backdrop-filter:blur(20px);
+    border-bottom:1px solid var(--border);
+  }
+  .nav-left{display:flex;align-items:center;gap:32px}
+  .nav-logo{
+    font-size:18px;font-weight:800;color:#fff;
+    letter-spacing:-0.03em;text-decoration:none;
+  }
+  .nav-links{display:flex;align-items:center;gap:24px;list-style:none}
+  .nav-links a{
+    color:var(--text-secondary);font-size:13px;font-weight:500;
+    text-decoration:none;transition:color 0.2s;
+  }
+  .nav-links a:hover{color:#fff}
+  .nav-links .has-dropdown{display:flex;align-items:center;gap:4px;cursor:pointer}
+  .nav-links .has-dropdown::after{
+    content:'';display:inline-block;width:0;height:0;
+    border-left:4px solid transparent;border-right:4px solid transparent;
+    border-top:4px solid var(--text-secondary);margin-top:1px;
+  }
+  .nav-right{display:flex;align-items:center;gap:16px}
+  .nav-icon{
+    width:32px;height:32px;display:flex;align-items:center;justify-content:center;
+    border-radius:8px;color:var(--text-secondary);cursor:pointer;transition:color 0.2s;
+    text-decoration:none;font-size:14px;
+  }
+  .nav-icon:hover{color:#fff}
+  .nav-icon svg{width:18px;height:18px}
+  .nav-user{
+    display:flex;align-items:center;gap:6px;
+    padding:5px 10px;border-radius:8px;
+    border:1px solid var(--border);
+    font-size:12px;color:var(--text-secondary);cursor:pointer;
+  }
+  .nav-user svg{width:16px;height:16px}
+  .btn-nav-outline{
+    padding:7px 16px;border-radius:100px;
+    border:1px solid var(--border);background:transparent;
+    color:#fff;font-size:12px;font-weight:500;
+    cursor:pointer;transition:all 0.2s;font-family:'Inter',sans-serif;
+    text-decoration:none;display:inline-flex;align-items:center;
+  }
+  .btn-nav-outline:hover{border-color:rgba(255,255,255,0.2);background:rgba(255,255,255,0.04)}
+  .btn-nav-primary{
+    padding:7px 16px;border-radius:100px;
+    background:#fff;color:#000;border:none;
+    font-size:12px;font-weight:600;
+    cursor:pointer;transition:all 0.2s;font-family:'Inter',sans-serif;
+    text-decoration:none;display:inline-flex;align-items:center;
+  }
+  .btn-nav-primary:hover{background:rgba(255,255,255,0.9)}
+
+  /* ── HERO ── */
+  .hero{
+    text-align:center;padding:140px 48px 60px;
+    max-width:900px;margin:0 auto;
+    position:relative;
+  }
+  .hero::before{
+    content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);
+    width:700px;height:400px;
+    background:radial-gradient(ellipse at center, rgba(0,200,150,0.04) 0%, transparent 70%);
+    pointer-events:none;
+  }
+  .hero h1{
+    font-size:clamp(40px,5.5vw,64px);font-weight:700;
+    line-height:1.1;letter-spacing:-0.03em;
+    color:#fff;margin-bottom:16px;position:relative;
+  }
+  .hero-sub{
+    font-size:16px;color:var(--text-secondary);
+    max-width:520px;margin:0 auto 40px;line-height:1.6;
+  }
+  .hero-actions{
+    display:flex;gap:12px;justify-content:center;flex-wrap:wrap;
+    margin-bottom:0;
+  }
+  .btn-hero-primary{
+    padding:11px 24px;border-radius:100px;
+    background:var(--accent);color:#000;border:none;
+    font-size:14px;font-weight:600;cursor:pointer;
+    font-family:'Inter',sans-serif;display:inline-flex;align-items:center;gap:8px;
+    transition:all 0.2s;text-decoration:none;
+  }
+  .btn-hero-primary:hover{background:#00d9a3;transform:translateY(-1px)}
+  .btn-hero-outline{
+    padding:11px 24px;border-radius:100px;
+    background:transparent;color:#fff;
+    border:1px solid var(--border);
+    font-size:14px;font-weight:500;cursor:pointer;
+    font-family:'Inter',sans-serif;display:inline-flex;align-items:center;gap:8px;
+    transition:all 0.2s;text-decoration:none;
+  }
+  .btn-hero-outline:hover{border-color:rgba(255,255,255,0.2);background:rgba(255,255,255,0.03)}
+  .btn-hero-outline svg{width:16px;height:16px;opacity:0.6}
+
+  /* ── TRUSTED BAR ── */
+  .trusted-bar{
+    display:flex;align-items:center;justify-content:center;gap:40px;
+    padding:40px 48px;max-width:900px;margin:0 auto;
+    flex-wrap:wrap;
+  }
+  .trusted-label{
+    font-size:11px;color:var(--text-muted);max-width:140px;
+    line-height:1.5;text-align:left;
+  }
+  .trusted-logos{display:flex;align-items:center;gap:36px;flex-wrap:wrap;justify-content:center}
+  .trusted-logo{
+    display:flex;flex-direction:column;align-items:center;gap:4px;
+    opacity:0.5;transition:opacity 0.2s;
+  }
+  .trusted-logo:hover{opacity:0.8}
+  .trusted-logo-name{font-size:14px;font-weight:700;color:#fff;letter-spacing:-0.01em}
+  .trusted-logo-person{font-size:10px;color:var(--text-muted)}
+  .trusted-logo-role{font-size:9px;color:var(--text-muted);opacity:0.7}
+
+  /* ── SECTION COMMON ── */
+  .section{
+    max-width:1000px;margin:0 auto;padding:80px 48px;
+  }
+  .section-center{text-align:center}
+  .section-label{
+    font-size:13px;font-weight:600;color:var(--accent);
+    margin-bottom:12px;display:block;letter-spacing:0.02em;
+  }
+  .section-heading{
+    font-size:clamp(28px,4vw,42px);font-weight:700;
+    letter-spacing:-0.03em;line-height:1.15;
+    color:#fff;margin-bottom:16px;
+  }
+  .section-desc{
+    font-size:15px;color:var(--text-secondary);
+    max-width:600px;margin:0 auto;line-height:1.7;
+  }
+  .section-desc.left{text-align:left;margin:0}
+
+  /* ── FEATURE CARDS 2x2 ── */
+  .feature-grid{
+    display:grid;grid-template-columns:1fr 1fr;gap:16px;
+    margin-top:48px;
+  }
+  .feature-card{
+    background:var(--bg-card);
+    border:1px solid var(--border);
+    border-radius:16px;padding:28px;
+    transition:all 0.25s;
+  }
+  .feature-card:hover{background:var(--bg-card-hover);border-color:var(--border-hover)}
+  .feature-card-icon{
+    width:36px;height:36px;border-radius:10px;
+    display:flex;align-items:center;justify-content:center;
+    background:rgba(255,255,255,0.04);
+    border:1px solid var(--border);
+    margin-bottom:16px;color:var(--text-secondary);
+  }
+  .feature-card-icon svg{width:18px;height:18px}
+  .feature-card-title{
+    font-size:15px;font-weight:600;color:#fff;margin-bottom:8px;
+  }
+  .feature-card-desc{
+    font-size:13px;color:var(--text-muted);line-height:1.65;
+  }
+
+  /* ── MODEL MAKERS SECTION ── */
+  .chrome-icon{
+    width:64px;height:64px;margin:0 auto 20px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:36px;
+    background:radial-gradient(circle, rgba(0,100,255,0.15) 0%, transparent 70%);
+  }
+  .benefits-card{
+    background:var(--bg-card);
+    border:1px solid var(--border);
+    border-radius:16px;padding:32px;
+    margin-top:36px;text-align:left;
+  }
+  .benefits-label{
+    font-size:11px;font-weight:600;color:var(--text-muted);
+    text-transform:uppercase;letter-spacing:0.08em;
+    margin-bottom:20px;
+  }
+  .benefit-item{
+    display:flex;align-items:flex-start;gap:12px;
+    padding:10px 0;font-size:14px;color:var(--text-secondary);
+    border-bottom:1px solid rgba(255,255,255,0.04);
+  }
+  .benefit-item:last-child{border-bottom:none}
+  .benefit-icon{
+    width:20px;height:20px;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+    color:var(--text-muted);font-size:12px;margin-top:2px;
+  }
+  .benefit-item strong{color:#fff;font-weight:600}
+
+  /* ── PERFORMANCE TABLE ── */
+  .apple-icon{
+    width:64px;height:64px;margin:0 auto 20px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:40px;
+    background:radial-gradient(circle, rgba(0,150,255,0.12) 0%, transparent 70%);
+  }
+  .outperform-tags{
+    display:flex;gap:8px;justify-content:center;margin:20px 0 36px;
+  }
+  .outperform-tag{
+    padding:5px 14px;border-radius:100px;
+    font-size:12px;font-weight:500;
+    border:1px solid var(--border);
+    background:rgba(255,255,255,0.03);
+    color:var(--text-secondary);
+    display:flex;align-items:center;gap:6px;
+  }
+  .outperform-tag .dot{
+    width:8px;height:8px;border-radius:50%;
+  }
+  .dot-green{background:#00c896}
+  .dot-orange{background:#f59e0b}
+  .perf-table{
+    width:100%;border-collapse:collapse;
+    font-size:13px;
+  }
+  .perf-table th,.perf-table td{
+    padding:12px 16px;text-align:left;
+    border-bottom:1px solid rgba(255,255,255,0.05);
+  }
+  .perf-table th{
+    font-size:12px;font-weight:600;color:var(--text-muted);
+    text-transform:uppercase;letter-spacing:0.05em;
+  }
+  .perf-table td{color:var(--text-secondary)}
+  .perf-table td:first-child{color:var(--text-muted)}
+  .perf-table tr:hover td{background:rgba(255,255,255,0.02)}
+  .perf-note{
+    font-size:11px;color:var(--text-muted);margin-top:12px;
+    opacity:0.7;
+  }
+
+  /* ── SDK SECTION ── */
+  .sdk-grid{
+    display:grid;grid-template-columns:1fr 1fr;gap:24px;
+    margin-top:40px;text-align:left;
+  }
+  .sdk-card{
+    background:var(--bg-card);
+    border:1px solid var(--border);
+    border-radius:16px;padding:32px;
+  }
+  .sdk-badge{
+    display:inline-block;padding:4px 12px;border-radius:100px;
+    background:var(--accent-dim);color:var(--accent);
+    font-size:11px;font-weight:600;margin-bottom:16px;
+  }
+  .sdk-card h3{
+    font-size:22px;font-weight:700;letter-spacing:-0.02em;
+    margin-bottom:16px;
+  }
+  .sdk-benefit{
+    display:flex;align-items:flex-start;gap:10px;
+    padding:7px 0;font-size:13px;color:var(--text-secondary);
+  }
+  .sdk-benefit svg{width:16px;height:16px;flex-shrink:0;margin-top:2px;color:var(--accent)}
+  .sdk-actions{display:flex;gap:10px;margin-top:20px}
+  .sdk-actions .btn-hero-primary,.sdk-actions .btn-hero-outline{
+    font-size:13px;padding:9px 20px;
+  }
+
+  /* ── CODE STEPS ── */
+  .code-steps{display:flex;flex-direction:column;gap:20px}
+  .code-step-num{
+    font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:8px;
+  }
+  .code-step-title{
+    font-size:13px;font-weight:600;color:#fff;margin-bottom:8px;
+  }
+  .code-tabs{display:flex;gap:6px;margin-bottom:10px}
+  .code-tab{
+    padding:5px 14px;border-radius:100px;
+    font-size:12px;font-weight:500;cursor:pointer;
+    border:1px solid var(--border);
+    background:transparent;color:var(--text-secondary);
+    display:flex;align-items:center;gap:6px;
+    transition:all 0.2s;
+  }
+  .code-tab.active{background:rgba(255,255,255,0.06);color:#fff;border-color:rgba(255,255,255,0.15)}
+  .code-block{
+    background:rgba(0,0,0,0.4);
+    border:1px solid rgba(255,255,255,0.05);
+    border-radius:10px;padding:12px 16px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;color:var(--text-muted);
+    display:flex;align-items:center;justify-content:space-between;
+    overflow-x:auto;
+  }
+  .code-block .label{
+    font-size:11px;color:var(--text-muted);
+    background:rgba(255,255,255,0.05);
+    padding:3px 8px;border-radius:4px;
+    margin-right:12px;flex-shrink:0;
+  }
+  .code-block code{color:var(--text-secondary);white-space:nowrap}
+  .code-input{
+    background:rgba(0,0,0,0.4);
+    border:1px solid rgba(255,255,255,0.05);
+    border-radius:10px;padding:10px 16px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;color:var(--text-secondary);
+    display:flex;align-items:center;gap:12px;
+  }
+  .code-input .label{
+    font-size:11px;color:var(--text-muted);
+    background:rgba(255,255,255,0.05);
+    padding:3px 8px;border-radius:4px;
+    flex-shrink:0;
+  }
+  .code-input .value{color:var(--text-secondary)}
+
+  /* ── MODELS SECTION ── */
+  .model-tags{
+    display:flex;gap:8px;justify-content:center;flex-wrap:wrap;
+    margin-bottom:24px;
+  }
+  .model-tag{
+    padding:6px 16px;border-radius:100px;
+    font-size:13px;font-weight:500;
+    border:1px solid var(--border);
+    background:rgba(255,255,255,0.03);
+    color:var(--text-secondary);
+    display:flex;align-items:center;gap:6px;
+  }
+  .model-tag .dot{width:6px;height:6px;border-radius:50%}
+  .see-full-link{
+    font-size:13px;color:var(--text-secondary);
+    text-decoration:none;display:inline-flex;align-items:center;gap:4px;
+    margin-top:16px;transition:color 0.2s;
+  }
+  .see-full-link:hover{color:#fff}
+
+  /* ── QUOTE SECTION ── */
+  .quote-card{
+    background:var(--bg-card);
+    border:1px solid var(--border);
+    border-radius:20px;padding:48px;
+    text-align:left;position:relative;overflow:hidden;
+  }
+  .quote-card::after{
+    content:'';position:absolute;top:0;right:0;
+    width:200px;height:200px;
+    background:radial-gradient(circle at top right, rgba(255,255,255,0.02) 0%, transparent 70%);
+    pointer-events:none;
+  }
+  .quote-heading{
+    font-size:clamp(24px,3vw,32px);font-weight:700;
+    letter-spacing:-0.02em;line-height:1.2;
+    margin-bottom:20px;max-width:500px;
+  }
+  .quote-desc{
+    font-size:14px;color:var(--text-secondary);
+    max-width:460px;line-height:1.7;margin-bottom:28px;
+  }
+  .quote-benefits{display:flex;flex-direction:column;gap:10px}
+  .quote-benefit{
+    display:flex;align-items:center;gap:10px;
+    font-size:13px;color:var(--text-secondary);
+  }
+  .quote-benefit svg{width:16px;height:16px;flex-shrink:0;color:var(--accent)}
+
+  /* ── PARTNERSHIP ── */
+  .partnership{
+    text-align:center;padding:80px 48px;
+    max-width:800px;margin:0 auto;
+  }
+  .partnership-logos{
+    font-size:22px;font-weight:700;letter-spacing:-0.02em;
+    margin-bottom:24px;display:flex;align-items:center;justify-content:center;gap:12px;
+  }
+  .partnership-logos .times{color:var(--text-muted);font-weight:400}
+  .partnership-text{
+    font-size:clamp(18px,2.5vw,24px);font-weight:600;
+    line-height:1.4;letter-spacing:-0.01em;
+    max-width:640px;margin:0 auto 20px;
+  }
+  .partnership-text .highlight{
+    text-decoration:underline;text-decoration-color:var(--accent);
+    text-underline-offset:4px;text-decoration-thickness:2px;
+  }
+  .partnership-link{
+    font-size:13px;color:var(--text-secondary);
+    text-decoration:none;display:inline-flex;align-items:center;gap:4px;
+    transition:color 0.2s;
+  }
+  .partnership-link:hover{color:#fff}
+
+  /* ── BOTTOM CTA ── */
+  .bottom-cta{
+    text-align:center;padding:100px 48px 80px;
+    position:relative;
+  }
+  .bottom-cta::before{
+    content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);
+    width:600px;height:300px;
+    background:radial-gradient(ellipse at center, rgba(0,200,150,0.05) 0%, transparent 70%);
+    pointer-events:none;
+  }
+  .bottom-cta h2{
+    font-size:clamp(36px,5vw,56px);font-weight:700;
+    letter-spacing:-0.03em;line-height:1.1;
+    margin-bottom:16px;position:relative;
+  }
+  .bottom-cta p{
+    font-size:16px;color:var(--text-secondary);
+    max-width:480px;margin:0 auto 40px;
+  }
+  .bottom-cta .hero-actions{margin-bottom:0}
+
+  /* ── FOOTER ── */
+  footer{
+    border-top:1px solid var(--border);
+    padding:48px;
+  }
+  .footer-inner{
+    max-width:1000px;margin:0 auto;
+    display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:40px;
+  }
+  .footer-logo{
+    font-size:18px;font-weight:800;letter-spacing:-0.03em;
+  }
+  .footer-col-title{
+    font-size:12px;font-weight:600;color:var(--text-muted);
+    text-transform:uppercase;letter-spacing:0.06em;
+    margin-bottom:16px;
+  }
+  .footer-links{display:flex;flex-direction:column;gap:10px}
+  .footer-links a{
+    font-size:13px;color:var(--text-secondary);
+    text-decoration:none;transition:color 0.2s;
+  }
+  .footer-links a:hover{color:#fff}
+
+  /* ── ANIMATIONS ── */
+  @keyframes fade-in{
+    from{opacity:0;transform:translateY(16px)}
+    to{opacity:1;transform:translateY(0)}
+  }
+  .fade-in{animation:fade-in 0.6s cubic-bezier(0.16,1,0.3,1) both}
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar{width:5px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:4px}
+
+  /* ── RESPONSIVE ── */
+  @media(max-width:768px){
+    .navbar{padding:0 16px}
+    .nav-links{display:none}
+    .hero{padding:120px 20px 40px}
+    .section{padding:60px 20px}
+    .feature-grid{grid-template-columns:1fr}
+    .sdk-grid{grid-template-columns:1fr}
+    .footer-inner{grid-template-columns:1fr 1fr}
+    .trusted-bar{gap:20px;padding:30px 20px}
+    .trusted-logos{gap:24px}
+    .quote-card{padding:32px 24px}
+  }
+</style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <div class="nav-left">
+    <a href="#" class="nav-logo">mirai</a>
+    <ul class="nav-links">
+      <li><a href="#" class="has-dropdown">Product</a></li>
+      <li><a href="#">Models library</a></li>
+      <li><a href="#">MacOS app</a></li>
+      <li><a href="#">Docs</a></li>
+      <li><a href="#" class="has-dropdown">Company</a></li>
+    </ul>
+  </div>
+  <div class="nav-right">
+    <a href="#" class="nav-icon" title="Discord">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561 19.9312 19.9312 0 005.9932 3.0397.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286 19.8975 19.8975 0 006.0023-3.0397.0771.0771 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189z"/></svg>
+    </a>
+    <a href="#" class="nav-icon" title="X / Twitter">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+    </a>
+    <div class="nav-user">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      8367
+    </div>
+    <a href="#" class="btn-nav-outline">Speak with us</a>
+    <a href="#" class="btn-nav-primary">Try SDK</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <h1 class="fade-in">On-device layer for AI<br/>model makers & products</h1>
+  <p class="hero-sub fade-in" style="animation-delay:0.1s">Deploy and run models of any architecture directly on user devices.</p>
+  <div class="hero-actions fade-in" style="animation-delay:0.2s">
+    <a href="#" class="btn-hero-primary">Speak with us <span style="font-size:16px">→</span></a>
+    <a href="#" class="btn-hero-outline">Try SDK <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+    <a href="#" class="btn-hero-outline">Explore docs <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+  </div>
+</section>
+
+<!-- TRUSTED BAR -->
+<div class="trusted-bar">
+  <div class="trusted-label">Trusted + backed by leading AI funds and individuals</div>
+  <div class="trusted-logos">
+    <div class="trusted-logo">
+      <div class="trusted-logo-name">🤗 Hugging Face</div>
+      <div class="trusted-logo-person">Thomas Wolf</div>
+      <div class="trusted-logo-role">Co-founder</div>
+    </div>
+    <div class="trusted-logo">
+      <div class="trusted-logo-name">❄️ Snowflake</div>
+      <div class="trusted-logo-person">Marcin Zukowski</div>
+      <div class="trusted-logo-role">Co-founder</div>
+    </div>
+    <div class="trusted-logo">
+      <div class="trusted-logo-name">OpenAI</div>
+      <div class="trusted-logo-person">Laura Modano</div>
+      <div class="trusted-logo-role">Startups EMEA</div>
+    </div>
+    <div class="trusted-logo">
+      <div class="trusted-logo-name">RUNWAY</div>
+      <div class="trusted-logo-person">Sigil Chen</div>
+      <div class="trusted-logo-role">CEO</div>
+    </div>
+  </div>
+</div>
+
+<!-- RUN MODELS NATIVELY -->
+<section class="section section-center">
+  <h2 class="section-heading">Run your models <span style="color:var(--accent)">natively</span><br/>on Apple devices</h2>
+  <p class="section-desc">Mirai extends your model's reach to user devices. Running local inference for speed and privacy, while freeing your cloud GPUs for what truly needs scale.</p>
+  <div class="feature-grid">
+    <div class="feature-card">
+      <div class="feature-card-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9z"/></svg>
+      </div>
+      <div class="feature-card-title">Cloud stays essential</div>
+      <div class="feature-card-desc">Keep your existing infrastructure. Let it focus on what the cloud does best: training, reasoning, and scale.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+      </div>
+      <div class="feature-card-title">Devices got powerful</div>
+      <div class="feature-card-desc">Modern computer and mobile chips can now run real inference. Use that local power.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 20V4"/><path d="M6 12l6-8 6 8"/></svg>
+      </div>
+      <div class="feature-card-title">Latency belongs local</div>
+      <div class="feature-card-desc">Running inference on-device keeps chat and voice instant, the kind of speed no cloud can deliver.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      </div>
+      <div class="feature-card-title">Privacy is native</div>
+      <div class="feature-card-desc">Local inference filters, analyzes, and syncs only what's safe. Giving full trust and control.</div>
+    </div>
+  </div>
+</section>
+
+<!-- FOR MODEL MAKERS -->
+<section class="section section-center">
+  <div class="chrome-icon">
+    <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+      <circle cx="24" cy="24" r="20" stroke="url(#chrome-grad)" stroke-width="2" fill="none"/>
+      <circle cx="24" cy="24" r="8" fill="url(#chrome-grad)"/>
+      <defs>
+        <linearGradient id="chrome-grad" x1="0" y1="0" x2="48" y2="48">
+          <stop offset="0%" stop-color="#4285f4"/>
+          <stop offset="50%" stop-color="#34a853"/>
+          <stop offset="100%" stop-color="#00c896"/>
+        </linearGradient>
+      </defs>
+    </svg>
+  </div>
+  <div class="section-label">For model makers</div>
+  <h2 class="section-heading">Extend your model<br/>beyond the cloud</h2>
+  <p class="section-desc">Keep your inference backend. Add Mirai to process part of your user requests directly on user devices.</p>
+  <div class="benefits-card">
+    <div class="benefits-label">Key benefits</div>
+    <div class="benefit-item">
+      <div class="benefit-icon">⚡</div>
+      <div><strong>Instant, private inference</strong> with near-zero latency and full data privacy.</div>
+    </div>
+    <div class="benefit-item">
+      <div class="benefit-icon">🔀</div>
+      <div><strong>Route requests</strong> between device and cloud based on your custom rules.</div>
+    </div>
+    <div class="benefit-item">
+      <div class="benefit-icon">&lt;/&gt;</div>
+      <div>Add and run any <strong>custom model architecture.</strong></div>
+    </div>
+    <div class="benefit-item">
+      <div class="benefit-icon">🔒</div>
+      <div><strong>Granular access control.</strong> Choose which developers can access models.</div>
+    </div>
+    <div class="benefit-item">
+      <div class="benefit-icon">💰</div>
+      <div>Mirror your existing pricing. <strong>Tokens, licenses, revshare.</strong></div>
+    </div>
+  </div>
+</section>
+
+<!-- BUILT NATIVELY FOR iOS and macOS -->
+<section class="section section-center">
+  <div class="apple-icon">
+    <svg width="44" height="44" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="10" stroke="url(#apple-grad)" stroke-width="1.5" fill="rgba(0,120,255,0.08)"/>
+      <circle cx="12" cy="12" r="4" fill="url(#apple-grad)"/>
+      <defs>
+        <linearGradient id="apple-grad" x1="0" y1="0" x2="24" y2="24">
+          <stop offset="0%" stop-color="#4a9eff"/>
+          <stop offset="100%" stop-color="#00c8ff"/>
+        </linearGradient>
+      </defs>
+    </svg>
+  </div>
+  <div class="section-label">Built natively for iOS and macOS</div>
+  <h2 class="section-heading">Fastest inference engine built<br/>from scratch for Apple devices<br/>with performance in mind</h2>
+  <div style="margin-top:16px">
+    <span style="font-size:13px;color:var(--text-muted)">Outperforming</span>
+    <div class="outperform-tags">
+      <div class="outperform-tag"><span class="dot dot-green"></span> MLX</div>
+      <div class="outperform-tag"><span class="dot dot-orange"></span> llama.cpp</div>
+    </div>
+  </div>
+  <div style="overflow-x:auto">
+    <table class="perf-table">
+      <thead>
+        <tr>
+          <th>Metric</th>
+          <th>16 Pro Max (A18 Pro)</th>
+          <th>M1 Ultra</th>
+          <th>M2</th>
+          <th>M4 Max</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Time to first token, s</td>
+          <td>0.303</td>
+          <td>0.066</td>
+          <td>0.188</td>
+          <td>0.041</td>
+        </tr>
+        <tr>
+          <td>Tokens per sec, t/s</td>
+          <td>20.598</td>
+          <td>197.093</td>
+          <td>35.572</td>
+          <td>172.276</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="perf-note">* Llama-3.2-1B-Instruct, float16 precision, 37 input tokens</p>
+</section>
+
+<!-- FOR DEVELOPERS -->
+<section class="section section-center">
+  <div class="section-label">For developers</div>
+  <h2 class="section-heading">Easily integrate modern AI<br/>pipelines into your app</h2>
+  <div class="sdk-grid">
+    <div class="sdk-card">
+      <div class="sdk-badge">Free 10K Devices</div>
+      <h3>Try Mirai SDK for free</h3>
+      <div class="sdk-benefit">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        Drop-in SDK for local + cloud inference.
+      </div>
+      <div class="sdk-benefit">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        Model conversion + quantization handled.
+      </div>
+      <div class="sdk-benefit">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        Local-first workflows for text, audio, vision.
+      </div>
+      <div class="sdk-benefit">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        One developer can get it all running in minutes.
+      </div>
+      <div class="sdk-actions">
+        <a href="#" class="btn-hero-primary">Try SDK <span>→</span></a>
+        <a href="#" class="btn-hero-outline">Explore docs <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+      </div>
+    </div>
+    <div class="sdk-card">
+      <div class="code-steps">
+        <div>
+          <div class="code-step-num">1  Choose framework</div>
+          <div class="code-tabs">
+            <div class="code-tab active">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f05138" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+              Swift
+            </div>
+            <div class="code-tab">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+              Rust
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="code-step-num">2  Install Mirai</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">Include the following dependency</div>
+          <div class="code-block">
+            <span class="label">SPM</span>
+            <code>https://github.com/getmirai/uzu-swift</code>
+          </div>
+        </div>
+        <div>
+          <div class="code-step-num">3  Set Mirai API key</div>
+          <div class="code-input">
+            <span class="label">API key</span>
+            <span class="value">sk-ant-ap0321241asad...fgAA</span>
+          </div>
+        </div>
+        <div>
+          <div class="code-step-num">4  Choose AI use case</div>
+          <div class="code-input">
+            <span class="label">💬</span>
+            <span class="value">General Chat</span>
+            <span style="margin-left:auto;font-size:11px;color:var(--text-muted)">Choose use case</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SOTA MODELS -->
+<section class="section section-center">
+  <div class="model-tags">
+    <div class="model-tag"><span class="dot" style="background:#00c896"></span> DeepSeek</div>
+    <div class="model-tag"><span class="dot" style="background:#f59e0b"></span> Llama</div>
+    <div class="model-tag"><span class="dot" style="background:#6366f1"></span> Qwen</div>
+    <div class="model-tag"><span class="dot" style="background:#0ea5e9"></span> G...</div>
+  </div>
+  <h2 class="section-heading">All key SOTA<br/>models supported</h2>
+  <a href="#" class="see-full-link">See the full list ↗</a>
+</section>
+
+<!-- QUOTE SECTION -->
+<section class="section" style="padding-top:40px">
+  <div class="quote-card">
+    <h2 class="quote-heading">Users don't care where your model runs. They care how it feels.</h2>
+    <p class="quote-desc">Mirai makes real-time, device-native experiences that feels seamless for the users.</p>
+    <div class="quote-benefits">
+      <div class="quote-benefit">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        <span><strong>Fast responses</strong> for text and audio.</span>
+      </div>
+      <div class="quote-benefit">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        <span><strong>Offline continuity.</strong> No network, no break.</span>
+      </div>
+      <div class="quote-benefit">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        <span><strong>Consistent latency.</strong> Even under load.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PARTNERSHIP -->
+<div class="partnership">
+  <div class="partnership-logos">
+    <span style="font-family:'Inter',sans-serif;font-weight:700">baseten</span>
+    <span class="times">×</span>
+    <span style="font-family:'Inter',sans-serif;font-weight:800">mirai</span>
+  </div>
+  <p class="partnership-text">We have partnered with <span class="highlight">Baseten</span> to deliver faster and easier hybrid AI, where you can run models locally or in the cloud using the same API</p>
+  <a href="#" class="partnership-link">Learn more ↗</a>
+</div>
+
+<!-- BOTTOM CTA -->
+<section class="bottom-cta">
+  <h2>Run your models<br/>locally. Free your cloud</h2>
+  <p>Deploy and run models of any architecture directly on user devices.</p>
+  <div class="hero-actions">
+    <a href="#" class="btn-hero-primary">Speak with us <span style="font-size:16px">→</span></a>
+    <a href="#" class="btn-hero-outline">Try SDK <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+    <a href="#" class="btn-hero-outline">Explore docs <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div>
+      <div class="footer-logo">mirai</div>
+    </div>
+    <div>
+      <div class="footer-col-title">Main</div>
+      <div class="footer-links">
+        <a href="#">Apple Inference SDK</a>
+        <a href="#">Smart Routing</a>
+        <a href="#">Models Library</a>
+        <a href="#">MacOS App</a>
+        <a href="#">Blog</a>
+        <a href="#">Docs</a>
+      </div>
+    </div>
+    <div>
+      <div class="footer-col-title">Company</div>
+      <div class="footer-links">
+        <a href="#">About us</a>
+        <a href="#">Careers</a>
+        <a href="#">Contact Us</a>
+        <a href="#">Privacy Policy</a>
+        <a href="#">Terms of Use</a>
+      </div>
+    </div>
+    <div>
+      <div class="footer-col-title">Links</div>
+      <div class="footer-links">
+        <a href="#">X (Twitter)</a>
+        <a href="#">GitHub</a>
+        <a href="#">LinkedIn</a>
+        <a href="#">Discord</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

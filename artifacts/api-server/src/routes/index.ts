@@ -6,6 +6,7 @@ import sessionsRouter from "./sessions";
 import apiKeysRouter from "./apikeys";
 import vaultRouter from "./vault";
 import walletRouter from "./wallet";
+import liquidityRouter from "./liquidity";
 
 const router: IRouter = Router();
 
@@ -16,5 +17,6 @@ router.use(sessionsRouter);
 router.use(paymentsRouter);
 router.use(apiKeysRouter);
 router.use(vaultRouter);
+router.use(liquidityRouter);
 
 export default router;

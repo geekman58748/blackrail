@@ -149,3 +149,71 @@ export const insertLoginSessionSchema = createInsertSchema(loginSessionsTable).o
 });
 export type InsertLoginSession = z.infer<typeof insertLoginSessionSchema>;
 export type LoginSession = typeof loginSessionsTable.$inferSelect;
+
+// ── MERCHANT BANK ACCOUNTS (Nigerian) ───────────────────────────────────────
+export const merchantBankAccountsTable = pgTable("merchant_bank_accounts", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => usersTable.id),
+  bankName: varchar("bank_name", { length: 100 }).notNull(),
+  bankCode: varchar("bank_code", { length: 10 }).notNull(),
+  accountNumber: varchar("account_number", { length: 20 }).notNull(),
+  accountName: varchar("account_name", { length: 200 }).notNull(),
+  paystackRecipientCode: varchar("paystack_recipient_code", { length: 50 }),
+  isDefault: boolean("is_default").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("merchant_bank_user_unique").on(table.userId),
+]);
+
+export const insertMerchantBankAccountSchema = createInsertSchema(merchantBankAccountsTable).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertMerchantBankAccount = z.infer<typeof insertMerchantBankAccountSchema>;
+export type MerchantBankAccount = typeof merchantBankAccountsTable.$inferSelect;
+
+// ── LIQUIDITY POOL (NGN) ────────────────────────────────────────────────────
+export const liquidityPoolTable = pgTable("liquidity_pool", {
+  id: serial("id").primaryKey(),
+  poolName: varchar("pool_name", { length: 100 }).notNull().default("main"),
+  balanceNgn: numeric("balance_ngn", { precision: 20, scale: 2 }).notNull().default("0"),
+  seededNgn: numeric("seeded_ngn", { precision: 20, scale: 2 }).notNull().default("0"),
+  totalDisbursedNgn: numeric("total_disbursed_ngn", { precision: 20, scale: 2 }).notNull().default("0"),
+  usdcRate: numeric("usdc_rate", { precision: 10, scale: 2 }).notNull().default("1360"),
+  isActive: boolean("is_active").notNull().default(true),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertLiquidityPoolSchema = createInsertSchema(liquidityPoolTable).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertLiquidityPool = z.infer<typeof insertLiquidityPoolSchema>;
+export type LiquidityPool = typeof liquidityPoolTable.$inferSelect;
+
+// ── NAIRA SETTLEMENTS ───────────────────────────────────────────────────────
+export const nairaSettlementsTable = pgTable("naira_settlements", {
+  id: serial("id").primaryKey(),
+  sessionId: varchar("session_id", { length: 100 }).notNull(),
+  merchantUserId: integer("merchant_user_id").notNull().references(() => usersTable.id),
+  usdcAmount: numeric("usdc_amount", { precision: 10, scale: 6 }).notNull(),
+  nairaAmount: numeric("naira_amount", { precision: 14, scale: 2 }).notNull(),
+  exchangeRate: numeric("exchange_rate", { precision: 10, scale: 2 }).notNull(),
+  bankName: varchar("bank_name", { length: 100 }),
+  accountNumber: varchar("account_number", { length: 20 }),
+  accountName: varchar("account_name", { length: 200 }),
+  paystackTransferRef: varchar("paystack_transfer_ref", { length: 100 }),
+  status: varchar("status", { length: 20 }).notNull().default("pending"),
+  statusMessage: text("status_message"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  completedAt: timestamp("completed_at"),
+});
+
+export const insertNairaSettlementSchema = createInsertSchema(nairaSettlementsTable).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertNairaSettlement = z.infer<typeof insertNairaSettlementSchema>;
+export type NairaSettlement = typeof nairaSettlementsTable.$inferSelect;

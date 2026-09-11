@@ -10,6 +10,7 @@ import {
 import { capabilityMatches, merchantPrincipal, requireMerchant } from "../middlewares/auth.js";
 import { decryptSecret, encryptSecret, hashCapability } from "../lib/secrets.js";
 import { notifyMerchant, sendBuyerReceipt, type PaymentNotification } from "../lib/notifications.js";
+import { settleToNaira, getMerchantBank } from "../lib/liquidity.js";
 
 const router = Router();
 
@@ -232,6 +233,28 @@ router.post("/sessions/:id/settle", async (req, res): Promise<void> => {
         merchantId: claimed.merchantId,
       }).onConflictDoNothing();
     });
+    // ── Auto-disburse NGN to merchant's bank account ──
+    try {
+      const hasBank = await getMerchantBank(merchantUserId);
+      if (hasBank) {
+        const usdcFloat = parseFloat(decimalUsdc(received));
+        console.log(`[settle] Triggering NGN settlement: $${usdcFloat} USDC → merchant bank ${hasBank.bankName} ${hasBank.accountNumber}`);
+        settleToNaira({
+          sessionId: claimed.id,
+          merchantUserId,
+          usdcAmount: usdcFloat,
+        }).then((settlement) => {
+          console.log(`[settle] NGN settlement SUCCESS: ₦${settlement.nairaAmount} sent to ${settlement.accountName}`);
+        }).catch((nairaErr) => {
+          console.error(`[settle] NGN settlement FAILED:`, nairaErr.message);
+        });
+      } else {
+        console.log(`[settle] Merchant ${merchantUserId} has no linked bank account — skipping NGN settlement`);
+      }
+    } catch (bankErr: any) {
+      console.error(`[settle] NGN settlement check failed:`, bankErr.message);
+    }
+
     // Fire notifications (non-blocking)
     const [merchantUser] = await db.select().from(usersTable).where(eq(usersTable.id, merchantUserId));
     if (merchantUser) {

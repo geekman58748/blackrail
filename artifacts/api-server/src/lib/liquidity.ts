@@ -111,7 +111,7 @@ export async function linkBankAccount(params: {
         bankCode,
         accountNumber: params.accountNumber,
         accountName: resolved.account_name,
-        paystackRecipientCode: String(beneficiary.id), // Store Flutterwave beneficiary ID
+        flutterwaveRecipientId: String(beneficiary.id),
         isDefault: true,
       })
       .where(eq(merchantBankAccountsTable.id, existing.id))
@@ -127,7 +127,7 @@ export async function linkBankAccount(params: {
       bankCode,
       accountNumber: params.accountNumber,
       accountName: resolved.account_name,
-      paystackRecipientCode: String(beneficiary.id), // Store Flutterwave beneficiary ID
+      flutterwaveRecipientId: String(beneficiary.id),
     })
     .returning();
 
@@ -194,11 +194,11 @@ export async function settleToNaira(params: {
 
   // 5. Initiate Flutterwave transfer
   try {
-    if (!bank.paystackRecipientCode) {
+    if (!bank.flutterwaveRecipientId) {
       throw new Error("No Flutterwave beneficiary ID — re-link bank account");
     }
 
-    const beneficiaryId = parseInt(bank.paystackRecipientCode, 10);
+    const beneficiaryId = parseInt(bank.flutterwaveRecipientId, 10);
     const reference = `br_${sessionId.slice(0, 12)}_${Date.now()}`;
 
     const transfer = await initiateTransfer({
@@ -217,8 +217,8 @@ export async function settleToNaira(params: {
       await tx
         .update(liquidityPoolTable)
         .set({
-          balanceNgN: String(newBalance),
-          totalDisbursedNgN: String(Number(pool.totalDisbursedNgN) + nairaAmount),
+          balanceNgn: String(newBalance),
+          totalDisbursedNgn: String(Number(pool.totalDisbursedNgn) + nairaAmount),
           updatedAt: new Date(),
         })
         .where(eq(liquidityPoolTable.id, pool.id));
@@ -228,7 +228,7 @@ export async function settleToNaira(params: {
         .update(nairaSettlementsTable)
         .set({
           status: "sent",
-          paystackTransferRef: String(transfer.id),
+          flutterwaveTransferId: String(transfer.id),
           statusMessage: `Flutterwave transfer ${transfer.status}: ${transfer.reference}`,
           completedAt: new Date(),
         })

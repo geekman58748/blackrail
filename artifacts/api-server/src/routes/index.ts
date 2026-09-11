@@ -15,8 +15,8 @@ router.use(authRouter);
 router.use(walletRouter);
 router.use(sessionsRouter);
 router.use(paymentsRouter);
+router.use(liquidityRouter);
 router.use(apiKeysRouter);
 router.use(vaultRouter);
-router.use(liquidityRouter);
 
 export default router;

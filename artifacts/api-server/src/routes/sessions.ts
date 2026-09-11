@@ -157,7 +157,13 @@ router.post("/sessions/:id/settle", async (req, res): Promise<void> => {
 
   try {
     // Look up user's wallet to send settlement to their dedicated address
-    const merchantUserId = Number(claimed.merchantId);
+    // merchantId may be a numeric users.id OR an identity string (email/bootstrap key)
+    let merchantUserId = Number(claimed.merchantId);
+    if (!Number.isSafeInteger(merchantUserId) || merchantUserId <= 0) {
+      const [u] = await db.select().from(usersTable)
+        .where(eq(usersTable.email, String(claimed.merchantId).trim().toLowerCase()));
+      merchantUserId = u?.id ?? NaN;
+    }
     console.log(`[settle] merchantId=${claimed.merchantId}, userId=${merchantUserId}`);
     const [wallet] = await db.select().from(walletsTable).where(eq(walletsTable.userId, merchantUserId));
     const destinationAddress = wallet?.publicKey ?? undefined;

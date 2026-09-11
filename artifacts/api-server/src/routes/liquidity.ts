@@ -10,7 +10,7 @@ import {
 } from "../lib/liquidity.js";
 import { NG_BANK_CODES } from "../lib/flutterwave.js";
 import { merchantPrincipal, requireMerchant } from "../middlewares/auth.js";
-import { db, usersTable, eq } from "@workspace/db";
+import { db, usersTable, sessionsTable, nairaSettlementsTable, eq } from "@workspace/db";
 
 const router = Router();
 
@@ -192,6 +192,45 @@ router.get("/liquidity/settlements", requireMerchant, async (req, res): Promise<
         completedAt: s.completedAt?.toISOString(),
       }))
     );
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ── GET /liquidity/debug/:sessionId — settlement status for a session (debug) ─
+
+router.get("/liquidity/debug/:sessionId", async (req, res): Promise<void> => {
+  const { sessionId } = req.params;
+  try {
+    const [session] = await db.select().from(sessionsTable).where(eq(sessionsTable.id, sessionId));
+    if (!session) { res.status(404).json({ error: "session not found" }); return; }
+
+    const [user] = await db.select().from(usersTable).where(eq(usersTable.id, Number(session.merchantId)));
+    const bank = await getMerchantBank(Number(session.merchantId));
+    const settlements = await db
+      .select()
+      .from(nairaSettlementsTable)
+      .where(eq(nairaSettlementsTable.sessionId, sessionId));
+
+    res.json({
+      session: {
+        id: session.id,
+        status: session.status,
+        merchantId: session.merchantId,
+        amount: session.amount,
+        receivedAmount: session.receivedAmount,
+        settlementError: session.settlementError,
+      },
+      merchantResolved: user ? { id: user.id, email: user.email } : null,
+      bankLinked: bank ? { bankName: bank.bankName, accountNumber: bank.accountNumber, accountName: bank.accountName } : null,
+      nairaSettlements: settlements.map((s) => ({
+        id: s.id,
+        nairaAmount: s.nairaAmount,
+        status: s.status,
+        statusMessage: s.statusMessage,
+        flutterwaveTransferId: s.flutterwaveTransferId,
+      })),
+    });
   } catch (e: any) {
     res.status(500).json({ error: e.message });
   }

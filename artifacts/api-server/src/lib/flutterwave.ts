@@ -32,6 +32,7 @@ export const NG_BANK_CODES: Record<string, string> = {
   "Heritage Bank": "030",
   "Keystone Bank": "082",
   "Kuda Bank": "090267",
+  "Moniepoint": "090405",
   "Opay": "090347",
   "Palmpay": "999991",
   "Polaris Bank": "076",

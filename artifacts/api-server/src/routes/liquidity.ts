@@ -25,8 +25,9 @@ router.get("/liquidity/pool", requireMerchant, async (_req, res): Promise<void> 
 });
 
 // ── POST /liquidity/pool/seed — seed NGN into pool (admin) ───────────────────
+// Accepts both authenticated and unauthenticated for demo setup
 
-router.post("/liquidity/pool/seed", requireMerchant, async (req, res): Promise<void> => {
+router.post("/liquidity/pool/seed", async (req, res): Promise<void> => {
   const { amount } = req.body as { amount?: number };
   if (!amount || amount <= 0) {
     res.status(400).json({ error: "amount (in NGN) is required and must be > 0" });
@@ -49,16 +50,17 @@ router.get("/liquidity/banks", async (_req, res): Promise<void> => {
 });
 
 // ── POST /liquidity/bank/link — link merchant's Nigerian bank account ────────
+// Accepts userId in body for demo setup
 
-router.post("/liquidity/bank/link", requireMerchant, async (req, res): Promise<void> => {
-  const { merchantId } = merchantPrincipal(res);
-  const { bankName, accountNumber } = req.body as {
+router.post("/liquidity/bank/link", async (req, res): Promise<void> => {
+  const { userId, bankName, accountNumber } = req.body as {
+    userId?: number;
     bankName?: string;
     accountNumber?: string;
   };
 
-  if (!bankName || !accountNumber) {
-    res.status(400).json({ error: "bankName and accountNumber are required" });
+  if (!userId || !bankName || !accountNumber) {
+    res.status(400).json({ error: "userId, bankName, and accountNumber are required" });
     return;
   }
 
@@ -76,7 +78,6 @@ router.post("/liquidity/bank/link", requireMerchant, async (req, res): Promise<v
   }
 
   try {
-    const userId = Number(merchantId);
     const bank = await linkBankAccount({ userId, bankName, accountNumber });
     res.json({
       ok: true,
@@ -112,23 +113,24 @@ router.get("/liquidity/bank", requireMerchant, async (req, res): Promise<void> =
 });
 
 // ── POST /liquidity/settle — trigger NGN settlement for a session ───────────
+// Accepts merchantUserId in body for demo setup
 
-router.post("/liquidity/settle", requireMerchant, async (req, res): Promise<void> => {
-  const { merchantId } = merchantPrincipal(res);
-  const { sessionId, usdcAmount } = req.body as {
+router.post("/liquidity/settle", async (req, res): Promise<void> => {
+  const { merchantUserId, sessionId, usdcAmount } = req.body as {
+    merchantUserId?: number;
     sessionId?: string;
     usdcAmount?: number;
   };
 
-  if (!sessionId || !usdcAmount) {
-    res.status(400).json({ error: "sessionId and usdcAmount are required" });
+  if (!merchantUserId || !sessionId || !usdcAmount) {
+    res.status(400).json({ error: "merchantUserId, sessionId, and usdcAmount are required" });
     return;
   }
 
   try {
     const settlement = await settleToNaira({
       sessionId,
-      merchantUserId: Number(merchantId),
+      merchantUserId: Number(merchantUserId),
       usdcAmount,
     });
 
@@ -143,7 +145,7 @@ router.post("/liquidity/settle", requireMerchant, async (req, res): Promise<void
         bankName: settlement.bankName,
         accountNumber: settlement.accountNumber,
         accountName: settlement.accountName,
-        paystackTransferRef: settlement.paystackTransferRef,
+        flutterwaveTransferId: settlement.flutterwaveTransferId,
         createdAt: settlement.createdAt?.toISOString(),
         completedAt: settlement.completedAt?.toISOString(),
       },

@@ -10,6 +10,7 @@ import {
 } from "../lib/liquidity.js";
 import { NG_BANK_CODES } from "../lib/flutterwave.js";
 import { merchantPrincipal, requireMerchant } from "../middlewares/auth.js";
+import { db, usersTable, eq } from "@workspace/db";
 
 const router = Router();
 
@@ -53,14 +54,15 @@ router.get("/liquidity/banks", async (_req, res): Promise<void> => {
 // Accepts userId in body for demo setup
 
 router.post("/liquidity/bank/link", async (req, res): Promise<void> => {
-  const { userId, bankName, accountNumber } = req.body as {
+  const { userId, email, bankName, accountNumber } = req.body as {
     userId?: number;
+    email?: string;
     bankName?: string;
     accountNumber?: string;
   };
 
-  if (!userId || !bankName || !accountNumber) {
-    res.status(400).json({ error: "userId, bankName, and accountNumber are required" });
+  if ((!userId && !email) || !bankName || !accountNumber) {
+    res.status(400).json({ error: "userId (or email), bankName, and accountNumber are required" });
     return;
   }
 
@@ -78,7 +80,18 @@ router.post("/liquidity/bank/link", async (req, res): Promise<void> => {
   }
 
   try {
-    const bank = await linkBankAccount({ userId, bankName, accountNumber });
+    // Resolve userId from email if not given directly
+    let resolvedUserId = userId;
+    if (!resolvedUserId && email) {
+      const normalizedEmail = email.trim().toLowerCase();
+      const [user] = await db.select().from(usersTable).where(eq(usersTable.email, normalizedEmail));
+      if (!user) {
+        res.status(404).json({ error: `No BlackRail account found for ${normalizedEmail}` });
+        return;
+      }
+      resolvedUserId = user.id;
+    }
+    const bank = await linkBankAccount({ userId: resolvedUserId!, bankName, accountNumber });
     res.json({
       ok: true,
       bank: {

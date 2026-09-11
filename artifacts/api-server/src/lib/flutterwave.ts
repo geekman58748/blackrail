@@ -62,8 +62,14 @@ export async function resolveBankAccount(
   accountNumber: string,
   bankCode: string
 ): Promise<ResolvedAccount> {
-  const url = `${FLW_API}/banks/${bankCode}?account_number=${accountNumber}`;
-  const res = await fetch(url, { headers: headers() });
+  const res = await fetch(`${FLW_API}/accounts/resolve`, {
+    method: "POST",
+    headers: headers(),
+    body: JSON.stringify({
+      account_number: accountNumber,
+      account_bank: bankCode,
+    }),
+  });
   const body: any = await res.json();
 
   if (body.status !== "success") {

@@ -1,24 +1,22 @@
-// ── Flutterwave API integration for Nigerian bank transfers ───────────────────
-// Docs: https://developer.flutterwave.com/v3.0/docs
-// Why Flutterwave over Paystack: Starter account only needs BVN + NIN, no CAC
+// ── Paystack API integration for Nigerian bank transfers ─────────────────────
+// Docs: https://paystack.com/docs/api/
 
-const FLW_API = "https://api.flutterwave.com/v3";
+const PAYSTACK_API = "https://api.paystack.co";
 
-function getConfig() {
-  const secretKey = process.env.FLUTTERWAVE_SECRET_KEY;
-  if (!secretKey) throw new Error("FLUTTERWAVE_SECRET_KEY is required but not set");
-  return { secretKey };
+function getKey(): string {
+  const key = process.env.PAYSTACK_SECRET_KEY;
+  if (!key) throw new Error("PAYSTACK_SECRET_KEY is required but not set");
+  return key;
 }
 
 function headers(): Record<string, string> {
-  const { secretKey } = getConfig();
   return {
-    Authorization: `Bearer ${secretKey}`,
+    Authorization: `Bearer ${getKey()}`,
     "Content-Type": "application/json",
   };
 }
 
-// ── Nigerian bank codes (Flutterwave format) ─────────────────────────────────
+// ── Nigerian bank codes (top banks) ──────────────────────────────────────────
 
 export const NG_BANK_CODES: Record<string, string> = {
   "Access Bank": "044",
@@ -54,119 +52,105 @@ export const NG_BANK_CODES: Record<string, string> = {
 export interface ResolvedAccount {
   account_number: string;
   account_name: string;
-  bank_code: string;
+  bank_id: number;
 }
 
 export async function resolveBankAccount(
   accountNumber: string,
   bankCode: string
 ): Promise<ResolvedAccount> {
-  const url = `${FLW_API}/banks/${bankCode}?account_number=${accountNumber}`;
+  const url = `${PAYSTACK_API}/bank/resolve?account_number=${accountNumber}&bank_code=${bankCode}`;
   const res = await fetch(url, { headers: headers() });
   const body: any = await res.json();
 
-  if (body.status !== "success") {
+  if (!body.status) {
     throw new Error(body.message || "Failed to resolve bank account");
   }
 
   return {
     account_number: body.data.account_number,
     account_name: body.data.account_name,
-    bank_code: bankCode,
+    bank_id: body.data.bank_id,
   };
 }
 
-// ── Create transfer beneficiary ──────────────────────────────────────────────
+// ── Create transfer recipient ────────────────────────────────────────────────
 
-export interface TransferBeneficiary {
-  id: number;
+export interface TransferRecipient {
+  recipient_code: string;
+  type: string;
+  name: string;
   account_number: string;
   bank_code: string;
-  account_name: string;
 }
 
-export async function createBeneficiary(params: {
+export async function createTransferRecipient(params: {
+  name: string;
   account_number: string;
   bank_code: string;
-  account_name: string;
-}): Promise<TransferBeneficiary> {
-  const res = await fetch(`${FLW_API}/beneficiaries`, {
+  type?: string;
+}): Promise<TransferRecipient> {
+  const res = await fetch(`${PAYSTACK_API}/transferrecipient`, {
     method: "POST",
     headers: headers(),
     body: JSON.stringify({
+      type: params.type || "nuban",
+      name: params.name,
       account_number: params.account_number,
       bank_code: params.bank_code,
-      name: params.account_name,
+      currency: "NGN",
     }),
   });
   const body: any = await res.json();
 
-  if (body.status !== "success") {
-    throw new Error(body.message || "Failed to create beneficiary");
+  if (!body.status) {
+    throw new Error(body.message || "Failed to create transfer recipient");
   }
 
-  return {
-    id: body.data.id,
-    account_number: body.data.account_number,
-    bank_code: body.data.bank_code,
-    account_name: body.data.name,
-  };
+  return body.data;
 }
 
 // ── Initiate transfer ────────────────────────────────────────────────────────
 
 export interface TransferResult {
-  id: number;
   reference: string;
+  transfer_code: string;
   status: string;
   amount: number;
-  account_number: string;
-  bank_code: string;
 }
 
 export async function initiateTransfer(params: {
-  beneficiary_id?: number;
-  account_number: string;
-  bank_code: string;
-  amount: number; // in NGN (not kobo — Flutterwave v3 uses full amounts)
+  recipient: string; // recipient_code
+  amount: number; // in kobo (NGN * 100)
   reference?: string;
-  narration?: string;
+  reason?: string;
   currency?: string;
 }): Promise<TransferResult> {
   const reference = params.reference || `br_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
-  const payload: Record<string, unknown> = {
-    account_bank: params.bank_code,
-    account_number: params.account_number,
-    amount: params.amount,
-    reference,
-    narration: params.narration || "BlackRail payment settlement",
-    currency: params.currency || "NGN",
-  };
-
-  // If we have a beneficiary ID, use it (faster, cached)
-  if (params.beneficiary_id) {
-    payload.beneficiary = params.beneficiary_id;
-  }
-
-  const res = await fetch(`${FLW_API}/transfers`, {
+  const res = await fetch(`${PAYSTACK_API}/transfer`, {
     method: "POST",
     headers: headers(),
-    body: JSON.stringify(payload),
+    body: JSON.stringify({
+      source: "balance",
+      recipient: params.recipient,
+      amount: params.amount, // Paystack expects amount in kobo
+      reference,
+      reason: params.reason || "BlackRail payment settlement",
+      currency: params.currency || "NGN",
+    }),
   });
   const body: any = await res.json();
 
-  if (body.status !== "success") {
+  if (!body.status) {
     throw new Error(body.message || "Transfer failed");
   }
 
   return {
-    id: body.data.id,
     reference: body.data.reference,
+    transfer_code: body.data.transfer_code,
     status: body.data.status,
     amount: body.data.amount,
-    account_number: params.account_number,
-    bank_code: params.bank_code,
   };
 }
 
@@ -175,51 +159,50 @@ export async function initiateTransfer(params: {
 export async function verifyTransfer(reference: string): Promise<{
   status: string;
   amount: number;
-  account_number: string;
-  bank_code: string;
+  recipient: { name: string; account_number: string };
 }> {
-  const res = await fetch(`${FLW_API}/transfers/${reference}`, {
+  const res = await fetch(`${PAYSTACK_API}/transfer/verify/${reference}`, {
     headers: headers(),
   });
   const body: any = await res.json();
 
-  if (body.status !== "success") {
+  if (!body.status) {
     throw new Error(body.message || "Transfer verification failed");
   }
 
   return {
     status: body.data.status,
     amount: body.data.amount,
-    account_number: body.data.account_number,
-    bank_code: body.data.bank_code,
+    recipient: {
+      name: body.data.recipient.name,
+      account_number: body.data.recipient.account_number,
+    },
   };
 }
 
 // ── Get balance ──────────────────────────────────────────────────────────────
 
-export async function getBalance(): Promise<{ balance: number; currency: string }> {
-  const res = await fetch(`${FLW_API}/balances`, { headers: headers() });
+export async function getPaystackBalance(): Promise<{ available: number; currency: string }> {
+  const res = await fetch(`${PAYSTACK_API}/balance`, { headers: headers() });
   const body: any = await res.json();
 
-  if (body.status !== "success") {
+  if (!body.status) {
     throw new Error(body.message || "Failed to get balance");
   }
 
-  // Flutterwave returns an array of balances, find NGN
-  const ngnBalance = body.data?.find((b: any) => b.currency === "NGN");
   return {
-    balance: ngnBalance?.balance || 0,
-    currency: "NGN",
+    available: body.data.balance,
+    currency: body.data.currency,
   };
 }
 
 // ── List banks ───────────────────────────────────────────────────────────────
 
 export async function listBanks(): Promise<Array<{ name: string; code: string }>> {
-  const res = await fetch(`${FLW_API}/banks/NG`, { headers: headers() });
+  const res = await fetch(`${PAYSTACK_API}/bank?country=nigeria`, { headers: headers() });
   const body: any = await res.json();
 
-  if (body.status !== "success") {
+  if (!body.status) {
     throw new Error(body.message || "Failed to list banks");
   }
 

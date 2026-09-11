@@ -277,7 +277,7 @@ export async function getPoolStats() {
   return {
     balance: Number(pool.balanceNgn),
     seeded: Number(pool.seededNgn),
-    disbursed: Number(pool.totalDisbursedNgN),
+    disbursed: Number(pool.totalDisbursedNgn),
     rate: Number(pool.usdcRate),
     isActive: pool.isActive,
   };

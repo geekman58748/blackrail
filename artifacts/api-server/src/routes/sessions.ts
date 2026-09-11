@@ -286,18 +286,6 @@ router.post("/sessions/:id/settle", async (req, res): Promise<void> => {
 
     }).catch((bgErr) => console.error("[settle] background settlement failed:", bgErr));
 
-    // Send buyer receipt email (non-blocking)
-    if (buyerEmail) {
-      sendBuyerReceipt(buyerEmail, {
-        sessionId: claimed.id,
-        label: claimed.label,
-        amount: decimalUsdc(received),
-        currency: claimed.currency,
-        facadeAddress: claimed.facadeAddress,
-        txHash: sig,
-        settledAt: settledAt.toISOString(),
-      }).catch(() => {});
-    }
   } catch (e) {
     const errMsg = String(e);
     console.error(`[settle] FAILED for session ${claimed.id}: ${errMsg}`);
